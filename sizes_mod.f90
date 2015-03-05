@@ -1,4 +1,4 @@
-module sizes_mod
+module sizes
 
   implicit none
 
@@ -15,10 +15,11 @@ module sizes_mod
   integer, parameter :: ngas = 5
 
 
-
+  ! number of condensate species
+  integer, parameter :: ncloud = 1
 
   
   save
 
   
-end module sizes_mod
+end module sizes
