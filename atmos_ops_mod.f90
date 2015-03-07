@@ -8,7 +8,7 @@ module atmos_ops
 
 contains
 
-  subroutine layer_thickness(press,temp,gravity,dz)
+  subroutine layer_thickness(press,temp,grav,dz)
 
     
     use sizes
@@ -21,7 +21,7 @@ contains
     integer:: i
     
     real :: p1,p2
-    real, intent(IN) :: gravity
+    real, intent(IN) :: grav
     real, dimension(nlayers), intent(IN) :: press,temp
     real, dimension(nlayers), intent(OUT):: dz
     
@@ -38,12 +38,12 @@ contains
     
     ! we're using the hypsometric equation for this..Is this OK?!!
     
-    dz(1)  = abs((R_GAS * temp(1) / gravity) * log(p2 / p1))
+    dz(1)  = abs((R_GAS * temp(1) / grav) * log(p2 / p1))
     
     p1 = ((press(nlayers) - press(nlayers-1)) / 2) + press(1)
     p2 = ((press(nlayers) - press(nlayers-1)) / 2) - press(1)
     
-    dz(nlayers)  = abs((R_GAS * temp(nlayers) / gravity) * log(p2 / p1))
+    dz(nlayers)  = abs((R_GAS * temp(nlayers) / grav) * log(p2 / p1))
     
     
     
@@ -56,7 +56,7 @@ contains
        write(*,*) p1, p2
        
        
-       dz(i)  = abs((R_GAS * temp(i) / gravity) * log(p2 / p1))
+       dz(i)  = abs((R_GAS * temp(i) / grav) * log(p2 / p1))
        
     end do
     

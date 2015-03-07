@@ -7,6 +7,9 @@ module sizes
   ! number of pressure layers
   integer, parameter :: nlayers = 16
 
+  ! number of temperatures in line list grid
+  integer, parameter :: nlinetemps = 27
+  
   ! number of wavelength/number bins in full range
   integer, parameter :: nwave = 319188
 
@@ -17,6 +20,9 @@ module sizes
 
   ! number of condensate species
   integer, parameter :: ncloud = 1
+
+  ! number of lines of header in linelists
+  integer,parameter :: listheadlines
 
   
   save

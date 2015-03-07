@@ -35,10 +35,10 @@ all: $(PROGRAMS)
 #shiner: main.o
 
 # some dependencies
-common_arrays_mod.o: sizes_mod.o
-define_types_mod.o: sizes_mod.o
+common_arrays_mod.o: sizes_mod.o define_types_mod.o
+define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o phys_const_mod.o
-main.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
+main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o
 
 main: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o main.o
 

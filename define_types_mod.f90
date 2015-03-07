@@ -4,24 +4,28 @@ module define_types
   
   implicit none
 
-  type a_atmos
-     logical::topdown
-     real, dimension(nlayers):: temp,press,logP,dz
-     double precision, dimension(nlayers)::opd_ext,opd_scat,gg
-  end type a_atmos
-  
-  type a_gas
-     logical::topdown
-     integer:: id
-     double precision, dimension(nlayers):: VMR
+    type a_gas
+     character(len=10):: name
+     double precision:: VMR
   end type a_gas
 
 
   type a_cloud
-     logical::topdown
-     integer::id
-     double precision, dimension(nlayers)::density,rpeak,rsigma
+     character(len=10):: name
+     double precision :: density,rpeak,rsigma
   end type a_cloud
+
+
+  type a_layer
+     ! set an index to identify the layer in the fixed pressure scale
+     ! layer 1 is top of atmosphere!!
+     integer:: index
+     real :: temp,press,logP,dz
+     double precision ::opd_ext,opd_scat,gg,opd_lines
+     type(a_gas) :: gas(ngas)
+     type(a_cloud) :: cloud(ncloud)
+  end type a_layer
+  
 
   save
 

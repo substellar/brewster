@@ -10,7 +10,7 @@ program opacity_mixer
       real :: T ,junk,intfact
       real, dimension(319188) :: wavenum,lambda
       double precision, dimension(319188) :: kappa1,kappa2,intkappa,totkappa
-      character(len=50) :: abfile,lines1,lines2
+      character(len=50) :: abfile,lines1,lines2, name
       ! temp and pressure arrays
       real, dimension(27) :: temp,tdiff
       real, dimension(16) :: pres
@@ -108,6 +108,9 @@ program opacity_mixer
             write(lines2,"(A11,I0,A1,I0)") "../CH4/ch4_",Tlay2,"_",Play
          endif
 
+         name = "CH4"
+         write(linetest,"(A,A,A1,A,A1,I0,A1,I0)") "../LineLists/",trim(name),"/",trim(name),"_",Tlay1,"_",Play
+         write(*,*) linestest
 !         write(*,*) lines1
 !         write(*,*) lines2
          

@@ -16,10 +16,6 @@ program main
   ! counters
   integer :: i
   
-  ! set up cloud and gas arrays, and atmosphere object
-  type(a_gas) :: gas(ngas)
-  type(a_cloud) :: cloud(ncloud)
-  type(a_atmos) :: atm
   
   ! some variables we'll get rid of later - just for development
   character(len=50) :: TPfile, VMRfile, cloudfile
@@ -46,26 +42,20 @@ program main
 
 !  close(10)
   
-!  if (tmppress .ne. press) then
+!  if (tmppress .ne. atm%press) then
 !     write(*,*) "Input pressure scale doesn't match the line-list grid, please check and correct."
 !     stop
 !  endif
 
-  ! set up the pressure layers - these are hard coded to match the line list
-  ! pressure intervals to reduce processing
+  call set_pressure_scale
 
-  atm%topdown = .true.
-  atm%press=[1.e-02, 3.e-02, 1.e-1, 3.e-1,1.e0, 3.e0,1.e1, 3.e1, 1.e2, &
-         3.e2,1.e3, 3.e3,1.e4, 3.e4,1.e5,3.e5] 
-    
-  atm%logP = log10(atm%press)
-
-
+  ! TK test line
+  write(*,*) atm%press
   
   ! Get VMRs, fixed in development for each gas, and write to all layers
 
   ! set gas order
-  gas%topdown = .true.
+!  gas%topdown = .true.
   
   write(*,*) "Give VMR file"
   read(*,*) vmrfile
@@ -75,11 +65,11 @@ program main
   
   do i = 1, ngas
 
-     read(10,*) gas(i)%ID, fixVMR(i)
+     read(10,*) atm%gas(i)%name, fixVMR(i)
 
-     gas(i)%VMR = fixVMR(i)
+     atm%gas(i)%VMR = fixVMR(i)
      ! TK test line
-     write(*,*) gas(i)%VMR
+     write(*,*) atm%gas(i)%VMR
   end do
 
   close(10)
@@ -88,7 +78,7 @@ program main
   ! Read in single values and copy to all layers
 
   !set cloud order
-  cloud%topdown = .true.
+!  cloud%topdown = .true.
   
   write(*,*) "Give cloud params file"
   read(*,*) cloudfile
@@ -96,12 +86,12 @@ program main
   open(10,file=cloudfile,status="old")
 
   do i = 1, ncloud
-     read(10,*) cloud(i)%id, tmp_n, tmp_rmax, tmp_rwidth
-     cloud(i)%density = tmp_n(i)
-     cloud(i)%rpeak = tmp_rmax(i)
-     cloud(i)%rsigma = tmp_rwidth(i)
+     read(10,*) atm%cloud(i)%name, tmp_n, tmp_rmax, tmp_rwidth
+     atm%cloud(i)%density = tmp_n(i)
+     atm%cloud(i)%rpeak = tmp_rmax(i)
+     atm%cloud(i)%rsigma = tmp_rwidth(i)
      ! TK test line
-     write(*,*) cloud(i)%density
+     write(*,*) atm%cloud(i)%density
   end do
 
 
@@ -116,6 +106,12 @@ program main
 
   call layer_thickness(atm%press,atm%temp,grav,atm%dz)
 
+
+  ! now mix the gases in each layer to get optical depth from lines
+
+
+  
+  
 
   
 
