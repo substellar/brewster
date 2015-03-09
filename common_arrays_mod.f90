@@ -26,7 +26,7 @@ contains
     
     atm%logP = log10(atm%press)
 
-    save
+
   end subroutine set_pressure_scale
   
   subroutine set_line_temps
@@ -37,7 +37,7 @@ contains
            300., 350., 400.,500., 650., 800., 1000., 1200., 1400., 1600.,&
            1800., 2000., 2300., 2600.,3000., 3500., 4000.]
 
-    save
+
   end subroutine set_line_temps
 
 

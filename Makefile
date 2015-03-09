@@ -38,7 +38,7 @@ all: $(PROGRAMS)
 common_arrays_mod.o: sizes_mod.o define_types_mod.o
 define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o phys_const_mod.o
-gas_mixing_mod.o sizes_mod.o phys_const_mod.o define_types_mod.o
+gas_mixing_mod.o: sizes_mod.o phys_const_mod.o define_types_mod.o common_arrays_mod.o
 main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o
 
 main: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o main.o

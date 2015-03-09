@@ -26,31 +26,19 @@ contains
     real, dimension(nlayers), intent(OUT):: dz
     
     
-    ! We are assuming that the values in press(nlayers) are the pressures at
-    ! the middle of each layer, so need to calculate the top and bottom pressures
-    ! first
+    ! The values in the pressure grid are geometric means for the layer. 
+    ! Assume these are taken as sqrt(Pbot * Ptop)
+    ! So (see derivation in notes)
+    ! log(P1) = (3/2)*log(Pbar1) - log(Pbar2)
+    ! log(P2) = 1/2(log (Pbar1) + log(Pbar2))
     
-    ! first and last layers need special treatment
-    ! lets make them symetrical about central pressure
+    ! we're using the hypsometric equation for this..I
     
-    p1 = ((press(2) - press(1)) / 2) + press(1)
-    p2 = ((press(2) - press(1)) / 2) - press(1)
-    
-    ! we're using the hypsometric equation for this..Is this OK?!!
-    
-    dz(1)  = abs((R_GAS * temp(1) / grav) * log(p2 / p1))
-    
-    p1 = ((press(nlayers) - press(nlayers-1)) / 2) + press(1)
-    p2 = ((press(nlayers) - press(nlayers-1)) / 2) - press(1)
-    
-    dz(nlayers)  = abs((R_GAS * temp(nlayers) / grav) * log(p2 / p1))
-    
-    
-    
-    do i = 2, nlayers-1 
+        
+    do i = 1, nlayers-1 
        
-       p1 = ((press(i-1) - press(i)) / 2) + press(i)
-       p2 =((press(i+1) - press(i)) / 2) + press(i)
+       p1 = exp(((3/2)*log(press(i))) - log(press(i+1)))
+       p2 = exp((1/2)*(log(press(i)) + log(press(i+1))))
        
        ! TK test line
        write(*,*) p1, p2
@@ -59,7 +47,12 @@ contains
        dz(i)  = abs((R_GAS * temp(i) / grav) * log(p2 / p1))
        
     end do
-    
+
+    ! last layer needs special treatment
+    ! is at the bottom of the atmosphere, so probably doesn't matter too much
+    ! make it a mirror of layer above 
+
+    dz(nlayers) = dz(nlayers - 1)
     
     
   end subroutine layer_thickness

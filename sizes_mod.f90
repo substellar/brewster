@@ -22,7 +22,7 @@ module sizes
   integer, parameter :: ncloud = 1
 
   ! number of lines of header in linelists
-  integer,parameter :: listheadlines
+  integer,parameter :: listheadlines = 23
 
   
   save

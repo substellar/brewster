@@ -10,17 +10,20 @@ contains
     use sizes
     use phys_const
     use define_types
+    use common_arrays
 
     real,intent(IN) :: grav, mu
     type(a_layer), intent(IN) :: layer
-    double precision, intent(OUT) :: opd_lines
+    double precision, dimension(nwave), intent(OUT) :: opd_lines
     integer :: Tlay1, Tlay2, torder
     double precision, dimension(nwave) :: kappa1,kappa2,intkappa,totkappa
-    double precision, dimension(nwave) :: logkap1, logkap2
+    double precision, dimension(nwave) :: logkap1, logkap2,wavenum
     real, dimension(nlinetemps):: linetemp,tdiff
-    double precision :: ndens
+    double precision :: ndens, intfact, junk
     character(len=50) :: lines1,lines2
-    
+
+    ! counters
+    integer:: i, j
     
     ! set up the line temp array
     
@@ -34,7 +37,7 @@ contains
     Tlay1 = minloc(tdiff,1)
 
       
-    if (linetemp(Tlay1) .lt. T) then
+    if (linetemp(Tlay1) .lt. layer%temp) then
        Tlay2 = Tlay1+1
     else
        Tlay2 = Tlay1 - 1
@@ -51,7 +54,7 @@ contains
          write(*,*) linetemp(Tlay2),linetemp(Tlay1)
       else
          torder = 2
-         infact =  (layer%temp -linetemp(Tlay1)) / (linetemp(Tlay2) - linetemp(Tlay1))
+         intfact =  (layer%temp -linetemp(Tlay1)) / (linetemp(Tlay2) - linetemp(Tlay1))
          ! TK test line
          write(*,*) "torder = ",torder
          write(*,*) linetemp(Tlay2),linetemp(Tlay1)
@@ -70,8 +73,10 @@ contains
 
       do i = 1, ngas
 
-         write(lines1,"(A,A,A1,A,A1,I0,A1,I0)")"../LineLists/",trim(layer%gas(i)%name),"/",trim(layer%gas(i)%name),"_",Tlay1,"_",layer%index
-         write(lines2,"(A,A,A1,A,A1,I0,A1,I0)") "../LineLists/",trim(layer%gas(i)%name),"/",trim(layer%gas(i)%name),"_",Tlay2,"_",layer%index
+         write(lines1,"(A,A,A1,A,A1,I0,A1,I0)")"../LineLists/",trim(layer%gas(i)%name), &
+              "/",trim(layer%gas(i)%name),"_",Tlay1,"_",layer%index
+         write(lines2,"(A,A,A1,A,A1,I0,A1,I0)") "../LineLists/",trim(layer%gas(i)%name), &
+              "/",trim(layer%gas(i)%name),"_",Tlay2,"_",layer%index
 
          ! TK test line
          write(*,*) lines1
@@ -86,8 +91,8 @@ contains
          do j =1, listheadlines
             read(15,*)
          enddo
-         do j = 1,nwave
-            read(15,*) wavenum(j),kappa1(j)
+         do j = 1, nwave
+            read(15,*) wavenum(j), kappa1(j)
          enddo
          close(15)
          open(15,file=lines2)
@@ -95,7 +100,7 @@ contains
             read(15,*)
          enddo
          do j = 1,nwave
-            read(15,*) junk,kappa2(j)
+            read(15,*) junk, kappa2(j)
          enddo
          close(15)
 
@@ -103,9 +108,9 @@ contains
          logkap1 = log10(kappa1)
          logkap2 = log10(kappa2)
          if (torder .eq. 1) then 
-            intkappa = ((logkap1 - logkap2)*intfact)+logkap2
+            intkappa = exp(((logkap1 - logkap2)*intfact)+logkap2)
          else if (torder .eq. 2) then
-            intkappa = ((logkap2 - logkap1)*intfact)+logkap1
+            intkappa = exp(((logkap2 - logkap1)*intfact)+logkap1)
          else
             write(*,*) "something wrong with interpolate order"           
          endif
