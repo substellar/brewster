@@ -15,12 +15,18 @@
 # The compiler
 FC = gfortran
 # flags for debugging or for maximum performance, comment as necessary
-FCFLAGS = -g -fbounds-check 
-#FCFLAGS = -frecord-marker=4 -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 
-FCFLAGS = -O2
-#FCFLAGS = -fno-leading-underscore
+# Debug version
+FCFLAGS = -g -fbounds-check -fbacktrace -Og -fdefault-real-8
+F77FLAGS = -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
+# Run version
+#FCFLAGS = -O3 -fdefault-real-8
+#F77FLAGS = -fdefault-double-8 -fdefault-real-8 -O3
+
+# F77FLAGS = -frecord-marker=4 -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
+#FCFLAGS += -fno-leading-underscore
 # flags forall (e.g. look for system .mod files, required in gfortran)
 FCFLAGS += -I/usr/include
+F77FLAGS += -I/usr/include
 
 # libraries needed for linking, unused in the examples
 LDFLAGS = -L/usr/local/lib/
@@ -39,9 +45,12 @@ common_arrays_mod.o: sizes_mod.o define_types_mod.o
 define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o phys_const_mod.o
 gas_mixing_mod.o: sizes_mod.o phys_const_mod.o define_types_mod.o common_arrays_mod.o
-main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o
+disort_mod.o: sizes_mod.o disort_params_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o
+bits_for_disort_f77.o:  ErrPack.o
+setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o disort_params_mod.o disort_mod.o 
+main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o disort_params_mod.o disort_mod.o setup_disort_mod.o 
 
-main: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o main.o
+main: sizes_mod.o define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o disort_params_mod.o disort_mod.o setup_disort_mod.o  main.o
 
 
 
@@ -66,6 +75,13 @@ main: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_
 %.o: %.F90
 	$(FC) $(FCFLAGS) -c $<
 
+# special rule for DISORT
+#%.o: %.F
+#	$(FC) $(F77FLAGS) -c $<
+
+# Some rules for building f77
+%.o: %.f
+	$(FC) $(F77FLAGS) -c $<
 # Utility targets
 .PHONY: clean 
 

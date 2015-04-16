@@ -1,43 +1,50 @@
 module gas_mixing
 
+
+
   implicit none
 
 
 contains
 
-  subroutine line_mixer(layer,mu,grav,opd_lines)
+  subroutine line_mixer(layer,opd_lines,index)
 
     use sizes
     use phys_const
     use define_types
     use common_arrays
 
-    real,intent(IN) :: grav, mu
+
+    implicit none
+    
     type(a_layer), intent(IN) :: layer
     double precision, dimension(nwave), intent(OUT) :: opd_lines
-    integer :: Tlay1, Tlay2, torder
-    double precision, dimension(nwave) :: kappa1,kappa2,intkappa,totkappa
-    double precision, dimension(nwave) :: logkap1, logkap2,wavenum
-    real, dimension(nlinetemps):: linetemp,tdiff
+    integer :: Tlay1, Tlay2, torder,index
+    double precision, dimension(nwave) :: kappa1,kappa2,logintkappa,totkappa
+    double precision, dimension(nwave) :: logkap1, logkap2
+    real, dimension(nlinetemps):: tdiff
     double precision :: ndens, intfact, junk
-    character(len=50) :: lines1,lines2
+    character(len=50) :: lines1,lines2,name
 
     ! counters
     integer:: i, j
     
-    ! set up the line temp array
+    ! set up the line temp array - check this is working properly
     
     call set_line_temps
 
+    ! TK test line
+    !write(*,*) "Line temperatures: ", linetemps
+
     ! get line temp array locations bracketing our temperature
 
-    tdiff = abs(linetemp - layer%temp)
+    tdiff = abs(linetemps - layer%temp)
 
     
     Tlay1 = minloc(tdiff,1)
 
       
-    if (linetemp(Tlay1) .lt. layer%temp) then
+    if (linetemps(Tlay1) .lt. layer%temp) then
        Tlay2 = Tlay1+1
     else
        Tlay2 = Tlay1 - 1
@@ -48,16 +55,16 @@ contains
 
       if (Tlay1 .gt. Tlay2) then
          torder = 1
-         intfact = (layer%temp - linetemp(Tlay2)) / (linetemp(Tlay1) - linetemp(Tlay2))
+         intfact = (log10(layer%temp) - log10(linetemps(Tlay2))) / (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
          ! TK test line
          write(*,*) "torder = ",torder
-         write(*,*) linetemp(Tlay2),linetemp(Tlay1)
+         write(*,*) linetemps(Tlay2),linetemps(Tlay1)
       else
          torder = 2
-         intfact =  (layer%temp -linetemp(Tlay1)) / (linetemp(Tlay2) - linetemp(Tlay1))
+         intfact =  (log10(layer%temp) -log10(linetemps(Tlay1))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
          ! TK test line
          write(*,*) "torder = ",torder
-         write(*,*) linetemp(Tlay2),linetemp(Tlay1)
+         write(*,*) linetemps(Tlay2),linetemps(Tlay1)
       endif
 
 
@@ -87,7 +94,7 @@ contains
        ! now read in the line lists and sum, weighted by abudance/fraction
 
          
-         open(15,file=lines1)
+         open(15,file=lines1, status='old')
          do j =1, listheadlines
             read(15,*)
          enddo
@@ -95,7 +102,7 @@ contains
             read(15,*) wavenum(j), kappa1(j)
          enddo
          close(15)
-         open(15,file=lines2)
+         open(15,file=lines2, status='old')
          do j =1, listheadlines
             read(15,*)
          enddo
@@ -108,13 +115,13 @@ contains
          logkap1 = log10(kappa1)
          logkap2 = log10(kappa2)
          if (torder .eq. 1) then 
-            intkappa = exp(((logkap1 - logkap2)*intfact)+logkap2)
+            logintkappa = ((logkap1 - logkap2)*intfact)+logkap2
          else if (torder .eq. 2) then
-            intkappa = exp(((logkap2 - logkap1)*intfact)+logkap1)
+            logintkappa = ((logkap2 - logkap1)*intfact)+logkap1
          else
             write(*,*) "something wrong with interpolate order"           
          endif
-         totkappa = totkappa + (layer%gas(i)%VMR * 10**intkappa)
+         totkappa = totkappa + (layer%gas(i)%VMR * (10**logintkappa))
       enddo
 
       ! now we've got total cross section for layer - totkappa (cm2 / molecule)
@@ -125,13 +132,25 @@ contains
       ! number density in /m3:
 
       ndens = layer%press  / (K_BOLTZ * layer%temp)
-      
+
       ! optical depth
-      
-      opd_lines = totkappa * 10**(-4) * ndens * layer%dz 
+
+      ! something here is making opd_line zero!
+      opd_lines = totkappa * ndens * layer%dz  * 10**(-4.0) 
 
 
+      ! TK test output
+      write(*,*) "line mixer L142 test.. layer%temp =", layer%temp
+      write(*,*) "line mixer L142 test.. layer%dz =", layer%dz
+      write(*,*) "line mixer L142 test.. ndens =", ndens
+      write(*,*) "line mixer L142 test.. totkappa 1000 =", totkappa(1000)
       
+      
+      write(name,"(A,I0,A)") "test_line_opacities_layer_",index,".txt"
+      open(unit=20,file=name,status="new")
+      write(20,*) opd_lines
+      close(20)
+
 
   end subroutine line_mixer
 

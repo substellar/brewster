@@ -15,7 +15,7 @@ module sizes
 
 
   ! number of gases for mixing
-  integer, parameter :: ngas = 5
+  integer, parameter :: ngas = 2
 
 
   ! number of condensate species

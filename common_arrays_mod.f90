@@ -7,8 +7,13 @@ module common_arrays
   
   ! declares arrays that will be used alot
   
-  ! set up cloud and gas arrays, and atmosphere object
+  ! set up atmosphere object, which is an array of layers
    type(a_layer) :: atm(nlayers)
+
+   ! the wavenumber array
+
+   double precision, dimension(nwave) :: wavenum, wavelen
+   real,dimension(nlinetemps) :: linetemps
 
   save
 
@@ -31,11 +36,11 @@ contains
   
   subroutine set_line_temps
 
-    real,dimension(nlinetemps) :: linetemps
 
     linetemps = [75., 85., 100., 120., 140., 160., 180., 200., 230., 260., &
            300., 350., 400.,500., 650., 800., 1000., 1200., 1400., 1600.,&
            1800., 2000., 2300., 2600.,3000., 3500., 4000.]
+
 
 
   end subroutine set_line_temps
