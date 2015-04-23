@@ -77,11 +77,16 @@ contains
 
 
     leveltemp(0) = layertemp(1) - 0.5*(layertemp(2) - layertemp(1))
+
+    ! if temperature is low and goes zero, lets just make the level equal to Tbar.
+    
+    if (leveltemp(0) .lt. 0) leveltemp(0) = layertemp(1)
     
     do i = 1, nlayers-1
        
        leveltemp(i) = layertemp(i) + 0.5*(layertemp(i+1) -layertemp(i))
-       
+
+       if (leveltemp(i) .lt. 0.0) leveltemp(i) = layertemp(i)
     end do
 
 

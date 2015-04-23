@@ -1,30 +1,21 @@
       module disort_mod
 
-      use sizes
-      use disort_params
-
-      
+ 
       contains
-c~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      
+c     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 c RCS version control information:
 c $Header: DISORT.f,v 2.1 2000/04/04 18:21:55 laszlo Exp $
 c ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-c      SUBROUTINE DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO,
-c     &                   WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU,
-c     &                   UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0,
-c     &                   FISOT, LAMBER, ALBEDO, BTEMP, TTEMP, TEMIS,
-c     &                   PLANK, ONLYFL, ACCUR, PRNT, HEADER, MAXCLY,
-c     &                   MAXULV, MAXUMU, MAXPHI, MAXMOM, RFLDIR, RFLDN,
-c     &                   FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
+      SUBROUTINE DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO,
+     &                   WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU,
+     &                   UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0,
+     &                   FISOT, LAMBER, ALBEDO, BTEMP, TTEMP, TEMIS,
+     &                   PLANK, ONLYFL, ACCUR, PRNT, HEADER, MAXCLY,
+     &                   MAXULV, MAXUMU, MAXPHI, MAXMOM, RFLDIR, RFLDN,
+     &                   FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
 
-
-      SUBROUTINE DISORT(DTAUC, SSALB, PMOM, TEMPER, WVNMLO,
-     &     WVNMHI, UMU, PHI, UMU0, PHI0, BTEMP, TTEMP,
-     &     PRNT, HEADER, RFLDIR, RFLDN,
-     &     FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
-
-      
 c *******************************************************************
 c       Plane-parallel discrete ordinates radiative transfer program
 c             ( see DISORT.doc for complete documentation )
@@ -368,30 +359,27 @@ c     .. Parameters ..
 
       INTEGER   MXCLY, MXULV, MXCMU, MXUMU, MXPHI, MI, MI9M2, NNLYRI,
      &          MXSQT
-      PARAMETER ( MXCLY = MAXCLY, MXULV = MAXULV, MXCMU = 48, 
-     &          MXUMU = MAXUMU, MXPHI = MAXPHI, MI = MXCMU / 2,
-     &          MI9M2 = 9*MI - 2, NNLYRI = MXCMU*MXCLY, MXSQT = 1000 )
+      PARAMETER ( MXCLY = 6, MXULV = 5, MXCMU = 48, MXUMU = 10,
+     &          MXPHI = 3, MI = MXCMU / 2, MI9M2 = 9*MI - 2,
+     &          NNLYRI = MXCMU*MXCLY, MXSQT = 1000 )
 c     ..
 c     .. Scalar Arguments ..
 
       CHARACTER HEADER*127
-c      LOGICAL   LAMBER, ONLYFL, PLANK, USRANG, USRTAU
-c      INTEGER   IBCND, MAXCLY, MAXMOM, MAXPHI, MAXULV, MAXUMU, NLYR,
-c     &          NMOM, NPHI, NSTR, NTAU, NUMU
-      INTEGER   NLYR
-c      REAL      ACCUR, ALBEDO, BTEMP, FBEAM, FISOT, PHI0, TEMIS, TTEMP,
-c     &          UMU0, WVNMHI, WVNMLO
-      REAL      BTEMP, PHI0, TTEMP, UMU0, WVNMHI, WVNMLO
+      LOGICAL   LAMBER, ONLYFL, PLANK, USRANG, USRTAU
+      INTEGER   IBCND, MAXCLY, MAXMOM, MAXPHI, MAXULV, MAXUMU, NLYR,
+     &          NMOM, NPHI, NSTR, NTAU, NUMU
+      REAL      ACCUR, ALBEDO, BTEMP, FBEAM, FISOT, PHI0, TEMIS, TTEMP,
+     &          UMU0, WVNMHI, WVNMLO
 c     ..
 c     .. Array Arguments ..
-      real, INTENT(IN) :: DTAUC( nlayers ),
-     &                    TEMPER( 0:nlayers ), PMOM( 0:NMOM, nlayers)
+
       LOGICAL   PRNT( 5 )
-      REAL      ALBMED( MAXUMU ), DFDT( MAXULV ),SSALB( nlayers ),
-     &          FLUP( MAXULV ), PHI( MAXPHI ),
-     &          RFLDIR( MAXULV ), RFLDN( MAXULV ), 
-     &          TRNMED( MAXUMU ), UAVG( MAXULV ),
-     &          UMU( nstr ), ! UTAU( MAXULV ),
+      REAL      ALBMED( MAXUMU ), DFDT( MAXULV ), DTAUC( MAXCLY ),
+     &          FLUP( MAXULV ), PHI( MAXPHI ), PMOM( 0:MAXMOM, MAXCLY ),
+     &          RFLDIR( MAXULV ), RFLDN( MAXULV ), SSALB( MAXCLY ),
+     &          TEMPER( 0:MAXCLY ), TRNMED( MAXUMU ), UAVG( MAXULV ),
+     &          UMU( MAXUMU ), UTAU( MAXULV ),
      &          UU( MAXUMU, MAXULV, MAXPHI )
 c     ..
 c     .. Local Scalars ..
@@ -399,11 +387,8 @@ c     .. Local Scalars ..
       LOGICAL   COMPAR, CORINT, DELTAM, LYRCUT, PASS1
       INTEGER   IQ, IU, J, KCONV, L, LC, LEV, LU, MAZIM, NAZ, NCOL,
      &          NCOS, NCUT, NN, NS
-      REAL      AZERR, AZTERM, BPLANK, COSPHI, DELM0, DITHER,
-     &     DUM, PI, RPD, SGN, TPLANK
-!     Ben's hack to fix errro
-      real, dimension(nstr) :: ANGCOS
-
+      REAL      ANGCOS, AZERR, AZTERM, BPLANK, COSPHI, DELM0, DITHER,
+     &          DUM, PI, RPD, SGN, TPLANK
 c     ..
 c     .. Local Arrays ..
 
@@ -449,7 +434,7 @@ c     &          ZEROIT
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, ASIN, COS, FLOAT, LEN, MAX, SQRT
+      INTRINSIC ABS, ASIN, COS, FLOAT, LEN, MAX, SQRT
 c     ..
       SAVE      DITHER, PASS1, PI, RPD, SQT
       DATA      PASS1 / .TRUE. /, PRNTU0 / 2*.FALSE. /
@@ -457,7 +442,6 @@ c     ..
       DELTAM = .TRUE.
       CORINT = .TRUE.
 
-      NLYR = nlayers
 
       IF( PASS1 ) THEN
 
@@ -476,15 +460,15 @@ c                            ** precision machine
    10    CONTINUE
 c                            ** Set input values for self-test.
 c                            ** Be sure SLFTST sets all print flags off.
-c         COMPAR = .FALSE.
+         COMPAR = .FALSE.
 
-c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
-c     &                DUM, DUM, DUM )
+         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
+     &                DUM, DUM, DUM )
 
       END IF
 
@@ -868,23 +852,23 @@ c                                          ** Print intensities
      &                 MAXUMU )
 
 
-c      IF( PASS1 ) THEN
+      IF( PASS1 ) THEN
 c                                    ** Compare test case results with
 c                                    ** correct answers and abort if bad
-c         COMPAR = .TRUE.
+         COMPAR = .TRUE.
 
-c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
-c     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
+         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
+     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
 
-c         PASS1  = .FALSE.
-c         GO TO  20
+         PASS1  = .FALSE.
+         GO TO  20
 
-c      END IF
+      END IF
 
 
       RETURN
@@ -2198,7 +2182,7 @@ c      EXTERNAL  SECSCA, SINSCA
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, ACOS, COS, SQRT
+      INTRINSIC ABS, ACOS, COS, SQRT
 c     ..
 
 
@@ -2687,7 +2671,7 @@ c                               ** Compare beam angle to comput. angles
 
 c                                   ** Set output polar angles to
 c                                   ** computational polar angles
-!         NUMU = NSTR
+         NUMU = NSTR
 
          DO 100 IU = 1, NN
             UMU( IU ) = -CMU( NN + 1 - IU )
@@ -2857,7 +2841,7 @@ c      EXTERNAL  ZEROIT
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC EXP
+      INTRINSIC EXP
 c     ..
 
 
@@ -3214,7 +3198,7 @@ c      EXTERNAL  ASYMTX, ERRMSG
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, SQRT
+      INTRINSIC ABS, SQRT
 c     ..
 
 c                             ** Calculate quantities in Eqs. SS(5-6),
@@ -3446,7 +3430,7 @@ c      EXTERNAL  ERRMSG, SGBCO, SGBSL, ZEROIT
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC EXP
+      INTRINSIC EXP
 c     ..
 
 
@@ -3736,8 +3720,8 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      REAL      BDREF
-      EXTERNAL  BDREF
+c      REAL      BDREF
+c      EXTERNAL  BDREF
 c     ..
 c     .. External Subroutines ..
 
@@ -3745,7 +3729,7 @@ c      EXTERNAL  QGAUSN, ZEROIT
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC COS
+      INTRINSIC COS
 c     ..
       SAVE      PASS1, GMU, GWT
       DATA      PASS1 / .True. /
@@ -4898,7 +4882,6 @@ c     .. Array Arguments ..
      &          PMOM( 0:MAXMOM, MAXCLY ), SSALB( MAXCLY ),
      &          TAUC( 0:MXCLY ), TEMPER( 0:MAXCLY ), UMU( MAXUMU ),
      &          UTAU( MAXULV )
-      
 c     ..
 c     .. Local Scalars ..
 
@@ -4908,18 +4891,17 @@ c     .. Local Scalars ..
 c     ..
 c     .. External Functions ..
 
-      LOGICAL   WRTBAD, WRTDIM
+c      LOGICAL   WRTBAD, WRTDIM
 c      REAL      DREF
-c      EXTERNAL  WRTBAD, WRTDIM
-c      EXTERNAL DREF
+c      EXTERNAL  WRTBAD, WRTDIM, DREF
 c     ..
 c     .. External Subroutines ..
-
+c
 c      EXTERNAL  ERRMSG
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, MAX, MOD
+      INTRINSIC ABS, MAX, MOD
 c     ..
 
 
@@ -4966,9 +4948,10 @@ c     ..
       DO 30 LC = 1, NLYR
 
          DO 20 K = 0, NMOM
+
             IF( PMOM( K,LC ).LT.-1.0 .OR. PMOM( K,LC ).GT.1.0 )
      &          INPERR = WRTBAD( 'PMOM' )
-            
+
    20    CONTINUE
 
    30 CONTINUE
@@ -4987,6 +4970,7 @@ c     ..
 
             IF( ABS( UTAU( LU )-TAUC( NLYR ) ).LE.1.E-4 )
      &          UTAU( LU ) = TAUC( NLYR )
+
             IF( UTAU( LU ).LT.0.0 .OR. UTAU( LU ).GT.TAUC( NLYR ) )
      &          INPERR = WRTBAD( 'UTAU' )
 
@@ -5216,8 +5200,8 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      REAL      BDREF
-      EXTERNAL  BDREF
+c      REAL      BDREF
+c      EXTERNAL  BDREF
 c     ..
 c     .. External Subroutines ..
 
@@ -5225,7 +5209,7 @@ c      EXTERNAL  ERRMSG, QGAUSN
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, ASIN
+      INTRINSIC ABS, ASIN
 c     ..
       SAVE      PASS1, GMU, GWT, PI
       DATA      PASS1 / .True. /
@@ -5494,16 +5478,16 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      REAL      R1MACH
-      EXTERNAL  R1MACH
+c      REAL      R1MACH
+c      EXTERNAL  R1MACH
 c     ..
 c     .. External Subroutines ..
 
-      EXTERNAL  ERRMSG
+c      EXTERNAL  ERRMSG
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, ASIN, EXP, LOG, MOD
+      INTRINSIC ABS, ASIN, EXP, LOG, MOD
 c     ..
 c     .. Statement Functions ..
 
@@ -6015,16 +5999,16 @@ c     .. Local Scalars ..
 c     ..
 c     .. External Functions ..
 
-      DOUBLE PRECISION D1MACH
-      EXTERNAL  D1MACH
+c      DOUBLE PRECISION D1MACH
+c      EXTERNAL  D1MACH
 c     ..
 c     .. External Subroutines ..
 
-      EXTERNAL  ERRMSG
+c      EXTERNAL  ERRMSG
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, ASIN, COS, FLOAT, MOD, TAN
+      INTRINSIC ABS, ASIN, COS, FLOAT, MOD, TAN
 c     ..
       SAVE      PI, TOL
 
@@ -6150,12 +6134,12 @@ c     .. Local Scalars ..
 c     ..
 c     .. External Functions ..
 
-      REAL      R1MACH
-      EXTERNAL  R1MACH
+c      REAL      R1MACH
+c      EXTERNAL  R1MACH
 c     ..
 c     .. Intrinsic Functions ..
 
-c      INTRINSIC ABS, LOG10, SIGN
+      INTRINSIC ABS, LOG10, SIGN
 c     ..
 c     .. Save statement ..
 
@@ -6290,12 +6274,12 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      LOGICAL   TSTBAD
-      EXTERNAL  TSTBAD
+c      LOGICAL   TSTBAD
+c      EXTERNAL  TSTBAD
 c     ..
 c     .. External Subroutines ..
 
-      EXTERNAL  ERRMSG
+c      EXTERNAL  ERRMSG
 c     ..
 c     .. Intrinsic Functions ..
 
@@ -7380,6 +7364,9 @@ c     ..
       END
 
       end module disort_mod
+
+
 c ******************************************************************
 c ********** End of IBCND=1 special case routines ******************
 c ******************************************************************
+

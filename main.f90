@@ -55,22 +55,22 @@ program main
   endif
 
   
-  write(*,*) "for testing we'll take an isothermal atmosphere. Give the temperature"
-  read(*,*) isotemp
+  write(*,*) "Give the temperature profile"
+  read(*,*) TPfile
 
 
   atm%temp = isotemp
 
-!  open(unit = 10, file=TPfile, status='old')
+  open(unit = 10, file=TPfile, status='old')
 
-!  do i = 1, nlayer
+ do i = 1, nlayers
 
-!     read(10,*) tmppress(i), atm%temp(i)
+     read(10,*) atm(i)%temp
 
   
-!  end do
+  end do
 
-!  close(10)
+  close(10)
   
 !  if (tmppress .ne. atm%press) then
 !     write(*,*) "Input pressure scale doesn't match the line-list grid, please check and correct."
@@ -142,16 +142,21 @@ program main
   call layer_thickness(atm%press,atm%temp,grav,atm%dz)
 
   write(*,*) "LAYER THICKNESS COMPLETE"
-  ! now mix the gases in each layer to get optical depth from lines
 
-  !TK test line
-  write(*,*) "Test Wavenumber 100 before linemixer call:", wavenum(1)
-  write(*,*) "Test Wavenumber 100 before linemixer call:", wavenum(2)
-  
+  ! now get number density of layers
+      ! number density in /m3:
+    
+  atm%ndens = atm%press  / (K_BOLTZ * atm%temp)
+
+
+
+
+  ! now mix the gases in each layer to get optical depth from lines
   do i = 1, nlayers
      call line_mixer(atm(i),atm(i)%opd_lines,i)
   end do
 
+  
   ! now we've got the wavenumber arrays we can set the index range for later
 
   wavelen = 1e4 / wavenum
@@ -164,11 +169,7 @@ program main
  
 
   
-  ! TK test line
-  write(*,*) "Test wavenumber 1 after linemixer call:", wavenum(1)
-  write(*,*) "Test wavenumber 2 after linemixer call:", wavenum(2)
-
-
+  
   ! zero all the missing bits
   do i = 1, nlayers
      atm(i)%opd_scat = 0.0
@@ -179,6 +180,17 @@ program main
   do i = 1, nlayers
      atm(i)%opd_ext = atm(i)%opd_scat + atm(i)%opd_lines + atm(i)%opd_CIA
   end do
+
+
+  write(junk,"(A,I0,A)") "test_line_opacities_layer_",8,".txt"
+  open(unit=20,file=junk,status="new")
+  write(20,*) "written at line 180 main"
+  do i = 1, nwave
+     write(20,*) wavelen(i), atm(8)%opd_ext(i)
+  end do
+  close(20)
+
+
   ! scattering opd stuff needed here and CIA!!!
 
 
@@ -187,6 +199,7 @@ program main
 
   write(*,*) "TEST: calling RUN_DISORT"
   write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
+
   call run_disort(dis_spec,do_clouds,nw1,nw2)
 
   ! TK test edit Just a subset of wavelength space... say 1 - 5um

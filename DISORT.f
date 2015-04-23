@@ -354,7 +354,7 @@ c     .. Parameters ..
 
       INTEGER   MXCLY, MXULV, MXCMU, MXUMU, MXPHI, MI, MI9M2, NNLYRI,
      &          MXSQT
-      PARAMETER ( MXCLY = 100, MXULV = 201, MXCMU = 48, MXUMU = 10,
+      PARAMETER ( MXCLY = 16, MXULV = 1, MXCMU = 48, MXUMU = 10,
      &          MXPHI = 3, MI = MXCMU / 2, MI9M2 = 9*MI - 2,
      &          NNLYRI = MXCMU*MXCLY, MXSQT = 1000 )
 c     ..
@@ -455,15 +455,15 @@ c                            ** precision machine
    10    CONTINUE
 c                            ** Set input values for self-test.
 c                            ** Be sure SLFTST sets all print flags off.
-c         COMPAR = .FALSE.
+         COMPAR = .FALSE.
 
-c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
-c     &                DUM, DUM, DUM )
+         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
+     &                DUM, DUM, DUM )
 
       END IF
 
@@ -847,23 +847,23 @@ c                                          ** Print intensities
      &                 MAXUMU )
 
 
-c      IF( PASS1 ) THEN
+      IF( PASS1 ) THEN
 c                                    ** Compare test case results with
 c                                    ** correct answers and abort if bad
-c         COMPAR = .TRUE.
+         COMPAR = .TRUE.
 
-c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
-c     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
+         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
+     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
 
-c         PASS1  = .FALSE.
-c         GO TO  20
+         PASS1  = .FALSE.
+         GO TO  20
 
-c      END IF
+      END IF
 
 
       RETURN
@@ -4943,10 +4943,10 @@ c     ..
       DO 30 LC = 1, NLYR
 
          DO 20 K = 0, NMOM
-            write(*,*) PMOM(K,LC)
+
             IF( PMOM( K,LC ).LT.-1.0 .OR. PMOM( K,LC ).GT.1.0 )
      &          INPERR = WRTBAD( 'PMOM' )
-            
+
    20    CONTINUE
 
    30 CONTINUE
