@@ -41,10 +41,7 @@ contains
        p1 = exp(((1.5)*log(press(i))) - ((0.5)*log(press(i+1))))
        p2 = exp((0.5)*(log(press(i) * press(i+1))))
        
-       ! TK test line
-      
-       write(*,*) "TEST atmos_ops L45:  ", p1, p2
-
+ 
        ! no need to change P units to Pa, as we want the ratio
        
        dz(i)  = abs((R_GAS * temp(i) / grav) * log(p2 / p1))

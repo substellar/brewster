@@ -7,6 +7,7 @@ module define_types
     type a_gas
      character(len=10):: name
      double precision:: VMR
+     double precision :: molmass
   end type a_gas
 
 
@@ -21,7 +22,7 @@ module define_types
      ! layer 1 is top of atmosphere!!
      integer:: index
      real:: temp
-     double precision :: press,logP,dz,ndens
+     double precision :: press,logP,dz,ndens,fH2,fHe,mu
      double precision, dimension(nwave) ::opd_ext,opd_scat,gg,opd_lines,opd_CIA
      type(a_gas) :: gas(ngas)
      type(a_cloud) :: cloud(ncloud)

@@ -7,7 +7,7 @@ module gas_mixing
 
 contains
 
-  subroutine line_mixer(layer,opd_lines,index)
+  subroutine line_mixer(layer,opd_lines)
 
     use sizes
     use phys_const
@@ -19,7 +19,7 @@ contains
     
     type(a_layer), intent(IN) :: layer
     double precision, dimension(nwave), intent(OUT) :: opd_lines
-    integer :: Tlay1, Tlay2, torder,index
+    integer :: Tlay1, Tlay2, torder
     double precision, dimension(nwave) :: kappa1,kappa2,logintkappa,totkappa
     double precision, dimension(nwave) :: logkap1, logkap2
     real, dimension(nlinetemps):: tdiff
@@ -33,8 +33,6 @@ contains
     
     call set_line_temps
     
-    ! TK test line
-    !write(*,*) "Line temperatures: ", linetemps
     
     ! get line temp array locations bracketing our temperature
     
@@ -68,15 +66,9 @@ contains
     if (Tlay1 .gt. Tlay2) then
        torder = 1
        intfact = (log10(layer%temp) - log10(linetemps(Tlay2))) / (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
-       ! TK test line
-       write(*,*) "torder = ",torder
-       write(*,*) linetemps(Tlay2),linetemps(Tlay1)
     else
        torder = 2
        intfact =  (log10(layer%temp) -log10(linetemps(Tlay1))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
-       ! TK test line
-       write(*,*) "torder = ",torder
-       write(*,*) linetemps(Tlay2),linetemps(Tlay1)
     endif
 
     if (layer%temp .gt. linetemps(nlinetemps)) then
@@ -101,9 +93,7 @@ contains
        write(lines2,"(A,A,A1,A,A1,I0,A1,I0)") "../LineLists/",trim(layer%gas(i)%name), &
             "/",trim(layer%gas(i)%name),"_",Tlay2,"_",layer%index
        
-       ! TK test line
-       write(*,*) lines1
-       write(*,*) lines2
+
        
        
        
@@ -157,7 +147,7 @@ contains
     
     ! now we've got total cross section for layer - totkappa (cm2 / molecule)
     ! we want the optical depth.. 
-    ! so we multiply by number density to get column density ( / cm)
+    ! so we multiply by number density (which is in /m3 to get column density ( / cm)
     ! and sum over the layer thickness (which we calculated in METRES
     
     
@@ -167,11 +157,7 @@ contains
     opd_lines = totkappa * layer%ndens * layer%dz  * 10**(-4.0) 
     
     
-    ! TK test output
-    write(*,*) "line mixer L142 test.. layer%temp =", layer%temp
-    write(*,*) "line mixer L142 test.. layer%dz =", layer%dz
-    write(*,*) "line mixer L142 test.. ndens =", layer%ndens
-    write(*,*) "line mixer L142 test.. totkappa 1000 =", totkappa(1000)
+
     
     
     

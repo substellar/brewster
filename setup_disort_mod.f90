@@ -54,10 +54,6 @@ contains
 
 
 
-    
-
-
-    
     integer :: nw1, nw2
     
     HEADER = ''
@@ -130,8 +126,6 @@ contains
           enddo
        else     
           do j = 1, nlayers
-             ! TK test line
-             write(*,*) "DOING GETMOM H-G"
              call GETMOM(6,atm(j)%gg(i),NMOM,PMOM(0,j))
           end do
        end if

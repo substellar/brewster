@@ -49,12 +49,13 @@ common_arrays_mod.o: sizes_mod.o define_types_mod.o
 define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o phys_const_mod.o
 gas_mixing_mod.o: sizes_mod.o phys_const_mod.o define_types_mod.o common_arrays_mod.o
+cia_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 #disort_mod.o: RDI1MACH.o LINPAK.o ErrPack.o BDREF.o
 #bits_for_disort_f77.o:  ErrPack.o
 setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
-main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
+main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
 
-main: sizes_mod.o define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o  main.o
+main: sizes_mod.o define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o  main.o
 
 
 

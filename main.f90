@@ -6,6 +6,7 @@ program main
   use phys_const
   use atmos_ops
   use gas_mixing
+  use cia
   use setup_disort
   
   implicit none
@@ -16,8 +17,8 @@ program main
   real:: metal,R2D2,logg, grav,test
   real,dimension(nwave) :: dis_spec
   ! counters
-  integer :: i
-  
+  integer :: i, ch4index
+  real:: fboth, fratio
   
   ! some variables we'll get rid of later - just for development
   character(len=50) :: TPfile, VMRfile, cloudfile,fmt, junk
@@ -30,12 +31,11 @@ program main
   real :: w1, w2
   real, dimension(nwave) :: diff
   integer :: nw1, nw2
-    
   
 
   ! set the wavelength range
-  w1 = 1.25
-  w2 = 1.75
+  w1 = 1.0
+  w2 = 2.5
   
  
 
@@ -79,8 +79,6 @@ program main
 
   call set_pressure_scale
 
-  ! TK test line
-  write(*,*) "MAIN L71 TEST:", atm%press
   
   ! Get VMRs, fixed in development for each gas, and write to all layers
 
@@ -101,6 +99,15 @@ program main
 !     read(junk(9:14),*) fixVMR(i)
      atm%gas(i)%name = gasname(i)
      atm%gas(i)%VMR = fixVMR(i)
+
+     if (trim(atm(1)%gas(i)%name) .eq. "ch4") then
+        atm%gas(i)%molmass = XCH4
+        ch4index = i
+     endif
+     if (trim(atm(1)%gas(i)%name) .eq. "h2o") then
+        atm%gas(i)%molmass = XH2O
+     end if
+     
   end do
 
   close(10)
@@ -135,25 +142,43 @@ program main
   !grav = 10**(logg) / 100.
   grav = 10.
 
+
+
+  ! now H2 and He fractions and mu for each layer
+
+  do i = 1, nlayers
+     
+     fboth = 1.0 - sum(atm(i)%gas%VMR)
+
+     ! hardcoded H/He ratio
+     ! from solar abundance of 91.2 by number H, 8.7 by number He
+     fratio = 0.84
+     atm(i)%fH2 = 0.84 * fboth
+     atm(i)%fHe = (1.0  - 0.84) * fboth
+
+     atm(i)%mu = (atm(i)%fH2 * XH2) + (atm(i)%fHe * XHe) + sum(atm(i)%gas%VMR * atm(i)%gas%molmass)
+  
+  end do
   ! now we want the layer thickness in LENGTH units
-  ! TK TEST
-  write(*,*) "TEST: Calling layer_thickness"
+
+  write(*,*) "Test line main L164. mu at layer 6 is: ", atm(6)%mu
   
   call layer_thickness(atm%press,atm%temp,grav,atm%dz)
 
   write(*,*) "LAYER THICKNESS COMPLETE"
 
   ! now get number density of layers
-      ! number density in /m3:
+  ! number density in /m3:
+  ! pressure is in mbar... so x100 to get N/m2
     
-  atm%ndens = atm%press  / (K_BOLTZ * atm%temp)
+  atm%ndens = 100 * atm%press  / (K_BOLTZ * atm%temp)
 
 
 
 
   ! now mix the gases in each layer to get optical depth from lines
   do i = 1, nlayers
-     call line_mixer(atm(i),atm(i)%opd_lines,i)
+     call line_mixer(atm(i),atm(i)%opd_lines)
   end do
 
   
@@ -176,19 +201,26 @@ program main
      atm(i)%opd_CIA = 0.0
   end do
 
+  ! now let's get the CIA.  
+  
+  call get_cia(grav,ch4index)
+     
+
+     
+    
   ! add up all the taus to get extinction
   do i = 1, nlayers
      atm(i)%opd_ext = atm(i)%opd_scat + atm(i)%opd_lines + atm(i)%opd_CIA
   end do
 
 
-  write(junk,"(A,I0,A)") "test_line_opacities_layer_",8,".txt"
-  open(unit=20,file=junk,status="new")
-  write(20,*) "written at line 180 main"
-  do i = 1, nwave
-     write(20,*) wavelen(i), atm(8)%opd_ext(i)
-  end do
-  close(20)
+!  write(junk,"(A,I0,A)") "test_line_opacities_layer_",8,".txt"
+!  open(unit=20,file=junk,status="new")
+!  write(20,*) "written at line 180 main"
+!  do i = 1, nwave
+!     write(20,*) wavelen(i), atm(8)%opd_ext(i)
+!  end do
+!  close(20)
 
 
   ! scattering opd stuff needed here and CIA!!!
@@ -201,10 +233,6 @@ program main
   write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
 
   call run_disort(dis_spec,do_clouds,nw1,nw2)
-
-  ! TK test edit Just a subset of wavelength space... say 1 - 5um
-
-  
 
  
   open(unit=20, file="test_spectrum.dat",status="new")
