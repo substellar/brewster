@@ -7,7 +7,7 @@ module gas_mixing
 
 contains
 
-  subroutine line_mixer(layer,opd_lines)
+  subroutine line_mixer(layer,opd_lines,index)
 
     use sizes
     use phys_const
@@ -19,7 +19,7 @@ contains
     
     type(a_layer), intent(IN) :: layer
     double precision, dimension(nwave), intent(OUT) :: opd_lines
-    integer :: Tlay1, Tlay2, torder
+    integer :: Tlay1, Tlay2, torder, index, iounit
     double precision, dimension(nwave) :: kappa1,kappa2,logintkappa,totkappa
     double precision, dimension(nwave) :: logkap1, logkap2
     real, dimension(nlinetemps):: tdiff
@@ -87,6 +87,9 @@ contains
     totkappa = 0.0
     
     do i = 1, ngas
+       if (layer%index .eq. 1) then
+          write(*,*) "dropping in line opacities for ",trim(layer%gas(i)%name)
+       end if
        
        write(lines1,"(A,A,A1,A,A1,I0,A1,I0)")"../LineLists/",trim(layer%gas(i)%name), &
             "/",trim(layer%gas(i)%name),"_",Tlay1,"_",layer%index
@@ -99,33 +102,31 @@ contains
        
        ! now read in the line lists and sum, weighted by abudance/fraction
        
-       
-       open(15,file=lines1, status='old')
-       do j =1, listheadlines
-          read(15,*)
-       enddo
+       iounit = index*10*i
+       open(iounit,file=lines1, status='old')
+!       write(*,*) "reading lines1 ", trim(lines1)
+       read(iounit,*) kappa1
+       close(iounit)
        do j = 1, nwave
-          read(15,*) wavenum(j), kappa1(j)
+
           if (kappa1(j) .eq. 0.0) then
              logkap1(j) = -100.0
           else
              logkap1(j) = log10(kappa1(j))
           end if
        enddo
-       close(15)
-       open(15,file=lines2, status='old')
-       do j =1, listheadlines
-          read(15,*)
-       enddo
+       open(iounit,file=lines2, status='old')
+!       write(*,*) "reading lines2 ", trim(lines2)
+       read(iounit,*) kappa2
+       close(iounit)
        do j = 1,nwave
-          read(15,*) junk, kappa2(j)
           if (kappa2(j) .eq. 0.0) then
              logkap2(j) = -100.0
           else
              logkap2(j) = log10(kappa2(j))
           end if
        enddo
-       close(15)
+
        
        !  do the interpolation in log(cross section) !!!         !
 
@@ -148,13 +149,10 @@ contains
     ! now we've got total cross section for layer - totkappa (cm2 / molecule)
     ! we want the optical depth.. 
     ! so we multiply by number density (which is in /m3 to get column density ( / cm)
-    ! and sum over the layer thickness (which we calculated in METRES
+    ! and sum over the layer thickness (which we calculated in METRES)
+    ! to get optical depth
     
-    
-    ! optical depth
-    
-    ! something here is making opd_line zero!
-    opd_lines = totkappa * layer%ndens * layer%dz  * 10**(-4.0) 
+     opd_lines = totkappa * layer%ndens * layer%dz  * 10**(-4.0) 
     
     
 

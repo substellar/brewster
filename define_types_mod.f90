@@ -13,7 +13,7 @@ module define_types
 
   type a_cloud
      character(len=10):: name
-     double precision :: density,rpeak,rsigma
+     double precision :: density,rg,rsig
   end type a_cloud
 
 
@@ -25,10 +25,17 @@ module define_types
      double precision :: press,logP,dz,ndens,fH2,fHe,mu
      double precision, dimension(nwave) ::opd_ext,opd_scat,gg,opd_lines,opd_CIA
      type(a_gas) :: gas(ngas)
-     type(a_cloud) :: cloud(ncloud)
+     type(a_cloud) :: cloud(nclouds)
   end type a_layer
   
 
+  type a_patch
+     integer:: index
+     logical :: cloudy
+     real:: cover
+     type(a_layer)::atm(nlayers)
+  end type a_patch
+  
   save
 
 

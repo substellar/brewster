@@ -2,30 +2,48 @@ module sizes
 
   implicit none
 
+  ! these should become arguments for the py-wrapped model
+
+  ! number of condensate species
+  integer, parameter :: nclouds = 1
+
+  ! number of gases for mixing
+  integer, parameter :: ngas = 3
+
+  ! number of patches
+  integer,parameter:: npatch = 1
+  
   ! declares and values size parameters for arrays 
   
   ! number of pressure layers
   integer, parameter :: nlayers = 61
 
   ! number of temperatures in line list grid
-  integer, parameter :: nlinetemps = 27
+  integer, parameter :: nlinetemps = 60
   
   ! number of wavelength/number bins in full range
   integer, parameter :: nwave = 319188
 
-
-  ! number of gases for mixing
-  integer, parameter :: ngas = 2
-
-
-  ! number of condensate species
-  integer, parameter :: ncloud = 1
-
-  ! number of lines of header in linelists
-  integer,parameter :: listheadlines = 24
-
+  
   ! number of temperatures in CIA tables
   integer,parameter :: nciatemps = 119
+
+  ! number of wavenumbers in lowres CIA tables
+  integer,parameter :: ncwave = 1000
+
+  
+  ! number of radius bins for mie coeff files
+  integer, parameter :: nrad = 40
+
+  ! number of wavelengths in mie coeff files
+  integer, parameter :: nmiewave = 180
+
+  ! minimum radius for mie coeffs
+  real, parameter :: rmin = 1e-5
+
+  ! Volume ratio for sets in particle sizes
+  real, parameter :: vrat = 2.2 
+  
   
   save
 
