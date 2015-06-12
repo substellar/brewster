@@ -17,8 +17,8 @@ contains
 
     implicit none
     
-    type(a_layer), intent(IN) :: layer
-    double precision, dimension(nwave), intent(OUT) :: opd_lines
+    type(a_layer) :: layer
+    double precision, dimension(nwave) :: opd_lines
     integer :: Tlay1, Tlay2, torder, index, iounit
     double precision, dimension(nwave) :: kappa1,kappa2,logintkappa,totkappa
     double precision, dimension(nwave) :: logkap1, logkap2
@@ -85,6 +85,7 @@ contains
     ! loope through the gases
     
     totkappa = 0.0
+    opd_lines = 0.0
     
     do i = 1, ngas
        if (layer%index .eq. 1) then
@@ -142,20 +143,20 @@ contains
        if (layer%temp .gt. linetemps(nlinetemps)) then
           logintkappa = ((logkap2 - logkap1)*intfact)+logkap2
        endif
-       
-       totkappa = totkappa + (layer%gas(i)%VMR * (10**logintkappa))
-    enddo
-    
-    ! now we've got total cross section for layer - totkappa (cm2 / molecule)
-    ! we want the optical depth.. 
-    ! so we multiply by number density (which is in /m3 to get column density ( / cm)
-    ! and sum over the layer thickness (which we calculated in METRES)
-    ! to get optical depth
-    
-     opd_lines = totkappa * layer%ndens * layer%dz  * 10**(-4.0) 
-    
-    
 
+       ! now we've got cross section for gas in layer - intkappa
+       ! (cm2 / molecule)
+       ! we want the optical depth.. 
+       ! so we multiply by number density
+       !(which is in /m3 to get column density ( / cm)
+       ! and sum over the layer thickness (which we calculated in METRES)
+       ! to get optical depth
+       
+       
+       opd_lines = opd_lines + &
+            ((layer%gas(i)%VMR * layer%ndens * layer%dz * 1d-4) &
+            * (10.0**logintkappa))
+    enddo
     
     
     

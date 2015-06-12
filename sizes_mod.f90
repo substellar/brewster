@@ -2,7 +2,6 @@ module sizes
 
   implicit none
 
-  ! these should become arguments for the py-wrapped model
 
   ! number of condensate species
   integer, parameter :: nclouds = 1

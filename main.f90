@@ -76,7 +76,7 @@ program main
   write(*,*) "Give VMR file"
   read(*,*) vmrfile
 
-  fmt = "(A8,F6.4)"
+  fmt = "(A8,F14.12)"
   open(10,file=vmrfile,status='old')
 
   do igas = 1, ngas

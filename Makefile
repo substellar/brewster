@@ -17,13 +17,13 @@ FC = gfortran
 # flags for debugging or for maximum performance, comment as necessary
 
 # Debug version
-#FCFLAGS =  -g -fbounds-check -fbacktrace -Og  -fdefault-real-8 -fdefault-double-8 -frecord-marker=4
-#F77FLAGS = -frecord-marker=4 -g -Og -fbounds-check -fbacktrace -std=legacy -fdefault-double-8 -fdefault-real-8  
+#FCFLAGS =  -g -fbounds-check -fbacktrace -Og -frecord-marker=4
+#F77FLAGS = -frecord-marker=4 -g -Og -fbounds-check -fbacktrace -std=legacy
 
 
 # Run version
-FCFLAGS = -O3 -fdefault-real-8 -fdefault-double-8  -frecord-marker=4
-F77FLAGS = -fdefault-double-8 -fdefault-real-8 -O3  -frecord-marker=4 -std=legacy
+FCFLAGS = -O3 -frecord-marker=4
+F77FLAGS = -O3  -frecord-marker=4 -std=legacy
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 
