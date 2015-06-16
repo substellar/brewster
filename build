@@ -1,0 +1,18 @@
+make sizes_mod.o
+make phys_const_mod.o
+make define_types_mod.o
+make common_arrays_mod.o
+make atmos_ops_mod.o
+make gas_mixing_mod.o
+make cia_lowres_mod.o
+make clouds_mod.o
+make setup_disort_mod.o
+make f77mods
+make main_mod.o
+make libfile
+make pysig
+make pymod
+
+
+
+

@@ -42,6 +42,7 @@ contains
        write(*,*) " Problem with low-res CIA table : ", trim(ciafile1)
        stop
     end if
+
     
     do iciatemp = 1, nciatemps
        read(15,*) ciatemp(iciatemp)
@@ -51,17 +52,17 @@ contains
        end do
     end do
     close(15)
-    
+
     do ilayer = 1, nlayers
        
 
        ! now we need to inpterpolate for the temperature
 
 
+       
        tdiff = abs(ciatemp - patch(1)%atm(ilayer)%temp)
 
        tcia1 = minloc(tdiff,1)
-
        if (ciatemp(tcia1) .lt. patch(1)%atm(ilayer)%temp)  then
           tcia2 = tcia1 + 1
        else
@@ -69,11 +70,10 @@ contains
           tcia1 = tcia2 - 1
        end if
 
+       
        if (tcia1 .eq. 0) then
           intfact = (log10(patch(1)%atm(ilayer)%temp) - log10(ciatemp(1))) / (log10(ciatemp(2)) - log10(ciatemp(1)))
 
-
-          
           logciaH2H2_LR = (((ph2h2(2,:) - ph2h2(1,:))* intfact) + ph2h2(1,:))
           logciaH2He_LR = (((ph2he(2,:) - ph2he(1,:))* intfact) + ph2he(1,:))
           logciaH2CH4_LR = (((ph2ch4(2,:) - ph2ch4(1,:))* intfact) + ph2ch4(1,:))
@@ -89,7 +89,6 @@ contains
        endif
 
        ! Now we need to resample to higher resolution
-
        do iwave= 1 , nwave
 
           wdiff = abs(ciawaven - wavenum(iwave))
@@ -103,7 +102,6 @@ contains
              oldw1 = oldw2 - 1
           end if
           
-          
           intfact = (log10(wavenum(iwave)) - log10(ciawaven(oldw1))) / &
                (log10(ciawaven(oldw2)) - log10(ciawaven(oldw1)))
 
@@ -113,19 +111,26 @@ contains
 
        end do ! wave do
 
-       
        ! Neglecting H2-H CIA  
        ! number density in amagats P0 in millibar
        n_amg = (patch(1)%atm(ilayer)%press / 1013.25 ) * (273.15/patch(1)%atm(ilayer)%temp)
-       
+
        ! now calculate optical depth using amagats density unit
-       patch(1)%atm(ilayer)%opd_cia = (n_amg**2 * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz) * &
-            ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
-            + (patch(1)%atm(ilayer)%fHe * ciaH2He) &
-            + (patch(1)%atm(ilayer)%gas(ch4index)%VMR * ciaH2CH4))
-       
+
+       ! Check if CH4 is present and include CH4-H2 if present       
+       if (ch4index .ne. 0) then 
+          patch(1)%atm(ilayer)%opd_cia = (n_amg**2 * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz) * &
+               ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
+               + (patch(1)%atm(ilayer)%fHe * ciaH2He) &
+               + (patch(1)%atm(ilayer)%gas(ch4index)%VMR * ciaH2CH4))
+       else
+          ! If no CH4 just sum the H2-H2 and H2-He CIAs
+          patch(1)%atm(ilayer)%opd_cia = (n_amg**2 * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz) * &
+               ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
+               + (patch(1)%atm(ilayer)%fHe * ciaH2He))
+       end if
     end do ! layer do
-    
+
   end subroutine get_cia_LR
 
   

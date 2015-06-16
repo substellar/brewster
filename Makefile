@@ -17,13 +17,13 @@ FC = gfortran
 # flags for debugging or for maximum performance, comment as necessary
 
 # Debug version
-#FCFLAGS =  -g -fbounds-check -fbacktrace -Og -frecord-marker=4
-#F77FLAGS = -frecord-marker=4 -g -Og -fbounds-check -fbacktrace -std=legacy
+#FCFLAGS =  -g -fbounds-check -fbacktrace -Og  -fdefault-real-8 -fdefault-double-8 -frecord-marker=4
+#F77FLAGS = -frecord-marker=4 -g -Og -fbounds-check -fbacktrace -std=legacy -fdefault-double-8 -fdefault-real-8  
 
 
 # Run version
-FCFLAGS = -O3 -frecord-marker=4
-F77FLAGS = -O3  -frecord-marker=4 -std=legacy
+FCFLAGS = -O3 -fPIC -frecord-marker=4
+F77FLAGS = -fPIC  -O3  -frecord-marker=4 -std=legacy
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 
@@ -36,7 +36,7 @@ F77FLAGS += -I/usr/include
 LDFLAGS = -L/usr/local/lib/
 
 # List of executables to be built within the package
-PROGRAMS = main
+#PROGRAMS = forward
 
 # "make" builds all
 all: $(PROGRAMS)
@@ -52,10 +52,21 @@ gas_mixing_mod.o: sizes_mod.o phys_const_mod.o define_types_mod.o common_arrays_
 cia_lowres_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 clouds_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o  
 setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
-main.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
+main_mod.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
 
-main: sizes_mod.o define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o  main.o
+marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
 
+
+f90wrap_common_arrays_mod.o: f90wrap_sizes_mod.o f90wrap_define_types_mod.o
+f90wrap_define_types_mod.o: f90wrap_sizes_mod.o 
+f90wrap_atmos_ops_mod.o: f90wrap_sizes_mod.o f90wrap_phys_const_mod.o
+f90wrap_gas_mixing_mod.o: f90wrap_sizes_mod.o f90wrap_phys_const_mod.o f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o
+f90wrap_cia_lowres_mod.o: f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o
+f90wrap_clouds_mod.o: f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o  
+f90wrap_setup_disort_mod.o:f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
+f90wrap_main_mod.o: f90wrap_sizes_mod.o  f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o f90wrap_gas_mixing_mod.o f90wrap_cia_lowres_mod.o f90wrap_clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o f90wrap_setup_disort_mod.o 
+
+f90wrap_marv.o: f90wrap_sizes_mod.o  f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o f90wrap_gas_mixing_mod.o f90wrap_cia_lowres_mod.o f90wrap_clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o f90wrap_setup_disort_mod.o f90wrap_main_mod.o
 
 
 
@@ -74,20 +85,36 @@ main: sizes_mod.o define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_
 # used in order to list only the first prerequisite (the source file)
 # and not the additional prerequisites such as module or include files
 %.o: %.f90
-	$(FC) $(FCFLAGS) -c $<
-
-%.o: %.F90
-	$(FC) $(F97FLAGS) -c $<
-
-# special rule for DISORT
-%.o: %.F
-	$(FC) $(F77FLAGS) -c $<
+	$(FC) $(FCFLAGS) -fPIC -c $<
 
 # Some rules for building f77
 %.o: %.f
-	$(FC) $(F77FLAGS) -c $<
+	$(FC) $(F77FLAGS) -fPIC -c $<
+
+f90mods:
+	$(FC) $(FCFLAGS) -fPIC -c f90wrap_*.f90
+
+f77mods:
+	$(FC) $(F77FLAGS) -fPIC -c *.f
+
+# now for python wrap
+f90wrap:
+	f90wrap -m forwardmodel *.f90
+
+libfile:
+	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so 
+pysig:
+	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
+
+pymod:
+	f2py --fcompiler=gfortran --f90flags=" -O3 -frecord-marker=4" -I/usr/include -L/usr/local/lib -DF2PY_REPORT_ON_ARRAY_COPY_FROMANY=0 -c libmarvin.so forwardmodel.pyf marv.f90
+
+
+
 # Utility targets
+
+
 .PHONY: clean 
 
 clean:
-	rm -f *.o *.mod *.MOD
+	rm -f *.o *.mod *.MOD f90wrap*  *.pyc *.pyf *.so
