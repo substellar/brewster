@@ -1,0 +1,42 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module forwardmodel ! in 
+    interface  ! in :forwardmodel
+        module sizes ! in :forwardmodel:sizes_mod.f90
+            integer, parameter,optional :: nclouds=1
+            real, parameter,optional :: rmin=1e-05
+            integer, parameter,optional :: nlayers=61
+            integer, parameter,optional :: ngas=3
+            integer, parameter,optional :: nlinetemps=60
+            integer, parameter,optional :: ncwave=1000
+            integer, parameter,optional :: nciatemps=119
+            real, parameter,optional :: vrat=2.2
+            integer, parameter,optional :: npatch=1
+            integer, parameter,optional :: nrad=40
+            integer, parameter,optional :: nwave=319188
+            integer, parameter,optional :: nmiewave=180
+        end module sizes
+        subroutine marv(w1,w2,temp,logg,r2d2,gasnum,vmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,out_spec) ! in :forwardmodel:marv.f90
+            use main
+            use sizes
+            real intent(in) :: w1
+            real intent(in) :: w2
+            real dimension(61),intent(in),depend(nlayers) :: temp
+            real intent(in) :: logg
+            real intent(in) :: r2d2
+            integer dimension(3),intent(in),depend(ngas) :: gasnum
+            double precision dimension(3,61),intent(in),depend(ngas,nlayers) :: vmr
+            real dimension(1),intent(in),depend(npatch) :: pcover
+            integer dimension(1),intent(in),depend(npatch) :: do_clouds
+            integer dimension(1,1),intent(in),depend(npatch,nclouds) :: cloudnum
+            double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudrad
+            double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudsig
+            double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudprof
+            real dimension(319188),intent(out),depend(nwave) :: out_spec
+        end subroutine marv
+    end interface 
+end python module forwardmodel
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/

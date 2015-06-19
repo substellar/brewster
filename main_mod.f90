@@ -31,7 +31,7 @@ contains
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
-    real,dimension(nwave),INTENT(OUT) :: out_spec
+    real,dimension(2,nwave),INTENT(OUT) :: out_spec
     
     
     real, dimension(nlayers):: tmppress
@@ -206,11 +206,9 @@ contains
     
     call cpu_time(distart)
     
-    call run_disort(out_spec,nw1,nw2)
-    
-    
-    
-      
+    call run_disort(out_spec(2,:),nw1,nw2)
+
+    out_spec(1,:) = wavelen
     call cpu_time(difinish)
     
     
