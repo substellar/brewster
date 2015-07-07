@@ -17,7 +17,7 @@ python module forwardmodel ! in
             integer, parameter,optional :: nwave=319188
             integer, parameter,optional :: nmiewave=180
         end module sizes
-        subroutine marv(w1,w2,temp,logg,r2d2,gasnum,vmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,out_spec) ! in :forwardmodel:marv.f90
+        subroutine marv(w1,w2,temp,logg,r2d2,gasnum,logvmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,out_spec) ! in :forwardmodel:marv.f90
             use main
             use sizes
             real intent(in) :: w1
@@ -26,14 +26,14 @@ python module forwardmodel ! in
             real intent(in) :: logg
             real intent(in) :: r2d2
             integer dimension(3),intent(in),depend(ngas) :: gasnum
-            double precision dimension(3,61),intent(in),depend(ngas,nlayers) :: vmr
+            double precision dimension(3,61),intent(in),depend(ngas,nlayers) :: logvmr
             real dimension(1),intent(in),depend(npatch) :: pcover
             integer dimension(1),intent(in),depend(npatch) :: do_clouds
             integer dimension(1,1),intent(in),depend(npatch,nclouds) :: cloudnum
             double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudrad
             double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudsig
             double precision dimension(1,61,1),intent(in),depend(nlayers,npatch,nclouds) :: cloudprof
-            real dimension(319188),intent(out),depend(nwave) :: out_spec
+            real dimension(2,319188),intent(out),depend(nwave) :: out_spec
         end subroutine marv
     end interface 
 end python module forwardmodel

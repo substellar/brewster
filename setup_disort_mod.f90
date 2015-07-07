@@ -58,9 +58,9 @@ contains
     PRNT = [.TRUE., .FALSE.,.FALSE.,.FALSE., .TRUE. ]
 
     ! set values for non-parameter disort input
-    NSTR = 8
-    NMOM = 8
-    NUMU = 8 ! same as NSTR
+    NSTR = 4
+    NMOM = 4
+    NUMU = 4 ! same as NSTR
     NLYR = nlayers
     NPHI      = 0
     NTAU = 1

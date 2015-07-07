@@ -24,17 +24,16 @@ w1 = 0.8
 w2 = 2.5
 logg = 4.5
 R2D2 = 1
-gasnum = np.asfortranarray(np.array([1],dtype='i'))
+gasnum = np.asfortranarray(np.array([1,2,20],dtype='i'))
 
 
 
 # In[3]:
 
 VMR1 = np.full((61,),8e-4)
-#vmr2 = np.loadtxt("h2o.dat",unpack=True)
-#vmr3 = np.loadtxt("K.dat",unpack=True)
-#print VMR1.shape
-VMR = np.reshape((VMR1),(1,61))
+vmr2 = np.full((61,),8e-4)
+vmr3 = np.full((61,),8e-4)
+VMR = np.reshape((VMR1,vmr2,vmr3),(3,61))
 print VMR.shape
 
 

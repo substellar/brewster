@@ -3,7 +3,7 @@ module main
   implicit none
 
 contains 
-  subroutine forward(w1,w2,temp,logg,R2D2,gasname,molmass,VMR,pcover,&
+  subroutine forward(w1,w2,temp,logg,R2D2,gasname,molmass,logVMR,pcover,&
        do_clouds,cloudname,cloudrad,cloudsig,cloudprof,out_spec)
     
     use sizes
@@ -26,7 +26,7 @@ contains
     integer,dimension(npatch):: do_clouds
     character(len=10),dimension(ngas),INTENT(IN) :: gasname
     double precision, dimension(ngas),INTENT(IN) :: molmass
-    double precision, dimension(ngas,nlayers),INTENT(IN) :: VMR
+    double precision, dimension(ngas,nlayers),INTENT(IN) :: logVMR
     character(len=10),dimension(npatch,nclouds), INTENT(IN) :: cloudname
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
@@ -60,7 +60,7 @@ contains
        
        
        patch(1)%atm%gas(igas)%name = gasname(igas)
-       patch(1)%atm%gas(igas)%VMR = VMR(igas,:)
+       patch(1)%atm%gas(igas)%VMR = 10.**(logVMR(igas,:))
        patch(1)%atm%gas(igas)%molmass = molmass(igas)
        
        if (trim(patch(1)%atm(1)%gas(igas)%name) .eq. "ch4") then
@@ -88,8 +88,8 @@ contains
        ! hardcoded H/He ratio
        ! from solar abundance of 91.2 by number H, 8.7 by number He
        fratio = 0.84
-       patch(1)%atm(ilayer)%fH2 = 0.84 * fboth
-       patch(1)%atm(ilayer)%fHe = (1.0  - 0.84) * fboth
+       patch(1)%atm(ilayer)%fH2 = fratio * fboth
+       patch(1)%atm(ilayer)%fHe = (1.0  - fratio) * fboth
        
        patch(1)%atm(ilayer)%mu = (patch(1)%atm(ilayer)%fH2 * XH2) + &
             (patch(1)%atm(ilayer)%fHe * XHe) + &
@@ -174,7 +174,7 @@ contains
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
              patch(ipatch)%atm%cloud(icloud)%name = &
                   patch(ipatch)%atm(1)%cloud(icloud)%name
-             patch(ipatch)%atm%cloud(icloud)%density = cloudprof(ipatch,:,icloud)
+             patch(ipatch)%atm%cloud(icloud)%density = 10.**(cloudprof(ipatch,:,icloud))
              patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
              patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              

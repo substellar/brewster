@@ -57,16 +57,6 @@ main_mod.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o
 marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
 
 
-f90wrap_common_arrays_mod.o: f90wrap_sizes_mod.o f90wrap_define_types_mod.o
-f90wrap_define_types_mod.o: f90wrap_sizes_mod.o 
-f90wrap_atmos_ops_mod.o: f90wrap_sizes_mod.o f90wrap_phys_const_mod.o
-f90wrap_gas_mixing_mod.o: f90wrap_sizes_mod.o f90wrap_phys_const_mod.o f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o
-f90wrap_cia_lowres_mod.o: f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o
-f90wrap_clouds_mod.o: f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o  
-f90wrap_setup_disort_mod.o:f90wrap_sizes_mod.o f90wrap_common_arrays_mod.o f90wrap_define_types_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
-f90wrap_main_mod.o: f90wrap_sizes_mod.o  f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o f90wrap_gas_mixing_mod.o f90wrap_cia_lowres_mod.o f90wrap_clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o f90wrap_setup_disort_mod.o 
-
-f90wrap_marv.o: f90wrap_sizes_mod.o  f90wrap_define_types_mod.o f90wrap_common_arrays_mod.o f90wrap_phys_const_mod.o f90wrap_atmos_ops_mod.o f90wrap_gas_mixing_mod.o f90wrap_cia_lowres_mod.o f90wrap_clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o f90wrap_setup_disort_mod.o f90wrap_main_mod.o
 
 
 
@@ -107,7 +97,7 @@ pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
-	f2py --fcompiler=gfortran --f90flags=" -O3 -frecord-marker=4" -I/usr/include -L/usr/local/lib -DF2PY_REPORT_ON_ARRAY_COPY_FROMANY=0 -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=gfortran --f90flags="-O3 -frecord-marker=4" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 
 
