@@ -196,9 +196,14 @@ contains
        write(*,*) "Patch coverage doesn't sum to unity. Stopping."
        stop
     end if
-      
-      
-    
+
+    ! test line to zero all opacities before disort!
+!    do ipatch = 1, npatch
+!       do ilayer = 1, nlayers
+!          patch(ipatch)%atm(ilayer)%opd_lines = 0.
+!           patch(ipatch)%atm(ilayer)%opd_CIA = 0. 
+!       end do
+!    end do
     ! now let put it all into DISORT
     
     write(*,*) "TEST: calling RUN_DISORT"

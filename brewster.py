@@ -25,8 +25,8 @@ intemp = np.asfortranarray(np.loadtxt("16temps.dat",dtype='d'))
 r2d2 = 1.
 logg = 4.5
 dlam = 0.
-w1 = 1.0
-w2 = 2.5
+w1 = 1.25
+w2 = 2.0
 pcover = 1.0
 do_clouds = 0
 # cloudparams is structured array with 5 entries
@@ -38,18 +38,18 @@ cloudparams = np.ones(5)
 # 2) base ID (these are both in 61 layers)
 # 3) rg
 # 4) rsig
-cloudparams[0,0,0] = -20.
-cloudparams[0,0,1] = 10
-cloudparams[0,0,0] = 12
-cloudparams[0,0,0] = 1e-4
-cloudparams[0,0,0] = 1e-5
+cloudparams[0] = -20.
+cloudparams[1] = 10
+cloudparams[2] = 12
+cloudparams[3] = 1e-4
+cloudparams[4] = 1e-5
 # hardwired gas and cloud IDs
-gasnum = np.asfortranarray(np.array([1,2,20],dtype='i'))
+gasnum = np.asfortranarray(np.array([1,2],dtype='i'))
 cloudnum = np.array([1],dtype='i')
 
 # hardwired FWHM of data
 fwhm = 0.005
-
+#fixvmrs = -8.0
 
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("sim_spectrum.dat",dtype='d',unpack='true'))
@@ -57,11 +57,11 @@ obspec = np.asfortranarray(np.loadtxt("sim_spectrum.dat",dtype='d',unpack='true'
 runargs = w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 3, 100
-p0 = -10.* np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim))
-sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=runargs)
+ndim, nwalkers = 2, 10
+p0 = -1.* np.random.rand(ndim * nwalkers).reshape((nwalkers, ndim)) - 3.0
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), threads = 4)
 # run the sampler
-sampler.run_mcmc(p0, 500)
+sampler.run_mcmc(p0, 100)
 
 # get rid of problematic bit of sampler object
 del sampler.__dict__['pool']

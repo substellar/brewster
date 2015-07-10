@@ -4,7 +4,7 @@ module define_types
   
   implicit none
 
-    type a_gas
+  type a_gas
      character(len=10):: name
      double precision:: VMR
      double precision :: molmass

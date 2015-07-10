@@ -34,7 +34,7 @@ contains
     real,dimension(nwave), INTENT(OUT):: spectrum
     real, dimension(nlayers) :: DTAUC, SSALB
     real, dimension(nlayers+1) :: temper
-    real :: WVNMLO, WVNMHI
+    real :: WVNMLO, WVNMHI, wint
     integer :: ipatch,ilayer, iwave
     real,dimension(0:MAXMOM,nlayers) :: PMOM
     real:: phi(maxphi),phi0, umu(maxumu), umu0
@@ -48,7 +48,7 @@ contains
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL
     real :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
-
+    
 
 
     integer :: nw1, nw2
@@ -58,9 +58,9 @@ contains
     PRNT = [.TRUE., .FALSE.,.FALSE.,.FALSE., .TRUE. ]
 
     ! set values for non-parameter disort input
-    NSTR = 4
-    NMOM = 4
-    NUMU = 4 ! same as NSTR
+    NSTR = 8
+    NMOM = 8
+    NUMU = 8 ! same as NSTR
     NLYR = nlayers
     NPHI      = 0
     NTAU = 1
@@ -156,10 +156,11 @@ contains
                FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
           
           
+          ! convert to flux density W/m2/um
+          ! need interval in um not cm^-1
+          wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
           
-          
-          upflux(iwave) = FLUP(1)
-          
+          upflux(iwave) = FLUP(1) / wint
        end do ! wave loop
        
        spectrum = spectrum + (upflux*patch(ipatch)%cover)

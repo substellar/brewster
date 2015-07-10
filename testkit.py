@@ -126,9 +126,9 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     return -0.5*(np.sum((obspec[1,:] - modspec[1,:])**2 * invsigma2 - np.log(2*np.pi*invsigma2)))
     
     
-def lnprob(theta,fixvmrs,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec):
+def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec):
 
-    invmr = np.array([theta[0],theta[1], fixvmrs]).reshape(3,)
+    invmr = theta
     # run the likelihood
     lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec)
     
@@ -142,7 +142,7 @@ def lnprob(theta,fixvmrs,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do
 def lnprior(theta):
     # set up the priors here
     invmr = theta
-    if -4.5 < invmr[0] < -2.5 and -4.5 < invmr[1] < -2.5: 
+    if -4.0 < invmr[0] < -3.0 and -4.0 < invmr[1] < -3.0: 
         return 0.0
     return -np.inf
 
