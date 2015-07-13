@@ -29,25 +29,25 @@ contains
     ! can worry about bonus bits for tracking contributions later
     
     integer ::ntau
-    real,dimension(MAXULV) :: utau
+    double precision,dimension(MAXULV) :: utau
     
-    real,dimension(nwave), INTENT(OUT):: spectrum
-    real, dimension(nlayers) :: DTAUC, SSALB
-    real, dimension(nlayers+1) :: temper
-    real :: WVNMLO, WVNMHI, wint
+    double precision,dimension(nwave), INTENT(OUT):: spectrum
+    double precision, dimension(nlayers) :: DTAUC, SSALB
+    double precision, dimension(nlayers+1) :: temper
+    double precision :: WVNMLO, WVNMHI, wint
     integer :: ipatch,ilayer, iwave
-    real,dimension(0:MAXMOM,nlayers) :: PMOM
-    real:: phi(maxphi),phi0, umu(maxumu), umu0
-    real,dimension(MAXULV) :: RFLDIR,RFLDN,FLUP,DFDT,UAVG
-    real,dimension(maxumu,maxulv,maxphi) :: UU
-    real,dimension(maxumu) :: ALBMED, TRNMED
-    real:: BTEMP, TTEMP
-    real,dimension(nwave):: upflux
+    double precision,dimension(0:MAXMOM,nlayers) :: PMOM
+    double precision:: phi(maxphi),phi0, umu(maxumu), umu0
+    double precision,dimension(MAXULV) :: RFLDIR,RFLDN,FLUP,DFDT,UAVG
+    double precision,dimension(maxumu,maxulv,maxphi) :: UU
+    double precision,dimension(maxumu) :: ALBMED, TRNMED
+    double precision:: BTEMP, TTEMP
+    double precision,dimension(nwave):: upflux
     logical, dimension(5) :: PRNT
     character(len=127):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL
-    real :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
+    double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
     
 
 
@@ -55,7 +55,7 @@ contains
     
     HEADER = ''
 
-    PRNT = [.TRUE., .FALSE.,.FALSE.,.FALSE., .TRUE. ]
+    PRNT = [.FALSE., .FALSE.,.FALSE.,.FALSE.,.FALSE.]
 
     ! set values for non-parameter disort input
     NSTR = 8
@@ -142,8 +142,8 @@ contains
           end if
           
           ! set top and bottom boundary temperatures
-          BTEMP = real(temper(nlayers+1))
-          TTEMP = real(temper(1))
+          BTEMP = temper(nlayers+1)
+          TTEMP = temper(1)
           
           
           

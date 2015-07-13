@@ -23,7 +23,7 @@ contains
     double precision :: p1,p2
     real, intent(IN) :: grav
     double precision, dimension(nlayers), intent(IN) :: press
-    real, dimension(nlayers), intent(IN):: temp
+    double precision, dimension(nlayers), intent(IN):: temp
     double precision, dimension(nlayers), intent(OUT):: dz
     
     
@@ -69,8 +69,8 @@ contains
     ! Tbars that are in our atmospheric layers.
     ! This is kept in atmos_ops for consistency a
     integer :: i
-    real, dimension(nlayers),INTENT(IN):: layertemp
-    real,INTENT(OUT):: leveltemp(0:nlayers)
+    double precision, dimension(nlayers),INTENT(IN):: layertemp
+    double precision,INTENT(OUT):: leveltemp(0:nlayers)
 
 
     leveltemp(0) = layertemp(1) - 0.5*(layertemp(2) - layertemp(1))

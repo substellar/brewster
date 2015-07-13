@@ -21,7 +21,7 @@ module define_types
      ! set an index to identify the layer in the fixed pressure scale
      ! layer 1 is top of atmosphere!!
      integer:: index
-     real:: temp
+     double precision:: temp
      double precision :: press,logP,dz,ndens,fH2,fHe,mu
      double precision, dimension(nwave) ::opd_ext,opd_scat,gg,opd_lines,opd_CIA
      type(a_gas) :: gas(ngas)

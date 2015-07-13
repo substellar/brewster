@@ -23,7 +23,7 @@ FC = gfortran
 
 # Run version
 FCFLAGS = -O3 -fPIC -frecord-marker=4
-F77FLAGS = -fPIC  -O3  -frecord-marker=4 -std=legacy
+F77FLAGS = -fPIC  -O3  -fdefault-real-8 -frecord-marker=4 -std=legacy
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 

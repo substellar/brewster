@@ -10,8 +10,9 @@ subroutine marv(w1,w2,temp,logg,R2D2,gasnum,logVMR,pcover,&
   !f2py integer, parameter :: npatch
   !f2py integer, parameter :: nwave
    
-  real,dimension(nlayers)::temp
-  real ::R2D2,logg,w1,w2
+  double precision,dimension(nlayers)::temp
+  real ::R2D2,logg
+  double precision :: w1, w2
   real,dimension(npatch) :: pcover
   integer,dimension(npatch) :: do_clouds
   integer,dimension(ngas)::gasnum
@@ -25,7 +26,7 @@ subroutine marv(w1,w2,temp,logg,R2D2,gasnum,logVMR,pcover,&
   double precision, dimension(npatch,nlayers,nclouds) :: cloudrad
   double precision, dimension(npatch,nlayers,nclouds) :: cloudsig
   double precision, dimension(npatch,nlayers,nclouds) :: cloudprof
-  real,dimension(2,nwave) :: out_spec
+  double precision,dimension(2,nwave) :: out_spec
   integer:: maxgas,maxcloud,igas,icloud, idum1, idum2
   !f2py intent(in) w1,w2,temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds
   !f2py intent(in) cloudnum,cloudrad,cloudsig,cloudprof

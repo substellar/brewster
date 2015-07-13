@@ -20,8 +20,9 @@ contains
     
     
     ! input variables
-    real,dimension(nlayers), INTENT(IN):: temp
-    real,INTENT(IN) :: R2D2,logg,w1,w2
+    double precision,dimension(nlayers), INTENT(IN):: temp
+    double precision,INTENT(IN) :: w1,w2
+    real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
     character(len=10),dimension(ngas),INTENT(IN) :: gasname
@@ -31,18 +32,18 @@ contains
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
-    real,dimension(2,nwave),INTENT(OUT) :: out_spec
+    double precision,dimension(2,nwave),INTENT(OUT) :: out_spec
     
+
     
-    real, dimension(nlayers):: tmppress
+    double precision, dimension(nlayers):: tmppress
     real:: metal,grav,test
-    real,dimension(nwave) :: patch_spec, wdiff
+    double precision,dimension(nwave) :: wdiff
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish
-    
-    
+
     
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
@@ -197,13 +198,15 @@ contains
        stop
     end if
 
-    ! test line to zero all opacities before disort!
-!    do ipatch = 1, npatch
-!       do ilayer = 1, nlayers
-!          patch(ipatch)%atm(ilayer)%opd_lines = 0.
-!           patch(ipatch)%atm(ilayer)%opd_CIA = 0. 
-!       end do
-!    end do
+    ! tests to see what's going to DISORT
+    do ipatch = 1, npatch
+       do ilayer = 1, nlayers
+          !patch(ipatch)%atm(ilayer)%opd_lines = 0.
+          !patch(ipatch)%atm(ilayer)%opd_CIA = 0.
+       end do
+    end do
+    write(*,*) "Do clouds and cover: ", patch%cloudy, patch%cover, " OK?"
+
     ! now let put it all into DISORT
     
     write(*,*) "TEST: calling RUN_DISORT"
