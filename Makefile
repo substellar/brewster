@@ -52,10 +52,10 @@ gas_mixing_mod.o: sizes_mod.o phys_const_mod.o define_types_mod.o common_arrays_
 cia_lowres_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 clouds_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o  
 setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
+
 main_mod.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
 
 marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
-
 
 
 

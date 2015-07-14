@@ -1,11 +1,8 @@
- module setup_disort
-
-
-
+module setup_twostr
 
 contains
 
-  subroutine run_disort(spectrum,nw1,nw2)
+  subroutine run_twostr(spectrum,nw1,nw2)
 
     use sizes
     use common_arrays
@@ -18,10 +15,7 @@ contains
 
     integer, parameter :: nlevel = nlayers+1
     integer, parameter :: MAXCLY = nlayers
-    integer, parameter :: MAXMOM = 8
-    integer, parameter :: MAXPHI = 3
     integer, parameter :: MAXULV = 1
-    integer, parameter :: MAXUMU = 10
 
 
     ! now set up where we want the fluxes.
@@ -32,50 +26,45 @@ contains
     double precision,dimension(MAXULV) :: utau
     
     double precision,dimension(nwave), INTENT(OUT):: spectrum
-    double precision, dimension(nlayers) :: DTAUC, SSALB
+    double precision, dimension(nlayers) :: DTAUC, SSALB, GG
     double precision, dimension(nlayers+1) :: temper
     double precision :: WVNMLO, WVNMHI, wint
     integer :: ipatch,ilayer, iwave
-    double precision,dimension(0:MAXMOM,nlayers) :: PMOM
-    double precision:: phi(maxphi),phi0, umu(maxumu), umu0
+    double precision:: umu0
     double precision,dimension(MAXULV) :: RFLDIR,RFLDN,FLUP,DFDT,UAVG
-    double precision,dimension(maxumu,maxulv,maxphi) :: UU
-    double precision,dimension(maxumu) :: ALBMED, TRNMED
     double precision:: BTEMP, TTEMP
     double precision,dimension(nwave):: upflux
-    logical, dimension(5) :: PRNT
+    logical, dimension(2) :: PRNT
     character(len=127):: HEADER
-    integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
-    logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL
-    double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
-    
-
+    integer :: NLYR, IBCND, ierror
+    logical :: PLANK,  USRTAU, spher, quiet, deltam
+    double precision :: FBEAM, FISOT,  ALBEDO , TEMIS
+    double precision:: radius, zd
+ 
 
     integer :: nw1, nw2
     
-    HEADER = ''
+    HEADER = ""
 
-    PRNT = [.FALSE., .FALSE.,.FALSE.,.FALSE.,.FALSE.]
+    PRNT = [.FALSE., .FALSE.]
 
+    QUIET = .false.
+
+    deltam = .true.
     ! set values for non-parameter disort input
-    NSTR = 8
-    NMOM = 8
-    NUMU = 8 ! same as NSTR
     NLYR = nlayers
-    NPHI      = 0
     NTAU = 1
     UTAU = 1e-5
+    radius = 0.
+    spher = .FALSE.
+    zd = 0.
     
     USRTAU    = .TRUE.  ! return quantities at each pre-defined layer
-    USRANG    = .FALSE.
-    ONLYFL    = .TRUE.   ! return only fluxes      
     IBCND     = 0        ! boundary conditions, change if Planck is false
     FBEAM     = 0.0      ! parallel beam at the top. 0 for stars
     ! if this is not 0, need to specify umu0 and phi0
     FISOT     = 0.0      ! not sure, was 1.0 / PI
-    LAMBER    = .TRUE.   ! don't care about lower boundary
     ALBEDO = 0.0001E0
-    ACCUR = 0.0 
     PLANK    = .TRUE.    ! need this to use temperature structure
     TEMIS = 0.01         ! need to give top layer a bit of emissivity 
     
@@ -101,32 +90,17 @@ contains
        upflux = 0.0
        do iwave = nw2, nw1
        
-       ! need PMOM
-        ! get this calling Mark's GETMOM code
-        ! 6 is Rayleigh+HG
-        ! 2 ia just Rayleigh
-          do ilayer = 1, nlayers
-           
-             if ((patch(ipatch)%cloudy) .and. &
-                  (patch(ipatch)%atm(ilayer)%gg(iwave) .gt. 0)) then
-                
-                call GETMOM(6,patch(ipatch)%atm(ilayer)%gg(iwave),&
-                     NMOM,0.0, PMOM(0:nmom,ilayer))
-                
-                SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
-                     patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
-                
-             else     
-                CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer) )
-                SSALB(ilayer) = 0.0
-             end if
-          enddo ! layer loop
-          
           DTAUC = patch(ipatch)%atm%opd_ext(iwave)              
           
-          
-          
-          
+          if (patch(ipatch)%cloudy) then
+             GG = patch(ipatch)%atm%gg(iwave)       
+             SSALB = patch(ipatch)%atm%opd_scat(iwave) / &
+                  patch(ipatch)%atm%opd_ext(iwave)
+
+          else
+             GG = 1.
+             SSALB = 0.0
+          end if
           ! set up wavenumber interval....
           
           
@@ -145,35 +119,34 @@ contains
           BTEMP = temper(nlayers+1)
           TTEMP = temper(1)
           
+          write(*,*) "HERE!"
           
-          
-          call DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO, &
-               WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU, &
-               UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0, &
-               FISOT, LAMBER, ALBEDO, BTEMP, TTEMP, TEMIS,&
-               PLANK, ONLYFL, ACCUR, PRNT, HEADER, MAXCLY,&
-               MAXULV, MAXUMU, MAXPHI, MAXMOM, RFLDIR, RFLDN,&
-               FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
-          
+          call twostr( albedo, btemp, deltam, dtauc, fbeam, fisot,& 
+               gg, header, ierror, maxcly, maxulv, nlyr, plank,&
+               ntau, prnt, quiet, radius, spher, ssalb, temis,&  
+               temper, ttemp, umu0,  usrtau, utau, wvnmlo,&
+               wvnmhi, zd, dfdt, flup, rfldir, rfldn, uavg )
+
+
+         
           
           ! convert to flux density W/m2/um
           ! need interval in um not cm^-1
           wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
           
           upflux(iwave) = FLUP(1) / wint
+
+          write(*,*) "twostr done. IERROR = ",ierror
+          
        end do ! wave loop
        
        spectrum = spectrum + (upflux*patch(ipatch)%cover)
 
+       
     end do ! patch loop
 
-       
-       
-
-
-    
-  end subroutine run_disort
+  end subroutine run_twostr
 
     
   
-end module setup_disort
+end module setup_twostr

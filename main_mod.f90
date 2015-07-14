@@ -199,13 +199,12 @@ contains
     end if
 
     ! tests to see what's going to DISORT
-    do ipatch = 1, npatch
-       do ilayer = 1, nlayers
+!    do ipatch = 1, npatch
+!       do ilayer = 1, nlayers
           !patch(ipatch)%atm(ilayer)%opd_lines = 0.
           !patch(ipatch)%atm(ilayer)%opd_CIA = 0.
-       end do
-    end do
-    write(*,*) "Do clouds and cover: ", patch%cloudy, patch%cover, " OK?"
+    !       end do
+ !end do
 
     ! now let put it all into DISORT
     
