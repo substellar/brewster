@@ -6,6 +6,7 @@ module define_types
 
   type a_gas
      character(len=10):: name
+     integer :: num
      double precision:: VMR
      double precision :: molmass
   end type a_gas
@@ -35,6 +36,12 @@ module define_types
      real:: cover
      type(a_layer)::atm(nlayers)
   end type a_patch
+
+
+  ! set up patchy atmosphere object, which is an array of patches
+  type(a_patch) :: patch(npatch)
+
+
   
   save
 

@@ -2,37 +2,32 @@ module gas_mixing
 
 
 
-  implicit none
-
-
 contains
 
-  subroutine line_mixer(layer,opd_lines,index)
+  subroutine line_mixer(layer,opd_lines,index,linelist)
 
     use sizes
+    use common_arrays
     use phys_const
     use define_types
-    use common_arrays
 
 
     implicit none
+
     
-    type(a_layer) :: layer
-    double precision, dimension(nwave) :: opd_lines
+    type(a_layer),intent(inout) :: layer
+    double precision, dimension(nwave),intent(out) :: opd_lines
+    double precision,intent(in):: linelist(:,:,:,:)
     integer :: Tlay1, Tlay2, torder, index, iounit
-    double precision, dimension(nwave) :: kappa1,kappa2,logintkappa,totkappa
-    double precision, dimension(nwave) :: logkap1, logkap2
+    double precision, dimension(ngas,nwave) :: logkap1, logkap2,logintkappa
     real, dimension(nlinetemps):: tdiff
     double precision :: ndens, intfact, junk
     character(len=50) :: lines1,lines2,name
-
+    
     ! counters
-    integer:: i, j
+    integer:: igas, j
     
-    ! set up the line temp array - check this is working properly
-    
-    call set_line_temps
-    
+
     
     ! get line temp array locations bracketing our temperature
     
@@ -76,58 +71,13 @@ contains
     endif
 
     
-    ! now get the files by their Tlay and pressure locations
-    ! gases are identified by name (character!)
-    ! this will allow the relevant linelists to be grabbed by T and P index
     
-    
-    
-    ! loope through the gases
-    
-    totkappa = 0.0
     opd_lines = 0.0
     
-    do i = 1, ngas
-       if (layer%index .eq. 1) then
-          write(*,*) "dropping in line opacities for ",trim(layer%gas(i)%name)
-       end if
-       
-       write(lines1,"(A,A,A1,A,A1,I0,A1,I0)")"../LineLists/",trim(layer%gas(i)%name), &
-            "/",trim(layer%gas(i)%name),"_",Tlay1,"_",layer%index
-       write(lines2,"(A,A,A1,A,A1,I0,A1,I0)") "../LineLists/",trim(layer%gas(i)%name), &
-            "/",trim(layer%gas(i)%name),"_",Tlay2,"_",layer%index
-       
 
-       
-       
-       
-       ! now read in the line lists and sum, weighted by abudance/fraction
-       
-       iounit = index*10*i
-       open(iounit,file=lines1, status='old')
-!       write(*,*) "reading lines1 ", trim(lines1)
-       read(iounit,*) kappa1
-       close(iounit)
-       do j = 1, nwave
-
-          if (kappa1(j) .eq. 0.0) then
-             logkap1(j) = -100.0
-          else
-             logkap1(j) = log10(kappa1(j))
-          end if
-       enddo
-       open(iounit,file=lines2, status='old')
-!       write(*,*) "reading lines2 ", trim(lines2)
-       read(iounit,*) kappa2
-       close(iounit)
-       do j = 1,nwave
-          if (kappa2(j) .eq. 0.0) then
-             logkap2(j) = -100.0
-          else
-             logkap2(j) = log10(kappa2(j))
-          end if
-       enddo
-
+    !! CODE FUCKS UP HERE.. segfault 
+    logkap1 = linelist(:,layer%index,Tlay1,:)
+    logkap2 = linelist(:,layer%index,Tlay2,:) 
        
        !  do the interpolation in log(cross section) !!!         !
 
@@ -151,11 +101,12 @@ contains
        !(which is in /m3 to get column density ( / cm)
        ! and sum over the layer thickness (which we calculated in METRES)
        ! to get optical depth
+
        
-       
+    do igas = 1, ngas       
        opd_lines = opd_lines + &
-            ((layer%gas(i)%VMR * layer%ndens * layer%dz * 1d-4) &
-            * (10.0**logintkappa))
+            ((layer%gas(igas)%VMR * layer%ndens * layer%dz * 1d-4) &
+            * (10.0**logintkappa(igas,:)))
     enddo
     
     

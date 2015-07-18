@@ -3,8 +3,9 @@ module main
   implicit none
 
 contains 
-  subroutine forward(w1,w2,temp,logg,R2D2,gasname,molmass,logVMR,pcover,&
-       do_clouds,cloudname,cloudrad,cloudsig,cloudprof,out_spec)
+  subroutine forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
+       pcover,do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
+       inlinetemps,inpress,inwavenum,linelist,out_spec)
     
     use sizes
     use common_arrays
@@ -32,28 +33,34 @@ contains
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
+    double precision, dimension(nwave) :: inwavenum
+    real,dimension(nlinetemps) :: inlinetemps
+    real,dimension(nlayers) :: inpress
+    double precision,intent(inout):: linelist(:,:,:,:)
+    integer, dimension(ngas), intent(in) :: ingasnum
     double precision,dimension(2,nwave),INTENT(OUT) :: out_spec
-    
 
-    
-    double precision, dimension(nlayers):: tmppress
     real:: metal,grav,test
     double precision,dimension(nwave) :: wdiff
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish
-
+    
     
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
 
+!   allocate(linelist(ngas,nlayers,nlinetemps,nwave))
     
     patch(1)%atm%temp = temp
-    
-    
-      
+    wavenum = inwavenum
+    linetemps = inlinetemps
+    press = inpress
+!    linelist = inlinelist
+    gasnum = ingasnum
+!    deallocate(inlinelist) 
     call set_pressure_scale
 
     ch4index=0
@@ -61,6 +68,7 @@ contains
        
        
        patch(1)%atm%gas(igas)%name = gasname(igas)
+       patch(1)%atm%gas(igas)%num = gasnum(igas)       
        patch(1)%atm%gas(igas)%VMR = 10.**(logVMR(igas,:))
        patch(1)%atm%gas(igas)%molmass = molmass(igas)
        
@@ -109,7 +117,6 @@ contains
     
     patch(1)%atm%ndens = 100 * patch(1)%atm%press  / (K_BOLTZ * patch(1)%atm%temp)
     
-    
       ! zero all the opacities
     do ipatch = 1, npatch
        do ilayer = 1, nlayers
@@ -119,13 +126,6 @@ contains
           patch(ipatch)%atm(ilayer)%opd_lines = 0.0
        end do
     end do
-    
-    ! get the wave array
-    
-    open(unit=10, file="../Linelists/wavegrid.dat", status='old')
-    read(10,*) wavenum
-    close(10)
-    ! now we've got the wavenumber arrays we can set the index range for later
     
     wavelen = 1e4 / wavenum
     
@@ -137,17 +137,18 @@ contains
     
     call cpu_time(opstart)
     call cpu_time(linstart)
+
     ! now mix the gases in each layer to get optical depth from lines
     do ilayer = 1, nlayers
-       call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer)
+       call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
     end do
     
     call cpu_time(linfinish)
     
     write(*,*) "lines mixed in", (linfinish - linstart), "seconds. moving on to CIA"
-    
-    ! now let's get the CIA.  
 
+
+    ! now let's get the CIA.  
     call get_cia_LR(grav,ch4index)
     
     
@@ -210,7 +211,8 @@ contains
     
     write(*,*) "TEST: calling RUN_DISORT"
     write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
-    
+
+    ! test line
     call cpu_time(distart)
     
     call run_disort(out_spec(2,:),nw1,nw2)
@@ -226,6 +228,8 @@ contains
     write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
     
     write(*,*) "DISORT took : ", (difinish - distart), " seconds"
+
+!    deallocate(linelist)
     
   end subroutine forward
 

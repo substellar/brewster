@@ -1,13 +1,30 @@
 module atmos_ops
 
   use sizes
+  use common_arrays
   use phys_const
+  use define_types
   
   implicit none
 
 
 contains
 
+  subroutine set_pressure_scale
+
+    ! pressure scale in mbar
+    integer:: i,ipatch
+
+    do ipatch= 1, npatch
+       patch(ipatch)%atm%index = (/ (i, i = 1, nlayers) /)
+       patch(ipatch)%atm%press= press
+       patch(ipatch)%atm%logP = log10(patch(ipatch)%atm%press)
+    end do
+
+  end subroutine set_pressure_scale
+
+
+  
   subroutine layer_thickness(press,temp,grav,dz)
 
     
