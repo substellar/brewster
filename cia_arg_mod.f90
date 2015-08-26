@@ -17,7 +17,7 @@ contains
     real,dimension(nciatemps,nwave)::ph2h2,ph2He,ph2h,ph2ch4
     real,dimension(4,nciatemps,nwave),intent(in):: cia
     real, dimension(nwave) :: ciah2h2, ciah2he,ciah2ch4    
-    double precision,dimension(nciatemps), intent(in) :: ciatemp 
+    real,dimension(nciatemps), intent(in) :: ciatemp 
     real, intent(in) :: grav
     integer, intent(in) :: ch4index
     real,dimension(nciatemps) :: tdiff
