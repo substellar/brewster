@@ -18,10 +18,10 @@ contains
 
     integer, parameter :: nlevel = nlayers+1
     integer, parameter :: MAXCLY = nlayers
-    integer, parameter :: MAXMOM = 8
+    integer, parameter :: MAXMOM = 16
     integer, parameter :: MAXPHI = 3
     integer, parameter :: MAXULV = 1
-    integer, parameter :: MAXUMU = 10
+    integer, parameter :: MAXUMU = 16
 
 
     ! now set up where we want the fluxes.
@@ -58,9 +58,9 @@ contains
     PRNT = [.FALSE., .FALSE.,.FALSE.,.FALSE.,.FALSE.]
 
     ! set values for non-parameter disort input
-    NSTR = 8
-    NMOM = 8
-    NUMU = 8 ! same as NSTR
+    NSTR = 16
+    NMOM = 16
+    NUMU = 16 ! same as NSTR
     NLYR = nlayers
     NPHI      = 0
     NTAU = 1
@@ -74,14 +74,14 @@ contains
     ! if this is not 0, need to specify umu0 and phi0
     FISOT     = 0.0      ! not sure, was 1.0 / PI
     LAMBER    = .TRUE.   ! don't care about lower boundary
-    ALBEDO = 0.0001E0
+    ALBEDO = 0.00
     ACCUR = 0.0 
     PLANK    = .TRUE.    ! need this to use temperature structure
-    TEMIS = 0.01         ! need to give top layer a bit of emissivity 
+    TEMIS = 0.0        ! need to give top layer a bit of emissivity 
     
 
     ! all temps the same across patches
-    call set_temp_levels(patch(1)%atm%temp,temper)
+    call set_temp_levels(temper)
 
     spectrum = 0.0
     

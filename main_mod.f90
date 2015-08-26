@@ -5,7 +5,7 @@ module main
 contains 
   subroutine forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,linelist,out_spec)
+       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,out_spec)
     
     use sizes
     use common_arrays
@@ -13,7 +13,7 @@ contains
     use phys_const
     use atmos_ops
     use gas_mixing
-    use cia_lowres
+    use cia_arg
     use clouds
     use setup_disort
     
@@ -37,6 +37,8 @@ contains
     real,dimension(nlinetemps) :: inlinetemps
     real,dimension(nlayers) :: inpress
     double precision,intent(inout):: linelist(:,:,:,:)
+    real, dimension(nciatemps), intent(in):: ciatemp
+    real, dimension(4,nciatemps,nwave), intent(in) :: cia
     integer, dimension(ngas), intent(in) :: ingasnum
     double precision,dimension(2,nwave),INTENT(OUT) :: out_spec
 
@@ -109,7 +111,7 @@ contains
     
     write(*,*) "Test line main L164. mu at layer 6 is: ", patch(1)%atm(6)%mu
     
-    call layer_thickness(patch(1)%atm%press,patch(1)%atm%temp,grav,patch(1)%atm%dz)
+    call layer_thickness(grav)
     
     ! now get number density of layers
     ! number density in /m3:
@@ -149,8 +151,7 @@ contains
 
 
     ! now let's get the CIA.  
-    call get_cia_LR(grav,ch4index)
-    
+    call get_cia(cia,ciatemp,grav,ch4index)
     
     call cpu_time(opfinish)
     

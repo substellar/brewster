@@ -1,6 +1,6 @@
 subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
      do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,&
-     inlinetemps,inpress,inwavenum,inlinelist,out_spec)
+     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec)
 
   use sizes
   use main
@@ -17,9 +17,12 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py intent(in) ingasnum,do_clouds,cloudnum
   !f2py intent(in) cloudrad,cloudsig,cloudprof
   !f2py intent(in) inwavenum, inlinetemps,inpress
+  !f2py intent(inout) cia, ciatemps
   !f2py intent(inout) inlinelist
   !f2py intent(out) out_spec
 
+  real,dimension(4,nciatemps,nwave) :: cia
+  real,dimension(nciatemps) :: ciatemps
   double precision,intent(inout) :: inlinelist(:,:,:,:)
   double precision,dimension(nlayers):: temp
   real :: R2D2,logg
@@ -81,7 +84,7 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
 
   call forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,inlinelist,out_spec)
+       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec)
 
  
 end subroutine marv

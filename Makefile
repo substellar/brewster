@@ -22,8 +22,8 @@ FC = gfortran
 
 
 # Run version
-FCFLAGS = -O3 -fPIC 
-F77FLAGS = -fPIC  -O3  -fdefault-real-8 -std=legacy
+FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check 
+F77FLAGS = -O3 -fPIC -fdefault-real-8 -frecord-marker=4 -fbounds-check -std=legacy 
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 
@@ -49,13 +49,13 @@ common_arrays_mod.o: sizes_mod.o define_types_mod.o
 define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o common_arrays_mod.o phys_const_mod.o define_types_mod.o
 gas_mixing_mod.o: sizes_mod.o  common_arrays_mod.o phys_const_mod.o define_types_mod.o
-cia_lowres_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
+cia_arg_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 clouds_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o  
 setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
 
-main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
+main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
 
-marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_lowres_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
+marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
 
 
 
@@ -75,21 +75,22 @@ marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atm
 # used in order to list only the first prerequisite (the source file)
 # and not the additional prerequisites such as module or include files
 %.o: %.f90
-	$(FC) $(FCFLAGS) -fPIC -c $<
+	$(FC) $(FCFLAGS) -c $<
 
 # Some rules for building f77
 %.o: %.f
-	$(FC) $(F77FLAGS) -fPIC -c $<
+	$(FC) $(F77FLAGS) -c $<
 
 f90mods:
-	$(FC) $(FCFLAGS) -fPIC -c f90wrap_*.f90
+	$(FC) $(FCFLAGS) -c f90wrap_*.f90
 
 f77mods:
-	$(FC) $(F77FLAGS) -fPIC -c *.f
+	$(FC) $(F77FLAGS) -c *.f
 
 # now for python wrap
 f90wrap:
 	f90wrap -m forwardmodel *.f90
+
 
 libfile:
 	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so 
@@ -99,7 +100,11 @@ pysig:
 pymod:
 	f2py --fcompiler=gfortran --f90flags="-O3 -frecord-marker=4" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
+ciasig:
+	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
+ciamod:
+	f2py --fcompiler=gfortran --f90flags="-O3 -frecord-marker=4" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 # Utility targets
 

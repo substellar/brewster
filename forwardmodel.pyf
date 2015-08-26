@@ -6,7 +6,7 @@ python module forwardmodel ! in
         module sizes ! in :forwardmodel:sizes_mod.f90
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
-            integer, parameter,optional :: nlayers=60
+            integer, parameter,optional :: nlayers=79
             integer, parameter,optional :: ngas=1
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000
@@ -17,26 +17,28 @@ python module forwardmodel ! in
             integer, parameter,optional :: nwave=9501
             integer, parameter,optional :: nmiewave=180
         end module sizes
-        subroutine marv(w1,w2,temp,logg,r2d2,ingasnum,logvmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,inpress,inwavenum,inlinelist,out_spec) ! in :forwardmodel:marv.f90
+        subroutine marv(w1,w2,temp,logg,r2d2,ingasnum,logvmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec) ! in :forwardmodel:marv.f90
             use main
             use sizes
             double precision intent(in) :: w1
             double precision intent(in) :: w2
-            double precision dimension(60),intent(in) :: temp
+            double precision dimension(79),intent(in) :: temp
             real intent(in) :: logg
             real intent(in) :: r2d2
             integer dimension(1),intent(in) :: ingasnum
-            double precision dimension(1,60),intent(in) :: logvmr
+            double precision dimension(1,79),intent(in) :: logvmr
             real dimension(1),intent(in) :: pcover
             integer dimension(1),intent(in) :: do_clouds
             integer dimension(1,1),intent(in) :: cloudnum
-            double precision dimension(1,60,1),intent(in) :: cloudrad
-            double precision dimension(1,60,1),intent(in) :: cloudsig
-            double precision dimension(1,60,1),intent(in) :: cloudprof
+            double precision dimension(1,79,1),intent(in) :: cloudrad
+            double precision dimension(1,79,1),intent(in) :: cloudsig
+            double precision dimension(1,79,1),intent(in) :: cloudprof
             real dimension(43),intent(in) :: inlinetemps
-            real dimension(60),intent(in) :: inpress
+            real dimension(79),intent(in) :: inpress
             double precision dimension(9501),intent(in) :: inwavenum
             double precision dimension(:,:,:,:),intent(inout) :: inlinelist
+            real dimension(4,119,9501),intent(inout) :: cia
+            real dimension(119),intent(inout) :: ciatemps
             double precision dimension(2,9501),intent(out) :: out_spec
         end subroutine marv
     end interface 

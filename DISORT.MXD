@@ -1,0 +1,22 @@
+c  LOCAL SYMBOLIC DIMENSIONS used by the following solvers: DISORT.f, DISORT2.f,
+c  twostr.f, spsdisort.f, dpsdisort.f
+c
+c  Adjusting the ary sizes have a large effect on storage requirements 
+c  and on computational time
+c
+c  For more documentation see DISORT.doc and DISORT2.doc
+c
+c  MXCLY  = Max no. of computational layers
+c  MXULV  = Max no. of output levels, note that internals 
+c           of dpsdisort requires this to be at least 2*MXCLY.
+c  MXCMU  = Max no. of computation polar angles
+c  MXUMU  = Max no. of output polar angles
+c  MXPHI  = Max no. of output azimuthal angles
+c  MXSZA  = Max no. of solar zenith angles (only used by dpsdisort.f)
+
+      PARAMETER ( MXCLY = 128,
+     & 	          MXULV = 2*MXCLY, 
+     &            MXCMU = 128, 
+     &            MXUMU = 48,
+     &            MXPHI = 19,
+     &            MXSZA = 5)

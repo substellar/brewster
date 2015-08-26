@@ -23,7 +23,7 @@ module define_types
      ! layer 1 is top of atmosphere!!
      integer:: index
      double precision:: temp
-     double precision :: press,logP,dz,ndens,fH2,fHe,mu
+     double precision :: press,logP,dz,dp,ndens,fH2,fHe,mu
      double precision, dimension(nwave) ::opd_ext,opd_scat,gg,opd_lines,opd_CIA
      type(a_gas) :: gas(ngas)
      type(a_cloud) :: cloud(nclouds)

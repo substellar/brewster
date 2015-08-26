@@ -1,0 +1,31 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module ciamod ! in 
+    interface  ! in :ciamod
+        module sizes ! in :ciamod:sizes_mod.f90
+            integer, parameter,optional :: nclouds=1
+            real, parameter,optional :: rmin=1e-05
+            integer, parameter,optional :: nlayers=79
+            integer, parameter,optional :: ngas=1
+            integer, parameter,optional :: nlinetemps=43
+            integer, parameter,optional :: ncwave=1000
+            integer, parameter,optional :: nciatemps=119
+            real, parameter,optional :: vrat=2.2
+            integer, parameter,optional :: npatch=1
+            integer, parameter,optional :: nrad=40
+            integer, parameter,optional :: nwave=9501
+            integer, parameter,optional :: nmiewave=180
+        end module sizes
+        subroutine read_cia(filename,wavenum,ciaarray,ciatemps) ! in :ciamod:read_cia.f90
+            use sizes
+            character*50 intent(in) :: filename
+            real dimension(9501),intent(in) :: wavenum
+            real dimension(4,119,9501),intent(out) :: ciaarray
+            real dimension(119),intent(out) :: ciatemps
+        end subroutine read_cia
+    end interface 
+end python module ciamod
+
+! This file was auto-generated with f2py (version:2).
+! See http://cens.ioc.ee/projects/f2py2e/
