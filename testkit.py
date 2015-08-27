@@ -31,18 +31,18 @@ def rebinspec(wave, specin, wavenew,):
 
 
 
-def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec):
+def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
     # get the ngas
     ngas = invmr.shape[0]
     # interp temp onto finer grid (16 => 61)
-    inlayer = np.arange(0,15.25,1)
-    layer = np.arange(0,15.25,0.25)
+#    inlayer = np.arange(0,15.25,1)
+#    layer = np.arange(0,15.25,0.25)
     # Hard code nlayers
-    nlayers = 61
+    nlayers = press.shape[0]
     # spline fit with no smoothing)
-    tfit = sp.interpolate.splrep(inlayer,intemp,s=0)
-    temp = np.asfortranarray(sp.interpolate.splev(layer,tfit, der=0),dtype='f')
-
+    #tfit = sp.interpolate.splrep(inlayer,intemp,s=0)
+    #temp = np.asfortranarray(sp.interpolate.splev(layer,tfit, der=0),dtype='f')
+    temp = intemp
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
@@ -90,7 +90,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
 
     # now we can call the forward model
 
-    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof)
+    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps)
 
     # Trim to length where it is defined.
     trimspec =  outspec[:,np.logical_not(np.logical_or(outspec[0,:] > w2, outspec[0,:] < w1))] 
@@ -126,11 +126,12 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     return -0.5*(np.sum((obspec[1,:] - modspec[1,:])**2 * invsigma2 - np.log(2*np.pi*invsigma2)))
     
     
-def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec):
+def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
 
-    invmr = theta
+    invmr = np.full((1),theta[0])
+    r2d2 = theta[1]
     # run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,fwhm,obspec)
+    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
     
     # now check against the priors
     lp = lnprior(theta)
@@ -141,8 +142,9 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,
 
 def lnprior(theta):
     # set up the priors here
-    invmr = theta
-    if -4.0 < invmr[0] < -3.0 and -4.0 < invmr[1] < -3.0: 
+    invmr = theta[0]
+    r2d2 = theta[1]
+    if -4.5 < invmr < -3.5 and 0.0 < r2d2 < 1.0: 
         return 0.0
     return -np.inf
 

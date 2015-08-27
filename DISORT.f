@@ -360,7 +360,7 @@ c     .. Parameters ..
 c     ..
 c     .. Scalar Arguments ..
 
-      CHARACTER HEADER*127
+      CHARACTER HEADER*0
       LOGICAL   LAMBER, ONLYFL, PLANK, USRANG, USRTAU
       INTEGER   IBCND, MAXCLY, MAXMOM, MAXPHI, MAXULV, MAXUMU, NLYR,
      &          NMOM, NPHI, NSTR, NTAU, NUMU

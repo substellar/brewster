@@ -44,7 +44,7 @@ contains
     double precision:: BTEMP, TTEMP
     double precision,dimension(nwave):: upflux
     logical, dimension(5) :: PRNT
-    character(len=127):: HEADER
+    character(len=0):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL
     double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
@@ -53,18 +53,18 @@ contains
 
     integer :: nw1, nw2
     
-    HEADER = ''
+    HEADER = ""
 
     PRNT = [.FALSE., .FALSE.,.FALSE.,.FALSE.,.FALSE.]
 
     ! set values for non-parameter disort input
-    NSTR = 16
-    NMOM = 16
-    NUMU = 16 ! same as NSTR
+    NSTR = 8
+    NMOM = 8
+    NUMU = 8 ! same as NSTR
     NLYR = nlayers
-    NPHI      = 0
+    NPHI = 0
     NTAU = 1
-    UTAU = 1e-5
+    UTAU = 0.0
     
     USRTAU    = .TRUE.  ! return quantities at each pre-defined layer
     USRANG    = .FALSE.
