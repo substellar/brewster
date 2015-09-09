@@ -89,14 +89,13 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
         cloudprof = np.ones_like(cloudrad)
 
     # now we can call the forward model
-
     outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps)
 
     # Trim to length where it is defined.
     trimspec =  outspec[:,np.logical_not(np.logical_or(outspec[0,:] > w2, outspec[0,:] < w1))] 
 
     # now shift wavelen by delta_lambda
-    shiftspec = np.array([trimspec[0,:],trimspec[0,:]+dlam])
+    shiftspec = np.array([trimspec[0,:]+dlam,trimspec[1,:]])
 
  
     # length and interval for later
@@ -130,13 +129,13 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum
 
     invmr = np.full((1),theta[0])
     r2d2 = theta[1]
-    # run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
     
-    # now check against the priors
+    # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
+    # else run the likelihood
+    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
     return lp + lnlike_value
 
 

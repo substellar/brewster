@@ -219,6 +219,11 @@ contains
     call run_disort(out_spec(2,:),nw1,nw2)
 
     out_spec(1,:) = wavelen
+
+    ! scale by r2d2
+
+    outspec(2,:) = outspec(2,:) * R2D2
+    
     call cpu_time(difinish)
     
     

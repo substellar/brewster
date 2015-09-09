@@ -98,9 +98,9 @@ runargs = w1,w2,intemp, pcover, cloudparams,logg, dlam, do_clouds,gasnum,cloudnu
 # now set up the EMCEE stuff
 ndim, nwalkers = 2, 4
 p0 = np.empty([nwalkers,ndim])
-p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
+p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
 p0[:,1] = np.random.rand(nwalkers).reshape(nwalkers)
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), threads = 4)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), threads = 2)
 # run the sampler
 sampler.run_mcmc(p0, 4)
 
