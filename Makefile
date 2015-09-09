@@ -14,6 +14,7 @@
 
 # The compiler
 FC = gfortran
+# FC = ifort
 # flags for debugging or for maximum performance, comment as necessary
 
 # Debug version
@@ -24,6 +25,11 @@ FC = gfortran
 # Run version
 FCFLAGS = -O3 -fPIC -m64
 F77FLAGS = -O3 -fPIC -fdefault-real-8 -std=legacy -m64
+
+# Intel compiler version
+# FCFLAGS = -O3 -fPIC
+# F77FLAGS = -O3 -fPIC -autodouble
+
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 
@@ -93,18 +99,22 @@ f90wrap:
 
 
 libfile:
-	$(FC) -fPIC -shared -O3 -m64 *.o -o libmarvin.so 
+	$(FC) -fPIC -shared -O3 -m64 *.o -o libmarvin.so
+#	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
+
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
 	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+#	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
 	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+#	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 # Utility targets
 
