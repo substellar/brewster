@@ -222,7 +222,7 @@ contains
 
     ! scale by r2d2
 
-    outspec(2,:) = outspec(2,:) * R2D2
+    out_spec(2,:) = out_spec(2,:) * R2D2
     
     call cpu_time(difinish)
     

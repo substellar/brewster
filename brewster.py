@@ -27,7 +27,13 @@ __status__ = "Development"
 # set up the model arguments the drop these into theta(state vector) or runargs
 
 # Here we'll use the temp and pressure profile from Mike, as used to produce sim
-# spectrum
+# spectrum, but we'll put them on our own pressure grid
+
+# set up pressure grids
+logcoarsePress = np.arange(-4.0, 2.5, 0.5)
+coarsePress = pow(10,logcoarsePress)
+logfinePress = np.arange(-4.0, 2.5, 0.1)
+finePress = pow(10,logfinePress)
 
 array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
 leveltemp = array[0]
@@ -40,21 +46,33 @@ for i in range(0,mikepress.size):
     mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
 mtfit = interp1d(np.log10(levelpress),leveltemp)
 miketemp = mtfit(np.log10(mikepress))
+tfit = interp1d(np.log10(mikepress),miketemp)
+temp = mtfit(np.log10(finePress))
+press = finePress*1000.
+intemp = temp
+
 # now the linelist
+# Set up number of gases, and point at the lists. see gaslist.dat
+ngas = 3
+gasnum = np.asfortranarray(np.array([1,2,20],dtype='i'))
+lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save","../Linelists/xsecarrCH4_1wno_500_10000.save","../Linelists/xsecarrK_new_1wno_500_10000_02.save" ]
+
+# get the basic framework from water list
 x=readsav('../Linelists/xsecarrH2O_1wno_500_10000.save')
 inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
 inlinetemps=np.asfortranarray(x.t,dtype='float64')
 inpress=x.p
 inwavenum=x.wno
-
+ntemps = inlinetemps.size
+nwave = inwavenum.size
 # Here we are interpolating the linelist onto Mike's pressure scale. 
-linelist = (np.ones([1,79,43,9501],order='F')).astype('float64', order='F')
-for i in range (0,42):
-    for j in range (0,9500):
-        pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
-        linelist[0,:,i,j] = np.asfortranarray(pfit(np.log10(mikepress)))
-press = mikepress*1000.
-intemp = miketemp
+linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
+for gas in range (0,ngas):
+    inlinelist=readsav(lists[gas]).xsecarr
+    for i in range (0,ntemps):
+        for j in range (0,nwave):
+            pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
+            linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(mikepress)))
 
 # This will be a variable in theta here - r2d2 = 1.
 logg = 4.5
@@ -78,11 +96,10 @@ cloudparams[2] = 12
 cloudparams[3] = 1e-4
 cloudparams[4] = 1e-5
 # hardwired gas and cloud IDs
-gasnum = np.asfortranarray(np.array([1],dtype='i'))
 cloudnum = np.array([1],dtype='i')
 
 # Get the cia bits
-cia, ciatemps = ciamod.read_cia("final1_abel_CIA.dat",inwavenum)
+cia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
 cia = np.asfortranarray(cia, dtype='float32')
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
@@ -93,7 +110,7 @@ fwhm = 0.005
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("sim_spectrum.dat",dtype='d',unpack='true'))
 
-runargs = w1,w2,intemp, pcover, cloudparams,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
+runargs = w1,w2,intemp, pcover, cloudparams,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
 
 # now set up the EMCEE stuff
 ndim, nwalkers = 2, 4

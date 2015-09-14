@@ -16,15 +16,20 @@ subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
   real,dimension(4,nciatemps,nwave) :: ciaarray
   real,dimension(nciatemps) :: ciatemps
   real,dimension(4,nciatemps,ncwave):: oldcia
-  integer:: iciatemp,icwaven,iwave,oldw1,oldw2,idum1,idum2
+  integer:: iciatemp,icwaven,iwave,oldw1,oldw2,idum1,idum2,i
   real,dimension(nwave) :: wavenum
   real,dimension(ncwave) :: ciawaven,wdiff
-  real:: intfact
+  real:: intfact, fdum1
 
 
   open(15,file=filename,status="old")
+  do i=1, 3
+     read(15,*)
+  end do
+  
   read(15,*) idum1, idum2
 
+  
   if (idum1 .ne. ncwave .or. idum2 .ne. nciatemps) then
      write(*,*) " Problem with low-res CIA table : ", trim(filename)
      stop
@@ -37,7 +42,7 @@ subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
      do icwaven = 1, ncwave
         read(15,*) ciawaven(icwaven), oldcia(1,iciatemp,icwaven), &
              oldcia(2,iciatemp,icwaven), &
-             oldcia(3,iciatemp,icwaven), oldcia(4,iciatemp,icwaven)
+             oldcia(3,iciatemp,icwaven), oldcia(4,iciatemp,icwaven), fdum1
 
      end do
   end do

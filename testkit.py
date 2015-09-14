@@ -31,17 +31,16 @@ def rebinspec(wave, specin, wavenew,):
 
 
 
-def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
+def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
     # get the ngas
     ngas = invmr.shape[0]
-    # interp temp onto finer grid (16 => 61)
-#    inlayer = np.arange(0,15.25,1)
-#    layer = np.arange(0,15.25,0.25)
+    # interp temp onto finer grid coarsePress => press
     # Hard code nlayers
     nlayers = press.shape[0]
-    # spline fit with no smoothing)
-    #tfit = sp.interpolate.splrep(inlayer,intemp,s=0)
-    #temp = np.asfortranarray(sp.interpolate.splev(layer,tfit, der=0),dtype='f')
+    # spline fit with no smoothing
+    # tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
+    # temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
+    # For now we're just using the T profile from Mike's file
     temp = intemp
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile

@@ -1,4 +1,4 @@
-module sizes
+  module sizes
 
   implicit none
 
@@ -7,7 +7,7 @@ module sizes
   integer, parameter :: nclouds = 1
 
   ! number of gases for mixing
-  integer, parameter :: ngas = 1
+  integer, parameter :: ngas = 3
 
   ! number of patches
   integer,parameter:: npatch = 1
@@ -15,7 +15,7 @@ module sizes
   ! declares and values size parameters for arrays 
   
   ! number of pressure layers
-  integer, parameter :: nlayers = 79
+  integer, parameter :: nlayers = 65
 
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 43
@@ -25,7 +25,7 @@ module sizes
 
   
   ! number of temperatures in CIA tables
-  integer,parameter :: nciatemps = 119
+  integer,parameter :: nciatemps = 198
 
   ! number of wavenumbers in lowres CIA tables
   integer,parameter :: ncwave = 1000
