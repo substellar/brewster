@@ -46,16 +46,16 @@ for i in range(0,mikepress.size):
     mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
 mtfit = interp1d(np.log10(levelpress),leveltemp)
 miketemp = mtfit(np.log10(mikepress))
-tfit = interp1d(np.log10(mikepress),miketemp)
-temp = mtfit(np.log10(finePress))
+tfit = interp1d(np.log10(mikepress),miketemp,bounds_error=False,fill_value=miketemp[miketemp.size-1])
+temp = tfit(np.log10(finePress))
 press = finePress*1000.
 intemp = temp
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 3
-gasnum = np.asfortranarray(np.array([1,2,20],dtype='i'))
-lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save","../Linelists/xsecarrCH4_1wno_500_10000.save","../Linelists/xsecarrK_new_1wno_500_10000_02.save" ]
+ngas = 1
+gasnum = np.asfortranarray(np.array([1],dtype='i'))
+lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save" ]
 
 # get the basic framework from water list
 x=readsav('../Linelists/xsecarrH2O_1wno_500_10000.save')
@@ -64,6 +64,7 @@ inlinetemps=np.asfortranarray(x.t,dtype='float64')
 inpress=x.p
 inwavenum=x.wno
 ntemps = inlinetemps.size
+npress= finePress.size
 nwave = inwavenum.size
 # Here we are interpolating the linelist onto Mike's pressure scale. 
 linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
@@ -72,12 +73,12 @@ for gas in range (0,ngas):
     for i in range (0,ntemps):
         for j in range (0,nwave):
             pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
-            linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(mikepress)))
+            linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(finePress)))
 
 # This will be a variable in theta here - r2d2 = 1.
 logg = 4.5
 dlam = 0.
-w1 = 1.0
+w1 = 1.05
 w2 = 2.5
 pcover = 1.0
 do_clouds = 0
@@ -117,9 +118,9 @@ ndim, nwalkers = 2, 4
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
 p0[:,1] = np.random.rand(nwalkers).reshape(nwalkers)
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), threads = 2)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), threads = 4)
 # run the sampler
-sampler.run_mcmc(p0, 4)
+sampler.run_mcmc(p0, 20000)
 
 # get rid of problematic bit of sampler object
 del sampler.__dict__['pool']

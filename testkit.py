@@ -120,11 +120,11 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
 
     # get log-likelihood
 
-    invsigma2 = 1/(obspec[2,:])**2
-    return -0.5*(np.sum((obspec[1,:] - modspec[1,:])**2 * invsigma2 - np.log(2*np.pi*invsigma2)))
+    invsigma2 = 1/(obspec[2,::3])**2
+    return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(2*np.pi*invsigma2)))
     
     
-def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
+def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
 
     invmr = np.full((1),theta[0])
     r2d2 = theta[1]
@@ -134,7 +134,7 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
+    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
     return lp + lnlike_value
 
 
