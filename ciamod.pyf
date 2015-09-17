@@ -7,7 +7,7 @@ python module ciamod ! in
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
             integer, parameter,optional :: nlayers=65
-            integer, parameter,optional :: ngas=1
+            integer, parameter,optional :: ngas=5
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000
             integer, parameter,optional :: nciatemps=198

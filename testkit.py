@@ -31,7 +31,7 @@ def rebinspec(wave, specin, wavenew,):
 
 
 
-def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
+def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec,logf):
     # get the ngas
     ngas = invmr.shape[0]
     # interp temp onto finer grid coarsePress => press
@@ -119,30 +119,35 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
 
     # get log-likelihood
-
-    invsigma2 = 1/(obspec[2,::3])**2
-    return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(2*np.pi*invsigma2)))
+    # We've lifted this from Mike's code, below is original from emcee docs
+    # Just taking every 3rd point to keep independence
+    s2=obspec[2,::3]**2 + 10.**logf
+    lnLik=-0.5*np.sum((obspec[1,::3] - modspec[1,::3])**2/s2 + np.log(2.*np.pi*s2))
+    return lnLik
+    #chi2 log likelihood--can modify this
+    #invsigma2 = 1.0/((obspec[2,::3])**2 + modspec[1,::3]**2 * np.exp(2*lnf))
+    #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
 def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
 
-    invmr = np.full((1),theta[0])
-    r2d2 = theta[1]
+    invmr = np.full((5),theta[0:4])
+    logf = theta[5]
     
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec)
+    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec,logf)
     return lp + lnlike_value
 
 
 def lnprior(theta):
     # set up the priors here
-    invmr = theta[0]
-    r2d2 = theta[1]
-    if -4.5 < invmr < -3.5 and 0.0 < r2d2 < 1.0: 
+    invmr = theta[0:4]
+    logf = theta[5]
+    if -9.0 < invmr[0] < 0. and -9.0 < invmr[1] < 0. and -9.0 < invmr[2] < 0. and -9.0 < invmr[3] < 0. and -9.0 < invmr[4] < 0. and 0.001*np.min(obspec[2,:]**2) < 10.**logf < 10.*np.max(obspec[2,:]**2)
         return 0.0
     return -np.inf
 

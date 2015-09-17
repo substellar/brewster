@@ -7,7 +7,7 @@ python module forwardmodel ! in
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
             integer, parameter,optional :: nlayers=65
-            integer, parameter,optional :: ngas=1
+            integer, parameter,optional :: ngas=5
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000
             integer, parameter,optional :: nciatemps=198
@@ -25,8 +25,8 @@ python module forwardmodel ! in
             double precision dimension(65),intent(in) :: temp
             real intent(in) :: logg
             real intent(in) :: r2d2
-            integer dimension(1),intent(in) :: ingasnum
-            double precision dimension(1,65),intent(in) :: logvmr
+            integer dimension(5),intent(in) :: ingasnum
+            double precision dimension(5,65),intent(in) :: logvmr
             real dimension(1),intent(in) :: pcover
             integer dimension(1),intent(in) :: do_clouds
             integer dimension(1,1),intent(in) :: cloudnum
