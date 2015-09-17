@@ -34,22 +34,20 @@ def rebinspec(wave, specin, wavenew,):
 def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec,logf):
     # get the ngas
     ngas = invmr.shape[0]
-    # interp temp onto finer grid coarsePress => press
     # Hard code nlayers
     nlayers = press.shape[0]
+    # interp temp onto finer grid coarsePress => press
     # spline fit with no smoothing
-    # tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
-    # temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
-    # For now we're just using the T profile from Mike's file
-    temp = intemp
+    tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
+    temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
     if invmr.size > invmr.shape[0]:
         for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(inlayer,invmr[i,:],s=0)
-            logVMR[i,:] = sp.interpolate.splev(layer,vfit,der=0)
+            vfit = sp.interpolate.splrep(coarsepress,invmr[i,:],s=0)
+            logVMR[i,:] = sp.interpolate.splev(press,vfit,der=0)
     else:
         for i in range(0,ngas):
             logVMR[i,:] = invmr[i]
@@ -129,13 +127,16 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
+def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
 
     invmr = np.full((5),theta[0:4])
     logf = theta[5]
+    gam = theta[6]
+    logbeta = theta[7]    
+    intemp = np.full((13),theta[8:])
     
     # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta)
+    lp = lnprior(theta,obspec)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
@@ -143,12 +144,22 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, logg, dlam, do_clouds,gasnum
     return lp + lnlike_value
 
 
-def lnprior(theta):
+def lnprior(theta,obspec):
     # set up the priors here
     invmr = theta[0:4]
     logf = theta[5]
-    if -9.0 < invmr[0] < 0. and -9.0 < invmr[1] < 0. and -9.0 < invmr[2] < 0. and -9.0 < invmr[3] < 0. and -9.0 < invmr[4] < 0. and 0.001*np.min(obspec[2,:]**2) < 10.**logf < 10.*np.max(obspec[2,:]**2)
-        return 0.0
+    gam = theta[6]
+    logbeta = theta[7]
+    T = theta[8:]
+    diff=np.roll(T,-1)-2.*T+np.roll(T,1)
+    pp=len(T)
+
+    if (-9.0 < invmr[0] < 0. and -9.0 < invmr[1] < 0. and -9.0 < invmr[2] < 0. and -9.0 < invmr[3] < 0. and -9.0 < invmr[4] < 0. and 0.001*np.min(obspec[2,:]**2) < 10.**logf < 10.*np.max(obspec[2,:]**2) and  min(T) > 0.0 and max(T) < 4000 and gam > 0 and -5 < logbeta < 0):
+    	beta=10.**logbeta
+    	alpha=1.0
+    	x=gam
+    	invgamma=beta**alpha/math.gamma(alpha)*x**(-alpha-1)*np.exp(-beta/x)
+        return -0.5/gam*np.sum(diff[1:-1]**2)-0.5*pp*np.log(gam)+np.log(invgamma)
     return -np.inf
 
 

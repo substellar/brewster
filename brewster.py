@@ -27,30 +27,29 @@ __status__ = "Development"
 
 # set up the model arguments the drop these into theta(state vector) or runargs
 
-# Here we'll use the temp and pressure profile from Mike, as used to produce sim
-# spectrum, but we'll put them on our own pressure grid
-
-# set up pressure grids
+# set up pressure grids in bar cos its intuitive
 logcoarsePress = np.arange(-4.0, 2.5, 0.5)
-coarsePress = pow(10,logcoarsePress)
+coarsePress = 1000.* pow(10,logcoarsePress)
 logfinePress = np.arange(-4.0, 2.5, 0.1)
-finePress = pow(10,logfinePress)
+finePress = 1000.* pow(10,logfinePress)
+# forward model wants pressure in mbar
+press = finePress
 
-array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
-leveltemp = array[0]
-levelpress = array[1]
-mikespec = np.array([array[2],array[3]],dtype='f')
-mikespec[0] = 10000.0 / mikespec[0]
-mikepress = np.empty(levelpress.size - 1,dtype='float64')
-miketemp = np.empty(leveltemp.size -1, dtype='float64')
-for i in range(0,mikepress.size):
-    mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
-mtfit = interp1d(np.log10(levelpress),leveltemp)
-miketemp = mtfit(np.log10(mikepress))
-tfit = interp1d(np.log10(mikepress),miketemp,bounds_error=False,fill_value=miketemp[miketemp.size-1])
-temp = tfit(np.log10(finePress))
-press = finePress*1000.
-intemp = temp
+# This bit is all to cover reading in Mike's profile - we don't need this.
+#array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
+#leveltemp = array[0]
+#levelpress = array[1]
+#mikespec = np.array([array[2],array[3]],dtype='f')
+#mikespec[0] = 10000.0 / mikespec[0]
+#mikepress = np.empty(levelpress.size - 1,dtype='float64')
+#miketemp = np.empty(leveltemp.size -1, dtype='float64')
+#for i in range(0,mikepress.size):
+#    mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
+#mtfit = interp1d(np.log10(levelpress),leveltemp)
+#miketemp = mtfit(np.log10(mikepress))
+#tfit = interp1d(np.log10(mikepress),miketemp,bounds_error=False,fill_value=miketemp[miketemp.size-1])
+#temp = tfit(np.log10(finePress))
+#intemp = temp
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
@@ -67,7 +66,7 @@ inwavenum=x.wno
 ntemps = inlinetemps.size
 npress= finePress.size
 nwave = inwavenum.size
-# Here we are interpolating the linelist onto Mike's pressure scale. 
+# Here we are interpolating the linelist onto our fine pressure scale. 
 linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
 for gas in range (0,ngas):
     inlinelist=readsav(lists[gas]).xsecarr
@@ -110,20 +109,22 @@ fwhm = 0.005
 #fixvmrs = -8.0
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("sim_spectrum.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true'))
 
-runargs = w1,w2,intemp, pcover, cloudparams,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
+runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 6, 12
+ndim, nwalkers = 20, 42
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * 0.1 * min(obspec[2,:]))
-
+p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * 0.1 * min(obspec[2,:])) # logf
+p0[:,6] = !!! #gam starter
+p0[:,7] = !!! #logbeta starter
+p0[:,8:] = !!!!!#13 temperatures
 # Now we set up the MPI bits
 #'''
 pool=MPIPool(loadbalance=True)
