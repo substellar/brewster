@@ -34,7 +34,7 @@ logfinePress = np.arange(-4.0, 2.5, 0.1)
 finePress = 1000.* pow(10,logfinePress)
 # forward model wants pressure in mbar
 press = finePress
-
+nprof = coarsePress.size
 # This bit is all to cover reading in Mike's profile - we don't need this.
 #array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
 #leveltemp = array[0]
@@ -61,7 +61,7 @@ lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save","../Linelists/xsecarrCH4_
 x=readsav('../Linelists/xsecarrH2O_1wno_500_10000.save')
 inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
 inlinetemps=np.asfortranarray(x.t,dtype='float64')
-inpress=x.p
+inpress=1000.*x.p
 inwavenum=x.wno
 ntemps = inlinetemps.size
 npress= finePress.size
@@ -114,17 +114,20 @@ obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 20, 42
+ndim, nwalkers = 21, 42
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * 0.1 * min(obspec[2,:])) # logf
-p0[:,6] = !!! #gam starter
-p0[:,7] = !!! #logbeta starter
-p0[:,8:] = !!!!!#13 temperatures
+p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * 0.01 * min(obspec[2,10::3]))
+p0[:,6] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
+p0[:,7] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
+p0[:,8] = 500. + ( np.random.rand(nwalkers).reshape(nwalkers) * 1000. )
+for i in range (9,8+nprof):
+    p0[:,i] = p0[:,8]
+
 # Now we set up the MPI bits
 #'''
 pool=MPIPool(loadbalance=True)
@@ -138,14 +141,14 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), 
 #sampler.sample(p0, 20000)
 
 k=0
-for result in sampler.sample(p0, iterations=20000):
+for result in sampler.sample(p0, iterations=20):
     k=k+1
     position = result[0]
     f = open("status_ball.txt", "w")
     f.write("****Itteration*****")
     f.write(str(k))
     f.write("****Reduced Chi2*****")
-    f.write(str(result[1]/wlgrid.shape[0]*(-2)))
+    f.write(str(result[1]/((obspec.shape[0] - 10.)/ 3.0) *(-2)))
     f.write("****Accept Fraction*****")
     f.write(str(sampler.acceptance_fraction))
     f.write("*****Values****")
@@ -177,7 +180,7 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(sampler,'retrieval_result.pk1')
+save_object(sampler,'temp_retrieval_result.pk1')
 
 
-
+pool.close()
