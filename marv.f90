@@ -46,7 +46,6 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   real,dimension(nlayers) :: inpress
   integer:: maxgas,maxcloud,igas,icloud, idum1, idum2
 
-  
   open(10,file="gaslist.dat", status='old')
   read(10,*) maxgas
   allocate(gaslist(maxgas), masslist(maxgas))
@@ -62,7 +61,6 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
      molmass(igas) = masslist(ingasnum(igas))
   end do
 
-  
   open(10,file="cloudlist.dat", status='old')
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
@@ -80,7 +78,6 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
 
   
   deallocate(cloudlist,gaslist,masslist)  
-
 
   call forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&

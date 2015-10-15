@@ -128,7 +128,6 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     
     
 def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
-
     invmr = theta[0:5]
     logf = theta[5]
     gam = theta[6]
@@ -154,7 +153,7 @@ def lnprior(theta,obspec):
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-    if (-9.0 < invmr[0] < 0. and -9.0 < invmr[1] < 0. and -9.0 < invmr[2] < 0. and -9.0 < invmr[3] < 0. and -9.0 < invmr[4] < 0. and 0.001*np.min(obspec[2,:]**2) < 10.**logf < 100.*np.max(obspec[2,:]**2) and  min(T) > 0.0 and max(T) < 4000 and gam > 0 and -5 < logbeta < 0):
+    if ((-9.0 < invmr[0] < 0.) and (-9.0 < invmr[1] < 0.) and (-9.0 < invmr[2] < 0.) and (-9.0 < invmr[3] < 0.) and (-9.0 < invmr[4] < 0.) and ((0.001*np.min(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  (min(T) > 0.0) and (max(T) < 4000) and (gam > 0.) and (-5. < logbeta < 0.)):
     	beta=10.**logbeta
     	alpha=1.0
     	x=gam

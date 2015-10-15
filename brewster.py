@@ -2,17 +2,22 @@
 
 """This is Brewster: the golden retriever of smelly atmospheres"""
 
-
+import multiprocessing
 import numpy as np
 import scipy as sp
 import emcee
 import testkit
 import ciamod
+import os
+import sys
 import cPickle as pickle
 from scipy.io.idl import readsav
 from scipy import interpolate
 from scipy.interpolate import interp1d
 from emcee.utils import MPIPool
+
+
+
 
 
 __author__ = "Ben Burningham"
@@ -23,6 +28,13 @@ __version__ = "0.1"
 __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
+
+# Bit to fix CPU affinity after numpy import
+
+if __name__ == '__main__':
+
+    pool_size = multiprocessing.cpu_count()
+    os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
 
 
 # set up the model arguments the drop these into theta(state vector) or runargs
@@ -55,10 +67,9 @@ nprof = coarsePress.size
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 5
 gasnum = np.asfortranarray(np.array([1,2,20,4,5],dtype='i'))
-lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save","../Linelists/xsecarrCH4_1wno_500_10000.save","../Linelists/xsecarrK_new_1wno_500_10000_02.save","../Linelists/xsecarrCO_1wno_500_10000_02.save","../Linelists/xsecarrCO2_1wno_500_10000_02.save" ]
-
+lists = ["/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCH4_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrK_new_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO2_1wno_500_10000_02.save" ]
 # get the basic framework from water list
-x=readsav('../Linelists/xsecarrH2O_1wno_500_10000.save')
+x=readsav('/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save')
 inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
 inlinetemps=np.asfortranarray(x.t,dtype='float64')
 inpress=1000.*x.p
@@ -121,7 +132,7 @@ p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * 0.01 * min(obspec[2,10::3]))
+p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3])))
 p0[:,6] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
 p0[:,7] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
 p0[:,8] = 500. + ( np.random.rand(nwalkers).reshape(nwalkers) * 1000. )
@@ -130,18 +141,19 @@ for i in range (9,8+nprof):
 
 # Now we set up the MPI bits
 #'''
-pool=MPIPool(loadbalance=True)
+pool=MPIPool()
 if not pool.is_master():
 	pool.wait()
-	sys.exit()
+	sys.exit(0)
 
 sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
 #'''
 # run the sampler
-#sampler.sample(p0, 20000)
+print "running the sampler"
+#sampler.run_mcmc(p0, 100)
 
 k=0
-for result in sampler.sample(p0, iterations=20):
+for result in sampler.sample(p0, iterations=20000):
     k=k+1
     position = result[0]
     f = open("status_ball.txt", "w")
@@ -154,22 +166,19 @@ for result in sampler.sample(p0, iterations=20):
     f.write("*****Values****")
     f.write(str(result[0]))
     f.close()
-    #'''
-    if (k==500 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 
-	or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 
-	or k==21000 or k==25000):
-    	chain=sampler.chain
+    if (k==500 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 or k==21000 or k==25000):
+        chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
-	pickle.dump(output,open("MCMC.pic","wb"))
-	pickle.dump(chain[:,k,:], open('MCMC_last.pic','wb'))
-    #'''
+	pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+	pickle.dump(chain[:,k-1,:], open('/nobackup/bburning/MCMC_last.pic','wb'))
+
 
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("MCMC.pic","wb"))
-pickle.dump(chain[:,-1,:], open('MCMC_last.pic','wb'))
+pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+pickle.dump(chain[:,-1,:], open('/nobackup/bburning/MCMC_last.pic','wb'))
 
 
 
@@ -180,7 +189,9 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
+pool.close()
+
+save_object(sampler,'/nobackup/bburning/temp_retrieval_result.pk1')
 save_object(sampler,'temp_retrieval_result.pk1')
 
 
-pool.close()

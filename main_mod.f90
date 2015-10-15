@@ -109,7 +109,7 @@ contains
     end do
     ! now we want the layer thickness in LENGTH units
     
-    write(*,*) "Test line main L164. mu at layer 6 is: ", patch(1)%atm(6)%mu
+!    write(*,*) "Test line main L164. mu at layer 6 is: ", patch(1)%atm(6)%mu
     
     call layer_thickness(grav)
     
@@ -147,7 +147,7 @@ contains
     
     call cpu_time(linfinish)
     
-    write(*,*) "lines mixed in", (linfinish - linstart), "seconds. moving on to CIA"
+!    write(*,*) "lines mixed in", (linfinish - linstart), "seconds. moving on to CIA"
 
 
     ! now let's get the CIA.  
@@ -210,8 +210,8 @@ contains
 
     ! now let put it all into DISORT
     
-    write(*,*) "TEST: calling RUN_DISORT"
-    write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
+!    write(*,*) "TEST: calling RUN_DISORT"
+!    write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
 
     ! test line
     call cpu_time(distart)
