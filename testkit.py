@@ -2,6 +2,7 @@
 
 """ Module of bits to plug into Brewster """
 import math
+import gc
 import numpy as np
 import scipy as sp
 import forwardmodel
@@ -38,8 +39,8 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     nlayers = press.shape[0]
     # interp temp onto finer grid coarsePress => press
     # spline fit with no smoothing
-    tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
-    temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
+    tfit = sp.interpolate.splrep(coarsePress,intemp,s=0,k=1)
+    temp = np.asfortranarray(sp.interpolate.splev(press,tfit,der=0),dtype='d')
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
@@ -121,6 +122,8 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # Just taking every 3rd point to keep independence
     s2=obspec[2,10::3]**2 + 10.**logf
     lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[1,10::3])**2/s2 + np.log(2.*np.pi*s2))
+
+
     return lnLik
     #chi2 log likelihood--can modify this
     #invsigma2 = 1.0/((obspec[2,::3])**2 + modspec[1,::3]**2 * np.exp(2*lnf))
@@ -153,7 +156,7 @@ def lnprior(theta,obspec):
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-    if ((-9.0 < invmr[0] < 0.) and (-9.0 < invmr[1] < 0.) and (-9.0 < invmr[2] < 0.) and (-9.0 < invmr[3] < 0.) and (-9.0 < invmr[4] < 0.) and ((0.001*np.min(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  (min(T) > 0.0) and (max(T) < 4000) and (gam > 0.) and (-5. < logbeta < 0.)):
+    if ((-9.0 < invmr[0] < 0.) and (-9.0 < invmr[1] < 0.) and (-9.0 < invmr[2] < 0.) and (-9.0 < invmr[3] < 0.) and (-9.0 < invmr[4] < 0.) and ((0.001*np.min(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  (min(T) > 10.0) and (max(T) < 4000) and (gam > 0.) and (-5. < logbeta < 0.)):
     	beta=10.**logbeta
     	alpha=1.0
     	x=gam

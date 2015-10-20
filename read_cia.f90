@@ -10,7 +10,8 @@ subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
 
   !f2py intent(in) filename
   !f2py intent(in) wavenum
-  !f2py intent(out) ciaarray, ciatemps
+  !f2py intent(out) ciaarray
+  !f2py intent(out) ciatemps
   
   character(len=50):: filename
   real,dimension(4,nciatemps,nwave) :: ciaarray

@@ -3,12 +3,14 @@
 """This is Brewster: the golden retriever of smelly atmospheres"""
 
 import multiprocessing
+import time
 import numpy as np
 import scipy as sp
 import emcee
 import testkit
 import ciamod
 import os
+import gc
 import sys
 import cPickle as pickle
 from scipy.io.idl import readsav
@@ -29,12 +31,13 @@ __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
+
 # Bit to fix CPU affinity after numpy import
 
 if __name__ == '__main__':
-
     pool_size = multiprocessing.cpu_count()
     os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
+
 
 
 # set up the model arguments the drop these into theta(state vector) or runargs
@@ -132,28 +135,36 @@ p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10(np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3])))
+p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
 p0[:,6] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
 p0[:,7] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
-p0[:,8] = 500. + ( np.random.rand(nwalkers).reshape(nwalkers) * 1000. )
+p0[:,8] = 200. + ( np.random.rand(nwalkers).reshape(nwalkers) * 100. )
 for i in range (9,8+nprof):
-    p0[:,i] = p0[:,8]
+    p0[:,i] = p0[:,8] + (150.*(i-8))
 
 # Now we set up the MPI bits
-#'''
 pool=MPIPool()
 if not pool.is_master():
 	pool.wait()
-	sys.exit(0)
+	sys.exit()
 
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),pool=pool)
 #'''
 # run the sampler
 print "running the sampler"
 #sampler.run_mcmc(p0, 100)
-
+clock = np.empty(10)
 k=0
-for result in sampler.sample(p0, iterations=20000):
+times = open("runtimes.dat","w")
+times.close()
+for result in sampler.sample(p0, iterations=10):
+    clock[k] = time.clock()
+    if (k > 1):
+        tcycle = clock[k] - clock[k-1]
+        times = open("runtimes.dat","a")
+        times.write("*****TIME FOR CYCLE*****")
+        times.write(str(tcycle))
+        times.close()
     k=k+1
     position = result[0]
     f = open("status_ball.txt", "w")
@@ -166,7 +177,7 @@ for result in sampler.sample(p0, iterations=20000):
     f.write("*****Values****")
     f.write(str(result[0]))
     f.close()
-    if (k==500 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 or k==21000 or k==25000):
+    if (k==100 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 or k==21000 or k==25000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
