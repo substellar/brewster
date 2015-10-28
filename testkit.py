@@ -32,7 +32,7 @@ def rebinspec(wave, specin, wavenew,):
 
 
 
-def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec,logf):
+def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
     # get the ngas
     ngas = invmr.shape[0]
     # Hard code nlayers
@@ -87,7 +87,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
         cloudprof = np.ones_like(cloudrad)
 
     # now we can call the forward model
-    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps)
+    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
 
     # Trim to length where it is defined.
     trimspec =  outspec[:,np.logical_not(np.logical_or(outspec[0,:] > w2, outspec[0,:] < w1))] 
@@ -130,7 +130,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec):
+def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
     invmr = theta[0:5]
     logf = theta[5]
     gam = theta[6]
@@ -142,7 +142,7 @@ def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cl
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec,logf)
+    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
     return lp + lnlike_value
 
 

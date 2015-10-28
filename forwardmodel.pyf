@@ -17,7 +17,7 @@ python module forwardmodel ! in
             integer, parameter,optional :: nwave=9501
             integer, parameter,optional :: nmiewave=180
         end module sizes
-        subroutine marv(w1,w2,temp,logg,r2d2,ingasnum,logvmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec) ! in :forwardmodel:marv.f90
+        subroutine marv(w1,w2,temp,logg,r2d2,ingasnum,logvmr,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec) ! in :forwardmodel:marv.f90
             use main
             use sizes
             double precision intent(in) :: w1
@@ -39,6 +39,7 @@ python module forwardmodel ! in
             double precision dimension(:,:,:,:),intent(inout) :: inlinelist
             real dimension(4,198,9501),intent(inout) :: cia
             real dimension(198),intent(inout) :: ciatemps
+            integer :: use_disort
             double precision dimension(2,9501),intent(out) :: out_spec
         end subroutine marv
     end interface 

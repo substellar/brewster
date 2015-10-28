@@ -5,7 +5,7 @@ module main
 contains 
   subroutine forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,out_spec)
+       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,out_spec)
     
     use sizes
     use common_arrays
@@ -15,7 +15,7 @@ contains
     use gas_mixing
     use cia_arg
     use clouds
-    use setup_disort
+    use setup_RT
     
     implicit none
     
@@ -45,11 +45,15 @@ contains
     real:: metal,grav,test
     double precision,dimension(nwave) :: wdiff
     ! counters
-    integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2
+    integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish
+    logical :: disorting
+
     
-    
+
+    ! Are we using DISORT
+    disorting = use_disort
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
@@ -91,7 +95,6 @@ contains
     
     
     ! now H2 and He fractions and mu for each layer
-    
     do ilayer = 1, nlayers
        
        fboth = 1.0 - sum(patch(1)%atm(ilayer)%gas%VMR)
@@ -117,7 +120,7 @@ contains
     ! number density in /m3:
     ! pressure is in mbar... so x100 to get N/m2
     
-    patch(1)%atm%ndens = 100 * patch(1)%atm%press  / (K_BOLTZ * patch(1)%atm%temp)
+    patch(1)%atm%ndens = 100. * patch(1)%atm%press  / (K_BOLTZ * patch(1)%atm%temp)
     
       ! zero all the opacities
     do ipatch = 1, npatch
@@ -139,7 +142,6 @@ contains
     
     call cpu_time(opstart)
     call cpu_time(linstart)
-
     ! now mix the gases in each layer to get optical depth from lines
     do ilayer = 1, nlayers
        call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
@@ -148,7 +150,6 @@ contains
     call cpu_time(linfinish)
     
 !    write(*,*) "lines mixed in", (linfinish - linstart), "seconds. moving on to CIA"
-
 
     ! now let's get the CIA.  
     call get_cia(cia,ciatemp,grav,ch4index)
@@ -164,7 +165,6 @@ contains
     end if
     
     ! now put in the cloud details
-    
     do ipatch = 1, npatch
        
        
@@ -215,8 +215,7 @@ contains
 
     ! test line
     call cpu_time(distart)
-    
-    call run_disort(out_spec(2,:),nw1,nw2)
+    call run_RT(out_spec(2,:),nw1,nw2,disorting)
 
     out_spec(1,:) = wavelen
 
@@ -233,7 +232,7 @@ contains
     
     write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
     
-    write(*,*) "DISORT took : ", (difinish - distart), " seconds"
+    write(*,*) "RT took : ", (difinish - distart), " seconds"
 
 !    deallocate(linelist)
     

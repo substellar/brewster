@@ -18,13 +18,13 @@ FC = gfortran
 # flags for debugging or for maximum performance, comment as necessary
 
 # Debug version
-#FCFLAGS =  -g -fbounds-check -fbacktrace -Og  -fdefault-real-8 -fdefault-double-8 -frecord-marker=4
-#F77FLAGS = -frecord-marker=4 -g -Og -fbounds-check -fbacktrace -std=legacy -fdefault-double-8 -fdefault-real-8  
+#FCFLAGS =  -fPIC -fbounds-check -fbacktrace -Og -frecord-marker=4
+#F77FLAGS = -frecord-marker=4 -fPIC -Og -fbounds-check -fbacktrace -fdefault-double-8 -fdefault-real-8 -std=legacy
 
 
 # Run version
-FCFLAGS = -O3 -fPIC -m64
-F77FLAGS = -O3 -fPIC -fdefault-real-8 -std=legacy -m64
+FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check
+F77FLAGS = -O3 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
 
 # Intel compiler version
 # FCFLAGS = -O3 -fPIC
@@ -57,17 +57,18 @@ atmos_ops_mod.o: sizes_mod.o common_arrays_mod.o phys_const_mod.o define_types_m
 gas_mixing_mod.o: sizes_mod.o  common_arrays_mod.o phys_const_mod.o define_types_mod.o
 cia_arg_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 clouds_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o  
-setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
+setup_RT_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o dsolver.o gfluxi.o 
 
-main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
+main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o dtridgl.o dsolver.o gfluxi.o setup_RT_mod.o 
 
-marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
+marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o dtridgl.o dsolver.o gfluxi.o  setup_RT_mod.o  main_mod.o
 
 
 
 
 
 # ======================================================================
+
 # And now the general rules, these should not require modification
 # ======================================================================
 
@@ -99,21 +100,21 @@ f90wrap:
 
 
 libfile:
-	$(FC) -fPIC -shared -O3 -m64 *.o -o libmarvin.so
+	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
 #	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
 
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
-	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 #	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
-	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 #	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 # Utility targets

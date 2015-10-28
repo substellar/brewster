@@ -12,7 +12,7 @@ import ciamod
 import os
 import gc
 import sys
-import cPickle as pickle
+import pickle
 from scipy.io.idl import readsav
 from scipy import interpolate
 from scipy.interpolate import interp1d
@@ -34,9 +34,9 @@ __status__ = "Development"
 
 # Bit to fix CPU affinity after numpy import
 
-if __name__ == '__main__':
-    pool_size = multiprocessing.cpu_count()
-    os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
+#if __name__ == '__main__':
+#    pool_size = multiprocessing.cpu_count()
+#    os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
 
 
 
@@ -93,9 +93,10 @@ r2d2 = 1.
 logg = 4.5
 dlam = 0.
 w1 = 1.05
-w2 = 2.5
+w2 = 5.0
 pcover = 1.0
 do_clouds = 0
+use_disort = 0 
 # cloudparams is structured array with 5 entries
 # each one has a patch*cloud entries
 cloudparams = np.ones(5)
@@ -125,10 +126,10 @@ fwhm = 0.005
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true'))
 
-runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,fwhm,obspec
+runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 21, 42
+ndim, nwalkers = 21, 48
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
@@ -153,11 +154,11 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),p
 # run the sampler
 print "running the sampler"
 #sampler.run_mcmc(p0, 100)
-clock = np.empty(10)
+clock = np.empty(100)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=10):
+for result in sampler.sample(p0, iterations=100):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -168,7 +169,7 @@ for result in sampler.sample(p0, iterations=10):
     k=k+1
     position = result[0]
     f = open("status_ball.txt", "w")
-    f.write("****Itteration*****")
+    f.write("****Iteration*****")
     f.write(str(k))
     f.write("****Reduced Chi2*****")
     f.write(str(result[1]/((obspec.shape[0] - 10.)/ 3.0) *(-2)))
