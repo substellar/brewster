@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 
 """ Module of bits to plug into Brewster """
-import math
-import gc
+
 import numpy as np
 import scipy as sp
 import forwardmodel
@@ -35,20 +34,22 @@ def rebinspec(wave, specin, wavenew,):
 def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
     # get the ngas
     ngas = invmr.shape[0]
+    # interp temp onto finer grid coarsePress => press
     # Hard code nlayers
     nlayers = press.shape[0]
-    # interp temp onto finer grid coarsePress => press
     # spline fit with no smoothing
-    tfit = sp.interpolate.splrep(coarsePress,intemp,s=0,k=1)
-    temp = np.asfortranarray(sp.interpolate.splev(press,tfit,der=0),dtype='d')
+    # tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
+    # temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
+    # For now we're just using the T profile from Mike's file
+    temp = intemp
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
     if invmr.size > invmr.shape[0]:
         for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(coarsepress,invmr[i,:],s=0)
-            logVMR[i,:] = sp.interpolate.splev(press,vfit,der=0)
+            vfit = sp.interpolate.splrep(inlayer,invmr[i,:],s=0)
+            logVMR[i,:] = sp.interpolate.splev(layer,vfit,der=0)
     else:
         for i in range(0,ngas):
             logVMR[i,:] = invmr[i]
@@ -119,23 +120,19 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
 
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
-    # Just taking every 3rd point to keep independence
+    # Just taking every 3rd point to keep independence, skipping first 10.
     s2=obspec[2,10::3]**2 + 10.**logf
     lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[1,10::3])**2/s2 + np.log(2.*np.pi*s2))
-
-
     return lnLik
     #chi2 log likelihood--can modify this
     #invsigma2 = 1.0/((obspec[2,::3])**2 + modspec[1,::3]**2 * np.exp(2*lnf))
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+
     invmr = theta[0:5]
     logf = theta[5]
-    gam = theta[6]
-    logbeta = theta[7]    
-    intemp = theta[8:]
     
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
@@ -150,18 +147,8 @@ def lnprior(theta,obspec):
     # set up the priors here
     invmr = theta[0:5]
     logf = theta[5]
-    gam = theta[6]
-    logbeta = theta[7]
-    T = theta[8:]
-    diff=np.roll(T,-1)-2.*T+np.roll(T,1)
-    pp=len(T)
-
-    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  (min(T) > 10.0) and (max(T) < 4000) and (gam > 0.) and (-5. < logbeta < 0.)):
-    	beta=10.**logbeta
-    	alpha=1.0
-    	x=gam
-    	invgamma=beta**alpha/math.gamma(alpha)*x**(-alpha-1)*np.exp(-beta/x)
-        return -0.5/gam*np.sum(diff[1:-1]**2)-0.5*pp*np.log(gam)+np.log(invgamma)
+    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2)))):
+        return 0.0
     return -np.inf
 
 

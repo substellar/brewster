@@ -30,6 +30,11 @@
  FCFLAGS = -O3 -fPIC -axCORE-AVX2
  F77FLAGS = -O3 -fPIC -axCORE-AVX2 -autodouble
 
+# intel debug version
+
+# FCFLAGS = -O0 -traceback -CB -fPIC -axCORE-AVX2
+# F77FLAGS = -O0 -traceback -CB -fPIC -axCORE-AVX2 -autodouble
+
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
 
@@ -51,17 +56,19 @@ all: $(PROGRAMS)
 #shiner: main.o
 
 # some dependencies
+
+
 common_arrays_mod.o: sizes_mod.o define_types_mod.o
 define_types_mod.o: sizes_mod.o 
 atmos_ops_mod.o: sizes_mod.o common_arrays_mod.o phys_const_mod.o define_types_mod.o
 gas_mixing_mod.o: sizes_mod.o  common_arrays_mod.o phys_const_mod.o define_types_mod.o
 cia_arg_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o
 clouds_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o  
-setup_disort_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o
+setup_RT_mod.o:sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o bits_for_disort_f77.o DISORT.o dsolver.o gfluxi.o 
 
-main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o 
+main_mod.o: sizes_mod.o common_arrays_mod.o define_types_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o dtridgl.o dsolver.o gfluxi.o setup_RT_mod.o 
 
-marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o setup_disort_mod.o main_mod.o
+marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atmos_ops_mod.o gas_mixing_mod.o cia_arg_mod.o clouds_mod.o RDI1MACH.o LINPAK.o ErrPack.o BDREF.o bits_for_disort_f77.o DISORT.o dtridgl.o dsolver.o gfluxi.o  setup_RT_mod.o  main_mod.o
 
 
 
@@ -100,21 +107,21 @@ f90wrap:
 
 libfile:
 #	$(FC) -fPIC -shared -O3 -m64 *.o -o libmarvin.so
-	$(FC) -fPIC -shared -O3 -axCORE-AVX2 *.o -o libmarvin.so
+	$(FC) -fPIC -shared -O0 -g -axCORE-AVX2 *.o -o libmarvin.so
 
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
-	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=intelem --f90flags="-O0 -g -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
-	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=intelem --f90flags="-O0 -g -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 # Utility targets
 

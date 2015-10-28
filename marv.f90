@@ -1,6 +1,6 @@
 subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
      do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,&
-     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec)
+     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec)
 
   use sizes
   use main
@@ -14,7 +14,7 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: nwave
   !f2py intent(in) logg,R2D2,pcover
   !f2py intent(in) w1,w2,temp,logVMR
-  !f2py intent(in) ingasnum,do_clouds,cloudnum
+  !f2py intent(in) ingasnum,do_clouds,cloudnum,use_disort
   !f2py intent(in) cloudrad,cloudsig,cloudprof
   !f2py intent(in) inwavenum, inlinetemps,inpress
   !f2py intent(inout) cia, ciatemps
@@ -44,7 +44,7 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,dimension(nwave) :: inwavenum
   real,dimension(nlinetemps) :: inlinetemps
   real,dimension(nlayers) :: inpress
-  integer:: maxgas,maxcloud,igas,icloud, idum1, idum2
+  integer:: maxgas,maxcloud,igas,icloud, idum1, idum2,use_disort
 
   open(10,file="gaslist.dat", status='old')
   read(10,*) maxgas
@@ -53,7 +53,6 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
      read(10,"(I4,A8,F9.5)") idum1,gaslist(igas),masslist(igas)
   end do
   close(10)
-
 
   
   do igas = 1, ngas
@@ -81,7 +80,7 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
 
   call forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,out_spec)
+       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec)
 
  
 end subroutine marv
