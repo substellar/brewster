@@ -177,7 +177,9 @@ contains
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
              patch(ipatch)%atm%cloud(icloud)%name = &
                   patch(ipatch)%atm(1)%cloud(icloud)%name
-             patch(ipatch)%atm%cloud(icloud)%density = 10.**(cloudprof(ipatch,:,icloud))
+             ! cloud profile given in units of log(n_cond/n_gas)
+             ! now convert to density
+             patch(ipatch)%atm%cloud(icloud)%density = patch(1)%atm%ndens * 10.**(cloudprof(ipatch,:,icloud))
              patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
              patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              

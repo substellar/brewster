@@ -1,15 +1,16 @@
-#!/bin/sh -f
+#PBS -S /bin/tcsh
 #PBS -N bb_5gas_test
 #PBS -m abe
 #PBS -l nodes=24
 #PBS -l pmem=4gb
-#PBS -l walltime=168:00:00
+#PBS -l walltime=20:00:00
 #PBS -k oe
-#PBS -q main
-export OMP_NUM_THREADS=24
-export PYTHONPATH=/soft/python/lib/python2.7/site-packages/
+#PBS -q car
+source /home/bb/.tcshrc
+setenv OMP_NUM_THREADS 24
+setenv PYTHONPATH /soft/python/lib/python2.7/site-packages/
 
-time_start=`date '+%T%t%d_%h_06'`
+set time_start=`date '+%T%t%d_%h_06'`
   
 echo ------------------------------------------------------
 echo -n 'Job is running on node '; cat $PBS_NODEFILE
@@ -29,12 +30,13 @@ echo ------------------------------------------------------
 module unload mpich2-x86_64
 module load mvapich2
 
-cd /home/bb/retrievals/code
-export PATH=/home/bb/retrievals/code:${PATH}    
+cd /home/bb/retrievals/marks_RT_version
+setenv PATH /home/bb/retrievals/marks_RT_version:${PATH}    
 
-/usr/local/bin/mpiexec -np 24 python brewster.py 
+/usr/local/bin/mpiexec -np 24 python brewster.py > brew_5gtest.log
 
-time_end=`date '+%T%t%d_%h_06'`
+
+set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
 echo Ended at: $time_end
 echo ------------------------------------------------------

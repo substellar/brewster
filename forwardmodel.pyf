@@ -39,7 +39,7 @@ python module forwardmodel ! in
             double precision dimension(:,:,:,:),intent(inout) :: inlinelist
             real dimension(4,198,9501),intent(inout) :: cia
             real dimension(198),intent(inout) :: ciatemps
-            integer :: use_disort
+            integer intent(in) :: use_disort
             double precision dimension(2,9501),intent(out) :: out_spec
         end subroutine marv
     end interface 

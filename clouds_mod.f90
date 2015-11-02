@@ -86,9 +86,9 @@ contains
     scat_cloud = 0.
     ext_cloud = 0.
     cqs_cloud = 0.
-    opd_ext = 1.e-99
-    opd_scat = 1.e-99
-    cos_qscat = 1.e-99
+    opd_ext = 1.d-99
+    opd_scat = 1.d-99
+    cos_qscat = 1.d-99
     
     do ilayer =1, nlayers
        do icloud = 1, nclouds
@@ -121,8 +121,8 @@ contains
              norm = (column(ilayer)%cloud(icloud)%density * column(ilayer)%dz  * 10.**(-4)) / norm
              
              
-             ! now loop over radius and fill up wavelength dependent opacity for each
-             ! cloud
+             ! now loop over radius and fill up wavelength dependent opacity for
+             ! each cloud
              do imiewave = 1, nmiewave
                 do irad = 1, nrad
                    
@@ -152,12 +152,13 @@ contains
                 opd_ext(ilayer,imiewave) = opd_ext(ilayer,imiewave) + &
                      ext_cloud(ilayer,imiewave,icloud)
                 cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
-                     cqs_cloud(ilayer,imiewave,icloud)
+                     (cqs_cloud(ilayer,imiewave,icloud) * &
+                     scat_cloud(ilayer,imiewave,icloud))
                 
              end do ! miewave loop
           end if
        end do  ! cloud loop
-       
+       cos_qs = cos_qs / opd_scat
        ! rebin to working resolution (nwave) grid and write to
        
        do iwave= 1 , nwave
@@ -186,13 +187,13 @@ contains
           
           column(ilayer)%gg(iwave) =  (10.**&
                (((log10(cos_qs(ilayer,oldw2)) - log10(cos_qs(ilayer,oldw1))) *intfact) &
-               + log10(cos_qs(ilayer,oldw1)))) / column(ilayer)%opd_scat(iwave)
+               + log10(cos_qs(ilayer,oldw1)))) 
           
-          if (column(ilayer)%opd_scat(iwave) .lt. 1e-50) then
+          if (column(ilayer)%opd_scat(iwave) .lt. 1d-50) then
              column(ilayer)%opd_scat(iwave) = 0.
              column(ilayer)%gg(iwave) = 0.
           end if
-          if (column(ilayer)%opd_ext(iwave) .lt. 1e-50) then
+          if (column(ilayer)%opd_ext(iwave) .lt. 1d-50) then
              column(ilayer)%opd_ext(iwave) = 0.
           end if
           
@@ -202,10 +203,10 @@ contains
     end do  ! layer loop
 
  ! TK test line see what we've got
- write(*,*) "clouds line 187 opd_scat layer ",column(41:42)%opd_scat(300)
- write(*,*) "clouds line 188 opd_ext layer ",column(41:42)%opd_ext(300)
- write(*,*) "clouds line 189 gg layer ",column(41:42)%gg(300)
- 
+ write(*,*) "clouds line 187 opd_scat layer ",column(1:20)%opd_scat(300)
+ write(*,*) "clouds line 188 opd_ext layer ",column(1:20)%opd_ext(300)
+ write(*,*) "clouds line 189 gg layer ",column(1:20)%gg(300)
+
  
  
 end subroutine cloudatlas
