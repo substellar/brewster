@@ -6,7 +6,7 @@ python module forwardmodel ! in
         module sizes ! in :forwardmodel:sizes_mod.f90
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
-            integer, parameter,optional :: nlayers=65
+            integer, parameter,optional :: nlayers=63
             integer, parameter,optional :: ngas=5
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000
@@ -22,19 +22,19 @@ python module forwardmodel ! in
             use sizes
             double precision intent(in) :: w1
             double precision intent(in) :: w2
-            double precision dimension(65),intent(in) :: temp
+            double precision dimension(63),intent(in) :: temp
             real intent(in) :: logg
             real intent(in) :: r2d2
             integer dimension(5),intent(in) :: ingasnum
-            double precision dimension(5,65),intent(in) :: logvmr
+            double precision dimension(5,63),intent(in) :: logvmr
             real dimension(1),intent(in) :: pcover
             integer dimension(1),intent(in) :: do_clouds
             integer dimension(1,1),intent(in) :: cloudnum
-            double precision dimension(1,65,1),intent(in) :: cloudrad
-            double precision dimension(1,65,1),intent(in) :: cloudsig
-            double precision dimension(1,65,1),intent(in) :: cloudprof
+            double precision dimension(1,63,1),intent(in) :: cloudrad
+            double precision dimension(1,63,1),intent(in) :: cloudsig
+            double precision dimension(1,63,1),intent(in) :: cloudprof
             real dimension(43),intent(in) :: inlinetemps
-            real dimension(65),intent(in) :: inpress
+            real dimension(63),intent(in) :: inpress
             double precision dimension(9501),intent(in) :: inwavenum
             double precision dimension(:,:,:,:),intent(inout) :: inlinelist
             real dimension(4,198,9501),intent(inout) :: cia

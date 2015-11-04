@@ -15,10 +15,10 @@ contains
 
     integer, parameter :: nlevel = nlayers+1
     integer, parameter :: MAXCLY = nlayers
-    integer, parameter :: MAXMOM = 16
+    integer, parameter :: MAXMOM = 8
     integer, parameter :: MAXPHI = 3
     integer, parameter :: MAXULV = 1
-    integer, parameter :: MAXUMU = 16
+    integer, parameter :: MAXUMU = 8
 
 
     ! now set up where we want the fluxes.
@@ -70,10 +70,11 @@ contains
     IBCND     = 0        ! boundary conditions, change if Planck is false
     FBEAM     = 0.0      ! parallel beam at the top. 0 for stars
     ! if this is not 0, need to specify umu0 and phi0
+    umu0 = 0.6667
     FISOT     = 0.0      ! not sure, was 1.0 / PI
     LAMBER    = .TRUE.   ! don't care about lower boundary
     ALBEDO = 0.000000001
-    ACCUR = 0.0 
+    ACCUR = 0.01 
     PLANK    = .TRUE.    ! need this to use temperature structure
     TEMIS = 0.0        ! need to give top layer a bit of emissivity 
     
@@ -104,32 +105,30 @@ contains
         ! 6 is Rayleigh+HG
         ! 2 ia just Rayleigh
           do ilayer = 1, nlayers
-           
+
              if (patch(ipatch)%cloudy) then
                 SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
                      patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
                 ! test lines
-                SSALB(ilayer) = 0.0
-                if ((ilayer .gt. 10) .and. (ilayer .lt. 12)) then
-                   SSALB(ilayer) = 0.5
-                   patch(ipatch)%atm(ilayer)%gg(iwave) = 0.0
-                end if
-                call GETMOM(6,patch(ipatch)%atm(ilayer)%gg(iwave),&
-                     NMOM,0.0, PMOM(0:nmom,ilayer))
-                
+                !SSALB(ilayer) = 0.5d0
+                !patch(ipatch)%atm(ilayer)%gg(iwave) = 0.0d0
+                call GETMOM(3,patch(ipatch)%atm(ilayer)%gg(iwave),&
+                     NMOM,0.0, PMOM(0,ilayer))
                 COSBAR(ilayer) = patch(ipatch)%atm(ilayer)%gg(iwave)
-                if (iwave .eq. 4000) then
-                   write(*,*) "SSALB at wn 4000 = ", SSALB(ilayer)," cosbar = ",cosbar(ilayer)
-                end if
              else     
-                CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer) )
+                CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer))
                 SSALB(ilayer) = 0.0
                 COSBAR(ilayer) = 0.0
              end if
+             
+             ! TEST LINE
+             !DTAUC(ilayer) =  patch(ipatch)%atm(ilayer)%dp /1000.
+
           enddo ! layer loop
-          
-          DTAUC = patch(ipatch)%atm%opd_ext(iwave)              
-          
+
+!          write(*,*) sum(dtauc)
+
+         DTAUC = patch(ipatch)%atm%opd_ext(iwave)              
           
           
           
@@ -171,9 +170,9 @@ contains
             upflux(iwave) = FLUP(1) / wint
 
          else
-            call gfluxi(temper,DTAUC,SSALB,COSBAR,WVNMLO,WVNMHI,ALBEDO,gflup,&
+            call gfluxi(temper,DTAUC,SSALB,COSBAR,wavenum(iwave),ALBEDO,gflup,&
                  fdi)
-            upflux(iwave) = gflup(1) / wint
+            upflux(iwave) = gflup(1) !/ wint
          endif
 
           

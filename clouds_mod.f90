@@ -20,7 +20,7 @@ contains
     double precision, dimension(nlayers,nmiewave,nclouds):: scat_cloud,ext_cloud,cqs_cloud
     double precision, dimension(nlayers,nmiewave):: opd_ext,opd_scat, cos_qs
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2
-    double precision :: f1, f2, intfact
+    double precision :: f1, f2, intfact,lintfact
 
 
     ! this will take the clouds and in turn calculate their opacities the layers
@@ -83,11 +83,11 @@ contains
     ! cross sections to get optical depth for this cloud from extinction
     ! and scattering
     ! this is all hacked from calc_optics. Credit to Ackerman & Marley
-    scat_cloud = 0.
-    ext_cloud = 0.
-    cqs_cloud = 0.
-    opd_ext = 1.d-99
-    opd_scat = 1.d-99
+    scat_cloud = 0.d0
+    ext_cloud = 0.d0
+    cqs_cloud = 0.d0
+    opd_ext = 0.d0
+    opd_scat = 0.0
     cos_qscat = 1.d-99
     
     do ilayer =1, nlayers
@@ -130,11 +130,8 @@ contains
                    arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*log(rsig) )
                    arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
                    pir2ndz = norm*PI*rr*arg1*exp( arg2 )
-                   
-                   
-                   
-                   
-                   
+                                      
+                                      
                    scat_cloud(ilayer,imiewave,icloud) =  &
                         scat_cloud(ilayer,imiewave,icloud) + & 
                         qscat(imiewave,irad,icloud)*pir2ndz
@@ -154,11 +151,14 @@ contains
                 cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
                      (cqs_cloud(ilayer,imiewave,icloud) * &
                      scat_cloud(ilayer,imiewave,icloud))
-                
+      
              end do ! miewave loop
           end if
        end do  ! cloud loop
-       cos_qs = cos_qs / opd_scat
+
+       cos_qs(ilayer,:) = cos_qs(ilayer,:) / opd_scat(ilayer,:)
+
+ 
        ! rebin to working resolution (nwave) grid and write to
        
        do iwave= 1 , nwave
@@ -176,6 +176,10 @@ contains
           
           intfact = (log10(wavenum(iwave)) - log10(miewaven(oldw1))) / &
                (log10(miewaven(oldw2)) - log10(miewaven(oldw1)))
+
+          ! gg should be interpolated in linear space - it is always small
+          lintfact =  (wavenum(iwave) - miewaven(oldw1)) / &
+               (miewaven(oldw2) - miewaven(oldw1))
           
           column(ilayer)%opd_ext(iwave) = 10.**&
                (((log10(opd_ext(ilayer,oldw2)) - log10(opd_ext(ilayer,oldw1))) *intfact) &
@@ -185,9 +189,9 @@ contains
                (((log10(opd_scat(ilayer,oldw2)) - log10(opd_scat(ilayer,oldw1))) *intfact) &
                + log10(opd_scat(ilayer,oldw1)))
           
-          column(ilayer)%gg(iwave) =  (10.**&
-               (((log10(cos_qs(ilayer,oldw2)) - log10(cos_qs(ilayer,oldw1))) *intfact) &
-               + log10(cos_qs(ilayer,oldw1)))) 
+          column(ilayer)%gg(iwave) = &
+               ((cos_qs(ilayer,oldw2) - cos_qs(ilayer,oldw1)) *lintfact) &
+               + cos_qs(ilayer,oldw1) 
           
           if (column(ilayer)%opd_scat(iwave) .lt. 1d-50) then
              column(ilayer)%opd_scat(iwave) = 0.

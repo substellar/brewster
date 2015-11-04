@@ -354,7 +354,7 @@ c     .. Parameters ..
 
       INTEGER   MXCLY, MXULV, MXCMU, MXUMU, MXPHI, MI, MI9M2, NNLYRI,
      &          MXSQT
-      PARAMETER ( MXCLY = 81, MXULV = 1, MXCMU = 48, MXUMU = 16,
+      PARAMETER ( MXCLY = 131, MXULV = 1, MXCMU = 48, MXUMU = 16,
      &          MXPHI = 3, MI = MXCMU / 2, MI9M2 = 9*MI - 2,
      &          NNLYRI = MXCMU*MXCLY, MXSQT = 1000 )
 c     ..
@@ -417,8 +417,8 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      REAL      PLKAVG, R1MACH, RATIO
-      EXTERNAL  PLKAVG, R1MACH, RATIO
+      REAL      PLKAVG, D1MACH, RATIO
+      EXTERNAL  PLKAVG, D1MACH, RATIO
 c     ..
 c     .. External Subroutines ..
 
@@ -435,13 +435,13 @@ c     ..
       DATA      PASS1 / .TRUE. /, PRNTU0 / 2*.FALSE. /
 
       DELTAM = .TRUE.
-      CORINT = .TRUE.
+      CORINT = .FALSE.
 
 
       IF( PASS1 ) THEN
 
          PI     = 2.*ASIN( 1.0 )
-         DITHER = 10.*R1MACH( 4 )
+         DITHER = 10.*D1MACH( 4 )
 
 c                            ** Must dither more on high (14-digit)
 c                            ** precision machine
@@ -457,13 +457,13 @@ c                            ** Set input values for self-test.
 c                            ** Be sure SLFTST sets all print flags off.
          COMPAR = .FALSE.
 
-         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
-     &                DUM, DUM, DUM )
+c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR, DUM,
+c     &                DUM, DUM, DUM )
 
       END IF
 
@@ -488,13 +488,13 @@ c                                  ** eigenvalue/vector computation
    30 CONTINUE
 c                                ** Check input dimensions and variables
 
-      CALL CHEKIN( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO,
-     &             WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG,
-     &             NUMU, UMU, NPHI, PHI, IBCND, FBEAM, UMU0,
-     &             PHI0, FISOT, LAMBER, ALBEDO, BTEMP, TTEMP,
-     &             TEMIS, PLANK, ONLYFL, DELTAM, CORINT, ACCUR,
-     &             TAUC, MAXCLY, MAXULV, MAXUMU, MAXPHI, MAXMOM,
-     &             MXCLY, MXULV, MXUMU, MXCMU, MXPHI, MXSQT )
+c      CALL CHEKIN( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO,
+c     &             WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG,
+c     &             NUMU, UMU, NPHI, PHI, IBCND, FBEAM, UMU0,
+c     &             PHI0, FISOT, LAMBER, ALBEDO, BTEMP, TTEMP,
+c     &             TEMIS, PLANK, ONLYFL, DELTAM, CORINT, ACCUR,
+c     &             TAUC, MAXCLY, MAXULV, MAXUMU, MAXPHI, MAXMOM,
+c     &             MXCLY, MXULV, MXUMU, MXCMU, MXPHI, MXSQT )
 
 c                                 ** Zero internal and output arrays
 
@@ -852,13 +852,13 @@ c                                    ** Compare test case results with
 c                                    ** correct answers and abort if bad
          COMPAR = .TRUE.
 
-         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
-     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
-     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
-     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
-     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
-     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
-     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
+c         CALL SLFTST( CORINT, ACCUR, ALBEDO, BTEMP, DELTAM, DTAUC( 1 ),
+c     &                FBEAM, FISOT, IBCND, LAMBER, NLYR, PLANK, NPHI,
+c     &                NUMU, NSTR, NTAU, ONLYFL, PHI( 1 ), PHI0, NMOM,
+c     &                PMOM( 0,1 ), PRNT, PRNTU0, SSALB( 1 ), TEMIS,
+c     &                TEMPER( 0 ), TTEMP, UMU( 1 ), USRANG, USRTAU,
+c     &                UTAU( 1 ), UMU0, WVNMHI, WVNMLO, COMPAR,
+c     &                FLUP( 1 ), RFLDIR( 1 ), RFLDN( 1 ), UU( 1,1,1 ) )
 
          PASS1  = .FALSE.
          GO TO  20
@@ -5447,7 +5447,7 @@ c        VCP      :  Exponential series cutoff points
 c        VMAX     :  Largest allowable argument of EXP function
 c
 c   Called by- DISORT
-c   Calls- R1MACH, ERRMSG
+c   Calls- D1MACH, ERRMSG
 c ----------------------------------------------------------------------
 
 c     .. Parameters ..
@@ -5473,8 +5473,8 @@ c     .. Local Arrays ..
 c     ..
 c     .. External Functions ..
 
-      REAL      R1MACH
-      EXTERNAL  R1MACH
+      REAL      D1MACH
+      EXTERNAL  D1MACH
 c     ..
 c     .. External Subroutines ..
 
@@ -5503,8 +5503,8 @@ c     ..
       IF( PI .EQ. 0.0 ) THEN
 
          PI     = 2.*ASIN( 1.0 )
-         VMAX   = LOG( R1MACH( 2 ) )
-         EPSIL  = R1MACH( 4 )
+         VMAX   = LOG( D1MACH( 2 ) )
+         EPSIL  = D1MACH( 4 )
          SIGDPI = SIGMA / PI
          CONC   = 15. / PI**4
 
@@ -6115,7 +6115,7 @@ c        NOTE:  In Fortran90, built-in functions TINY and HUGE
 c               can replace the R1MACH calls.
 c
 c   Called by- DISORT
-c   Calls- R1MACH
+c   Calls- D1MACH
 c +-------------------------------------------------------------------+
 
 c     .. Scalar Arguments ..
@@ -6129,8 +6129,8 @@ c     .. Local Scalars ..
 c     ..
 c     .. External Functions ..
 
-      REAL      R1MACH
-      EXTERNAL  R1MACH
+      REAL      D1MACH
+      EXTERNAL  D1MACH
 c     ..
 c     .. Intrinsic Functions ..
 
@@ -6148,8 +6148,8 @@ c     ..
 
       IF( PASS1 ) THEN
 
-         TINY   = R1MACH( 1 )
-         HUGE   = R1MACH( 2 )
+         TINY   = D1MACH( 1 )
+         HUGE   = D1MACH( 2 )
          POWMAX = LOG10( HUGE )
          POWMIN = LOG10( TINY )
          PASS1  = .FALSE.

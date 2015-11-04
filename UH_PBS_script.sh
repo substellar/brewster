@@ -1,13 +1,12 @@
 #PBS -S /bin/tcsh
 #PBS -N bb_5gas_test
 #PBS -m abe
-#PBS -l nodes=24
+#PBS -l nodes=12
 #PBS -l pmem=4gb
-#PBS -l walltime=20:00:00
+#PBS -l walltime=02:00:00
 #PBS -k oe
 #PBS -q car
-source /home/bb/.tcshrc
-setenv OMP_NUM_THREADS 24
+setenv OMP_NUM_THREADS  12
 setenv PYTHONPATH /soft/python/lib/python2.7/site-packages/
 
 set time_start=`date '+%T%t%d_%h_06'`
@@ -30,11 +29,12 @@ echo ------------------------------------------------------
 module unload mpich2-x86_64
 module load mvapich2
 
+set NPROCS = `wc -l < $PBS_NODEFILE`
+
 cd /home/bb/retrievals/marks_RT_version
 setenv PATH /home/bb/retrievals/marks_RT_version:${PATH}    
 
-/usr/local/bin/mpiexec -np 24 python brewster.py > brew_5gtest.log
-
+/usr/local/bin/mpiexec -np $NPROCS python brewster_5g.py > brew_5gtest.log 
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

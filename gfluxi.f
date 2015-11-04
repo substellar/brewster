@@ -1,4 +1,4 @@
-      SUBROUTINE GFLUXI(TEMP,TAU,W0,COSBAR,WLO,WHI
+      SUBROUTINE GFLUXI(TEMP,TAU,W0,COSBAR,wavenum
      &     ,RSF,FUP,Fdown)
 
       implicit none
@@ -6,7 +6,7 @@
 c  mean ubar
       DOUBLE PRECISION UBARI
       INTEGER nlayer, nlevel, ngaussi
-      PARAMETER (ngaussi=3, nlayer = 65, nlevel = 66)
+      PARAMETER (ngaussi=8, nlayer = 63, nlevel = 64)
       PARAMETER (UBARI = 0.5d0)
 c  THIS SUBROUTINE TAKES THE OPTICAL CONSTANTS AND BOUNDARY CONDITONS
 C  FOR THE INFRARED FLUX AT ONE WAVELENGTH AND SOLVES FOR THE FLUXES AT
@@ -32,28 +32,28 @@ C  FROM TOP TO BOTTOM. SEE C.P. MCKAY, TGM NOTES.
       DOUBLE PRECISION epp(nlevel)
       DOUBLE PRECISION term, rsf,alphax,bottom,bsurf,btop,emm
       DOUBLE PRECISION EP, obj, pi, tautop, ugauss
-      DOUBLE PRECISION WLO, WHI
+      DOUBLE PRECISION wavenum
       DOUBLE PRECISION TAU(nlayer)
       INTEGER iflag,j,ng 
-      REAL     PLKAVG
-      EXTERNAL PLKAVG
+      double precision BBPLK
+      EXTERNAL BBPLK
       
 c     GAUSS ANGLES AND GAUSS WEIGHTS FOR GAUSSIAN INTEGRATION
 c     MOMENTS (USE FIRST MOMENT VALUES) N=3
 C
-      x = [0.2123405382d0, 0.5905331356d0,0.9114120405d0]
-      w = [0.0698269799d0, 0.2292411064d0, 0.2009319137d0]
+c      x = [0.2123405382d0, 0.5905331356d0,0.9114120405d0]
+c      w = [0.0698269799d0, 0.2292411064d0, 0.2009319137d0]
 C
 C     GAUSS ANGLES AND WEIGHTS FOR GAUSSIAN INTEGRATION MOMENTS
 C     (USE FIRST MOMENT ONLY)  N=8
 C     X = gauss angle
-c        x =  [0.0446339553d0, 0.1443662570d0,
-c     &     0.2868247571d0, 0.4548133152d0, 0.6280678354d0,
-c     &     0.7856915206d0, 0.9086763921d0, 0.9822200849d0]
+       x = [0.0446339553d0, 0.1443662570d0,
+     &     0.2868247571d0, 0.4548133152d0, 0.6280678354d0,
+     &     0.7856915206d0, 0.9086763921d0, 0.9822200849d0]
 C     w = gauss weight
-c     w =  [0.0032951914d0, 0.0178429027d0,
-c     &     0.0454393195d0, 0.0791995995d0, 0.1060473594d0,
-c     &     0.1125057995d0, 0.0911190236d0, 0.0445508044d0]
+       w = [0.0032951914d0, 0.0178429027d0,
+     &     0.0454393195d0, 0.0791995995d0, 0.1060473594d0,
+     &     0.1125057995d0, 0.0911190236d0, 0.0445508044d0]
 c       5 Gauss points for mu integration:
 c     DATA GANGLE /0.0985350858, 0.3045357266, 0.5620251898, 0.8019865821,
 c    &           0.9601901429/
@@ -71,13 +71,13 @@ c    &           0.0967815902/
          LAMDA(J)=ALPHA(J)*(1.d0-W0(J)*COSBAR(J))/UBARI
          GAMA(J)=(1.d0-ALPHA(J))/(1.d0+ALPHA(J))
          term=0.5d0/(1.d0-w0(j)*cosbar(j))
-         B1(J)=(PLKAVG(WLO,WHI,TEMP(J+1)) - 
-     &        PLKAVG(WLO,WHI,TEMP(J))) /(tau(j))
-         B0(J)=PLKAVG(WLO,WHI,TEMP(J))
+         B1(J)=(BBPLK(wavenum,TEMP(J+1)) - 
+     &        BBPLK(wavenum,TEMP(J))) /(tau(j))
+         B0(J)=BBPLK(wavenum,TEMP(J))
          if (tau(j).lt.1e-6) then
             b1(j) = 0.0
-            b0(j) = 0.5d0*(PLKAVG(WLO,WHI,temp(j))
-     &           +PLKAVG(WLO,WHI,temp(j+1)))
+            b0(j) = 0.5d0*(BBPLK(wavenum,temp(j))
+     &           +BBPLK(wavenum,temp(j+1)))
          endif
          cp(j)=b0(j)+b1(j)*tau(j)+b1(j)*term
          cm(j)=b0(j)+b1(j)*tau(j)-b1(j)*term
@@ -111,8 +111,8 @@ c     if (j.eq.25) print *,'es',e1(j),e2(j),e3(j),e4(j)
  8    CONTINUE
       
       TAUTOP=TAU(1)
-      BTOP=(1.d0 - EXP(-TAUTOP/ubari))*PLKAVG(WLO,WHI,TEMP(1))
-      BSURF = PLKAVG( WLO,WHI, TEMP(nlevel)) 
+      BTOP=(1.d0 - EXP(-TAUTOP/ubari))*BBPLK(wavenum,TEMP(1))
+      BSURF = BBPLK( wavenum, TEMP(nlevel)) 
       bottom = (bsurf+b1(nlayer)*ubari)
 c     print *,'bsurf,bottom',bsurf,bottom,pi,b1(nlayer),ubari
       
@@ -157,7 +157,7 @@ c     McKay
         
         fpt(nlevel)=2.d0*pi*(bsurf+b1(nlayer)*ugauss)
         fmt(1)=2.d0*pi*(1.d0 - EXP(-TAUTOP/ugauss))*
-     &       PLKAVG(WLO,WHI,TEMP(1))
+     &       BBPLK(wavenum,TEMP(1))
         do j=1,nlayer
            em(j)=EXP(-LAMDA(J)*tau(j))
            em2(j)=EXP(-tau(j)/ugauss)
@@ -196,4 +196,24 @@ c 60     CONTINUE
       RETURN
       END
       
+
+      double precision function bbplk( waven, T )
+
+      implicit none
+      
+      double precision T, waven, wavelen      
+      double precision C, h, pi, kb
+
+      parameter (c = 299792458.d0 , kb = 1.38064852d-23,
+     &     h = 6.62607004d-34, pi =  3.14159274d0)
+      
+      wavelen = 1.d-6 * (1.0d4 / waven)
+      
+      
+      bbplk = 1.d-6 * ((2.d0*h * c**2) / wavelen**5) /
+     &     (exp(h*c/(wavelen*kb*T)) - 1.d0)
+      
+      
+      return
+      end      
       
