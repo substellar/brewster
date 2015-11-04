@@ -120,7 +120,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
-    s2=obspec[2,10::3]**2 + 10.**logf
+    s2=obspec[2,10::3]**2 #+ 10.**logf
     lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[1,10::3])**2/s2 + np.log(2.*np.pi*s2))
 
 
@@ -132,10 +132,10 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     
 def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
     invmr = theta[0:5]
-    logf = theta[5]
-    gam = theta[6]
-    logbeta = theta[7]    
-    intemp = theta[8:]
+    logf = 0.0 #theta[5]
+    gam = theta[5]
+    logbeta = theta[6]    
+    intemp = theta[7:]
     
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
@@ -149,14 +149,15 @@ def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cl
 def lnprior(theta,obspec):
     # set up the priors here
     invmr = theta[0:5]
-    logf = theta[5]
-    gam = theta[6]
-    logbeta = theta[7]
-    T = theta[8:]
+#    logf = theta[5]
+    gam = theta[5]
+    logbeta = theta[6]
+    T = theta[7:]
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  (min(T) > 10.0) and (max(T) < 4000) and (gam > 0.) and (-5. < logbeta < 0.)):
+    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 4000) and (gam > 0) and (-5. < logbeta < 0)):
+#        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and
     	beta=10.**logbeta
     	alpha=1.0
     	x=gam

@@ -132,19 +132,19 @@ obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 21, 48
+ndim, nwalkers = 20, 192
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
-p0[:,6] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
-p0[:,7] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
-p0[:,8] = 200. + ( np.random.rand(nwalkers).reshape(nwalkers) * 100. )
-for i in range (9,8+nprof):
-    p0[:,i] = p0[:,8] + (150.*(i-8))
+#p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
+p0[:,5] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
+p0[:,6] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
+p0[:,7] = 200. + ( np.random.rand(nwalkers).reshape(nwalkers) * 100. )
+for i in range (8,7+nprof):
+    p0[:,i] = p0[:,7] + (150.*(i-7))
 
 # Now we set up the MPI bits
 pool=MPIPool()
@@ -157,11 +157,11 @@ sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),p
 # run the sampler
 print "running the sampler"
 #sampler.run_mcmc(p0, 100)
-clock = np.empty(100)
+clock = np.empty(20000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=100):
+for result in sampler.sample(p0, iterations=20000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -175,7 +175,7 @@ for result in sampler.sample(p0, iterations=100):
     f.write("****Iteration*****")
     f.write(str(k))
     f.write("****Reduced Chi2*****")
-    f.write(str(result[1]/((obspec.shape[0] - 10.)/ 3.0) *(-2)))
+    f.write(str(result[1]/((obspec.shape[1] - 10.)/ 3.0) *(-2)))
     f.write("****Accept Fraction*****")
     f.write(str(sampler.acceptance_fraction))
     f.write("*****Values****")
