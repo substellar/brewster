@@ -5,6 +5,7 @@
 import numpy as np
 import scipy as sp
 import forwardmodel
+import gc
 from scipy import interpolate
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
@@ -96,6 +97,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # now shift wavelen by delta_lambda
     shiftspec = np.array([trimspec[0,:]+dlam,trimspec[1,:]])
 
+    gc.collect()
  
     # length and interval for later
     wlen = shiftspec.shape[1]
@@ -140,6 +142,7 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,
         return -np.inf
     # else run the likelihood
     lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
+    gc.collect()
     return lp + lnlike_value
 
 

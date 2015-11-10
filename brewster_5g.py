@@ -9,6 +9,7 @@ import emcee
 import testkit_5g
 import ciamod
 import os
+import gc
 import sys
 import pickle
 from scipy.io.idl import readsav
@@ -28,7 +29,10 @@ __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
 # Bit to fix CPU affinity after numpy import
-
+pool=MPIPool(loadbalance=True)
+if not pool.is_master():
+    pool.wait()
+    sys.exit(0)
 #if __name__ == '__main__':
 
 #    pool_size = multiprocessing.cpu_count()
@@ -130,8 +134,10 @@ obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 runargs = w1,w2,intemp, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
+gc.collect()
+
 # now set up the EMCEE stuff
-ndim, nwalkers = 6, 24
+ndim, nwalkers = 6, 48
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
@@ -142,10 +148,7 @@ p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,1
 
 
 # Now we set up the MPI bits
-pool=MPIPool()
-if not pool.is_master():
-    pool.wait()
-    sys.exit()
+
 sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit_5g.lnprob, args=(runargs), pool=pool)
 # run the sampler
 print "running the sampler"
@@ -153,7 +156,7 @@ clock = np.empty(15000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=15000):
+for result in sampler.sample(p0, iterations=15):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]

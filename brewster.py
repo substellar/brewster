@@ -132,7 +132,7 @@ obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 20, 192
+ndim, nwalkers = 20, 96
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
@@ -161,7 +161,7 @@ clock = np.empty(20000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=20000):
+for result in sampler.sample(p0, iterations=10):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]

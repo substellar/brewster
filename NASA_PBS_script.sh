@@ -1,10 +1,12 @@
 #PBS -S /bin/tcsh
 #PBS -N bb_5g_fulltest
 #PBS -m abe
-#PBS -l select=4:ncpus=24:mpiprocs=24:model=has
-#PBS -l walltime=08:00:00
+#PBS -l select=2:ncpus=24:mpiprocs=24:model=has
+#PBS -l pmem=5gb
+#PBS -l walltime=02:00:00
 #PBS -k oe
-#PBS -q normal
+#PBS -r n
+#PBS -q devel
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
 module load comp-intel/2015.3.187 mpi-mvapich2/2.0/intel python/2.7.10
@@ -13,8 +15,8 @@ source /usr/local/lib/global.cshrc
 
 setenv PATH ${PATH}:/home1/bburning/retrievals/marks_RT_version:/u/scicon/tools/bin
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/marks_RT_version
-setenv OMP_NUM_THREADS 96
-#setenv MPI_BUFS_PER_PROC 1024
+setenv OMP_NUM_THREADS 48
+#setenv MPI_BUFS_PER_PROC 512
 
 
 
@@ -40,7 +42,7 @@ echo ------------------------------------------------------
 cd /home1/bburning/retrievals/marks_RT_version
 
 
-mpiexec -np 96 python brewster.py > brew_fulltest.log
+mpiexec -np 48 python brewster.py > brew_fulltest.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
