@@ -39,16 +39,16 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     nlayers = press.shape[0]
     # interp temp onto finer grid coarsePress => press
     # spline fit with no smoothing
-    tfit = sp.interpolate.splrep(coarsePress,intemp,s=0,k=1)
-    temp = np.asfortranarray(sp.interpolate.splev(press,tfit,der=0),dtype='d')
+    tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
+    temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
     if invmr.size > invmr.shape[0]:
         for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(coarsepress,invmr[i,:],s=0)
-            logVMR[i,:] = sp.interpolate.splev(press,vfit,der=0)
+            vfit = sp.interpolate.splrep(np.log10(coarsepress),invmr[i,:],s=0)
+            logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
     else:
         for i in range(0,ngas):
             logVMR[i,:] = invmr[i]

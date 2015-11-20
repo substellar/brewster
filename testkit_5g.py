@@ -123,7 +123,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence, skipping first 10.
-    s2=obspec[2,10::3]**2 + 10.**logf
+    s2=obspec[2,10::3]**2 #+ 10.**logf
     lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[1,10::3])**2/s2 + np.log(2.*np.pi*s2))
     return lnLik
     #chi2 log likelihood--can modify this
@@ -134,7 +134,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
 def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
 
     invmr = theta[0:5]
-    logf = theta[5]
+    logf = 0.0 #theta[5]
     
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
@@ -149,9 +149,10 @@ def lnprob(theta,w1,w2,intemp, pcover, cloudparams, r2d2, logg, dlam, do_clouds,
 def lnprior(theta,obspec):
     # set up the priors here
     invmr = theta[0:5]
-    logf = theta[5]
-    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2)))):
+#    logf = theta[5]
+    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0)):
         return 0.0
     return -np.inf
 
+#and ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2)))):
 

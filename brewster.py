@@ -127,7 +127,8 @@ fwhm = 0.005
 obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true'))
 
 # NEXT LINE ADDS SYTEMATIC TO SPECTRUM FOR Log F retrieval
-obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
+#obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
+
 
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
@@ -147,7 +148,7 @@ for i in range (8,7+nprof):
     p0[:,i] = p0[:,7] + (150.*(i-7))
 
 # Now we set up the MPI bits
-pool=MPIPool()
+pool=MPIPool(loadbalance=True)
 if not pool.is_master():
 	pool.wait()
 	sys.exit()

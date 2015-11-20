@@ -1,6 +1,5 @@
-      SUBROUTINE GFLUXI(TEMP,TAU,W0,COSBAR,WLO,WHI
+      SUBROUTINE GFLUXI(TEMP,TAU,W0,COSBAR,wavenum
      &     ,RSF,FUP,Fdown)
-
       implicit none
 
 c  mean ubar
@@ -32,12 +31,12 @@ C  FROM TOP TO BOTTOM. SEE C.P. MCKAY, TGM NOTES.
       DOUBLE PRECISION epp(nlevel)
       DOUBLE PRECISION term, rsf,alphax,bottom,bsurf,btop,emm
       DOUBLE PRECISION EP, obj, pi, tautop, ugauss
-      DOUBLE PRECISION WLO, WHI
+      DOUBLE PRECISION wavenum
       DOUBLE PRECISION TAU(nlayer)
       INTEGER iflag,j,ng 
-      REAL     PLKAVG
-      EXTERNAL PLKAVG
-      
+      double precision BBPLK
+      EXTERNAL BBPLK
+
 c     GAUSS ANGLES AND GAUSS WEIGHTS FOR GAUSSIAN INTEGRATION
 c     MOMENTS (USE FIRST MOMENT VALUES) N=3
 C
@@ -67,17 +66,17 @@ c    &           0.0967815902/
       end do
       
       DO 20 J=1,NLAYER
-         ALPHA(J)=DSQRT( (1.d0-W0(J))/(1.d0-W0(J)*COSBAR(J)) )
+         ALPHA(J)=DSQRT( (1.d0-W0(J))/(1.d0-W0(J)*COSBAR(J)) 
          LAMDA(J)=ALPHA(J)*(1.d0-W0(J)*COSBAR(J))/UBARI
          GAMA(J)=(1.d0-ALPHA(J))/(1.d0+ALPHA(J))
          term=0.5d0/(1.d0-w0(j)*cosbar(j))
-         B1(J)=(PLKAVG(WLO,WHI,TEMP(J+1)) - 
-     &        PLKAVG(WLO,WHI,TEMP(J))) /(tau(j))
-         B0(J)=PLKAVG(WLO,WHI,TEMP(J))
+         B1(J)=(BBPLK(wavenum,TEMP(J+1)) - 
+     &        BBPLK(wavenum,TEMP(J))) /(tau(j))
+         B0(J)=BBPLK(wavenum,TEMP(J))
          if (tau(j).lt.1e-6) then
             b1(j) = 0.0
-            b0(j) = 0.5d0*(PLKAVG(WLO,WHI,temp(j))
-     &           +PLKAVG(WLO,WHI,temp(j+1)))
+            b0(j) = 0.5d0*(BBPLK(wavenum,temp(j))
+     &           +BBPLK(wavenum,temp(j+1)))
          endif
          cp(j)=b0(j)+b1(j)*tau(j)+b1(j)*term
          cm(j)=b0(j)+b1(j)*tau(j)-b1(j)*term
@@ -111,8 +110,8 @@ c     if (j.eq.25) print *,'es',e1(j),e2(j),e3(j),e4(j)
  8    CONTINUE
       
       TAUTOP=TAU(1)
-      BTOP=(1.d0 - EXP(-TAUTOP/ubari))*PLKAVG(WLO,WHI,TEMP(1))
-      BSURF = PLKAVG( WLO,WHI, TEMP(nlevel)) 
+      BTOP=(1.d0 - EXP(-TAUTOP/ubari))*BBPLK(wavenum,TEMP(1))
+      BSURF = BBPLK( wavenum, TEMP(nlevel)) 
       bottom = (bsurf+b1(nlayer)*ubari)
 c     print *,'bsurf,bottom',bsurf,bottom,pi,b1(nlayer),ubari
       
@@ -120,7 +119,7 @@ c     print *,'bsurf,bottom',bsurf,bottom,pi,b1(nlayer),ubari
      &     ,E1,E2,E3,E4,BTOP,bottom,RSF,XK1,XK2)
       
 
-      
+     
 C     Loop over the ugauss beginning here
       DO 315 NG = 1,ngaussi
         ugauss = x(ng)
@@ -157,7 +156,7 @@ c     McKay
         
         fpt(nlevel)=2.d0*pi*(bsurf+b1(nlayer)*ugauss)
         fmt(1)=2.d0*pi*(1.d0 - EXP(-TAUTOP/ugauss))*
-     &       PLKAVG(WLO,WHI,TEMP(1))
+     &       BBPLK(wavenum,TEMP(1))
         do j=1,nlayer
            em(j)=EXP(-LAMDA(J)*tau(j))
            em2(j)=EXP(-tau(j)/ugauss)
@@ -195,5 +194,24 @@ c 60     CONTINUE
 
       RETURN
       END
+
+      
+      double precision function bbplk( waven, T )
+      implicit none
+      
+      double precision T, waven, wavelen      
+      double precision C, h, pi, kb
+
+      parameter (c = 299792458.d0 , kb = 1.38064852d-23,
+     &     h = 6.62607004d-34, pi =  3.14159274d0)
+      
+      wavelen = 1.d-6 * (1.0d4 / waven)
       
       
+      bbplk = 1.d-6 * ((2.d0*h * c**2) / wavelen**5) /
+     &     (exp(h*c/(wavelen*kb*T)) - 1.d0)
+      
+      
+      return
+      end     
+

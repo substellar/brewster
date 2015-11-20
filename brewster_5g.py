@@ -33,8 +33,8 @@ pool=MPIPool(loadbalance=True)
 if not pool.is_master():
     pool.wait()
     sys.exit(0)
-#if __name__ == '__main__':
 
+# if __name__ == '__main__':
 #    pool_size = multiprocessing.cpu_count()
 #    os.system('taskset -cp 0-%d %s' % (pool_size, os.getpid()))
 
@@ -130,21 +130,22 @@ fwhm = 0.005
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true'))
 # NEXT LINE ADDS SYTEMATIC TO SPECTRUM FOR Log F retrieval
-obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
+#obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 runargs = w1,w2,intemp, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 gc.collect()
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 6, 48
+ndim, nwalkers = 5, 48
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
 p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
 p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
 p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
-p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
+#p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
+
 
 
 # Now we set up the MPI bits

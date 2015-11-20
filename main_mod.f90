@@ -61,6 +61,7 @@ contains
 !   allocate(linelist(ngas,nlayers,nlinetemps,nwave))
     
     patch(1)%atm%temp = temp
+   
     wavenum = inwavenum
     linetemps = inlinetemps
     press = inpress
@@ -69,6 +70,11 @@ contains
 !    deallocate(inlinelist) 
     call set_pressure_scale
 
+    ! TEST LINE - set artificial temp profile
+    !patch(1)%atm%temp = 300. + (((patch(1)%atm%press/1000.) / 0.1)**1.1)
+
+
+    
     ch4index=0
     do igas = 1, ngas
        
@@ -177,7 +183,10 @@ contains
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
              patch(ipatch)%atm%cloud(icloud)%name = &
                   patch(ipatch)%atm(1)%cloud(icloud)%name
-             patch(ipatch)%atm%cloud(icloud)%density = 10.**(cloudprof(ipatch,:,icloud))
+             ! cloud profile given in units of log(n_cond/n_gas)
+             ! now convert to density
+             patch(ipatch)%atm%cloud(icloud)%density = &
+                  patch(1)%atm%ndens * (10.**cloudprof(ipatch,:,icloud))
              patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
              patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              
