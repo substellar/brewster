@@ -66,7 +66,7 @@ c    &           0.0967815902/
       end do
       
       DO 20 J=1,NLAYER
-         ALPHA(J)=DSQRT( (1.d0-W0(J))/(1.d0-W0(J)*COSBAR(J)) 
+         ALPHA(J)=DSQRT( (1.d0-W0(J))/(1.d0-W0(J)*COSBAR(J)))
          LAMDA(J)=ALPHA(J)*(1.d0-W0(J)*COSBAR(J))/UBARI
          GAMA(J)=(1.d0-ALPHA(J))/(1.d0+ALPHA(J))
          term=0.5d0/(1.d0-w0(j)*cosbar(j))
