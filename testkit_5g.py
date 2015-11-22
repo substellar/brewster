@@ -9,8 +9,8 @@ import gc
 from scipy import interpolate
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
-from pysynphot import observation
-from pysynphot import spectrum
+#from pysynphot import observation
+#from pysynphot import spectrum
 
 __author__ = "Ben Burningham"
 __copyright__ = "Copyright 2015 - Ben Burningham"
@@ -21,14 +21,6 @@ __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
-
-def rebinspec(wave, specin, wavenew,):
-    spec = spectrum.ArraySourceSpectrum(wave=wave, flux=specin)
-    f = np.ones(len(wave))
-    filt = spectrum.ArraySpectralElement(wave, f, waveunits='microns')
-    obs = observation.Observation(spec, filt, binset=wavenew, force='taper')
- 
-    return obs.binflux
 
 
 
@@ -112,19 +104,18 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # now get the kernel and convolve
     gauss = Gaussian1DKernel(gwidth)
     cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
-    spec = np.array([shiftspec[0,:],cspec])
+    spec = np.array([shiftspec[0,::-1],cspec[::-1]])
     
     # rebin to observed dispersion
+    wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
+    modspec = sp.interpolate.splev(obspec[0,:],wfit,der=0)
 
-    oblen = obspec.shape[1]
-    modspec = np.empty((2,oblen),dtype='d')
-    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
 
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence, skipping first 10.
     s2=obspec[2,10::3]**2 #+ 10.**logf
-    lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[1,10::3])**2/s2 + np.log(2.*np.pi*s2))
+    lnLik=-0.5*np.sum((((obspec[1,10::3] - modspec[10::3])**2) / s2) + np.log(2.*np.pi*s2))
     return lnLik
     #chi2 log likelihood--can modify this
     #invsigma2 = 1.0/((obspec[2,::3])**2 + modspec[1,::3]**2 * np.exp(2*lnf))

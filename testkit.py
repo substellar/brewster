@@ -109,7 +109,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # now get the kernel and convolve
     gauss = Gaussian1DKernel(gwidth)
     cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
-    spec = np.array([shiftspec[0,:],cspec])
+    spec = np.array([shiftspec[0,::-1],cspec[::-1]])
     
     # rebin to observed dispersion
     wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
@@ -124,7 +124,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
     s2=obspec[2,10::3]**2 #+ 10.**logf
-    lnLik=-0.5*np.sum((obspec[1,10::3] - modspec[10::3])**2/s2 + np.log(2.*np.pi*s2))
+    lnLik=-0.5*np.sum((((obspec[1,10::3] - modspec[10::3])**2) / s2) + np.log(2.*np.pi*s2))
 
 
     return lnLik

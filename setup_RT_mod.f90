@@ -131,34 +131,36 @@ contains
          DTAUC = patch(ipatch)%atm%opd_ext(iwave)              
           
           
-          
-          ! set up wavenumber interval....
-          
-          
-          if (iwave .eq. 1) then 
-             WVNMLO = wavenum(1) - 0.5*(wavenum(2) - wavenum(1))
-             WVNMHI =  wavenum(1) + 0.5*(wavenum(2) - wavenum(1))
-          else if (iwave .eq. nwave) then
-             WVNMLO = wavenum(nwave) - 0.5*(wavenum(nwave) - wavenum(nwave-1))
-             WVNMHI =  wavenum(nwave) + 0.5*(wavenum(nwave) - wavenum(nwave-1))
-          else
-             WVNMLO = wavenum(iwave) - 0.5*(wavenum(iwave) - wavenum(iwave-1))
-             WVNMHI = wavenum(iwave) + 0.5*(wavenum(iwave+1) -wavenum(iwave))
-          end if
-          
-          ! set top and bottom boundary temperatures
-          BTEMP = temper(nlayers+1)
-          TTEMP = temper(1)
-          
-          ! convert to flux density W/m2/um
-          ! need interval in um not cm^-1
-          wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
 
 
 
           
           
          if (disorting) then 
+
+                      
+          ! set up wavenumber interval....
+          
+          
+            if (iwave .eq. 1) then 
+               WVNMLO = wavenum(1) - 0.5*(wavenum(2) - wavenum(1))
+               WVNMHI =  wavenum(1) + 0.5*(wavenum(2) - wavenum(1))
+            else if (iwave .eq. nwave) then
+               WVNMLO = wavenum(nwave) - 0.5*(wavenum(nwave) - wavenum(nwave-1))
+               WVNMHI =  wavenum(nwave) + 0.5*(wavenum(nwave) - wavenum(nwave-1))
+            else
+               WVNMLO = wavenum(iwave) - 0.5*(wavenum(iwave) - wavenum(iwave-1))
+               WVNMHI = wavenum(iwave) + 0.5*(wavenum(iwave+1) -wavenum(iwave))
+            end if
+            
+            ! set top and bottom boundary temperatures
+            BTEMP = temper(nlayers+1)
+            TTEMP = temper(1)
+            
+            ! convert to flux density W/m2/um
+            ! need interval in um not cm^-1
+            wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
+
             call DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO, &
                  WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU, &
                  UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0, &

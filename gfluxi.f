@@ -211,7 +211,6 @@ c 60     CONTINUE
       bbplk = 1.d-6 * ((2.d0*h * c**2) / wavelen**5) /
      &     (exp(h*c/(wavelen*kb*T)) - 1.d0)
       
-      
       return
       end     
 

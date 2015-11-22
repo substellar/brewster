@@ -29,10 +29,6 @@ __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
 # Bit to fix CPU affinity after numpy import
-pool=MPIPool(loadbalance=True)
-if not pool.is_master():
-    pool.wait()
-    sys.exit(0)
 
 # if __name__ == '__main__':
 #    pool_size = multiprocessing.cpu_count()
@@ -72,11 +68,11 @@ intemp = temp
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 5
 gasnum = np.asfortranarray(np.array([1,2,20,4,5],dtype='i'))
-lists = ["../Linelists/xsecarrH2O_1wno_500_10000.save","../Linelists/xsecarrCH4_1wno_500_10000.save","../Linelists/xsecarrK_new_1wno_500_10000_02.save","../Linelists/xsecarrCO_1wno_500_10000_02.save","../Linelists/xsecarrCO2_1wno_500_10000_02.save" ]
+lists = ["/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCH4_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrK_new_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO2_1wno_500_10000_02.save" ]
 
 # get the basic framework from water list.
 # Pressure is in bars for Mike's list, we use mbar...
-x=readsav('../Linelists/xsecarrH2O_1wno_500_10000.save')
+x=readsav('/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save')
 inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
 inlinetemps=np.asfortranarray(x.t,dtype='float64')
 inpress=1000. * x.p
@@ -92,6 +88,7 @@ for gas in range (0,ngas):
         for j in range (0,nwave):
             pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
             linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(finePress)))
+linelist[np.isnan(linelist)] = -50.0
 
 r2d2 = 1.
 logg = 4.5
@@ -149,25 +146,29 @@ p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
 
 
 # Now we set up the MPI bits
+pool=MPIPool(loadbalance=True)
+if not pool.is_master():
+    pool.wait()
+    sys.exit()
 
 sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit_5g.lnprob, args=(runargs), pool=pool)
 # run the sampler
 print "running the sampler"
 clock = np.empty(15000)
 k=0
-times = open("runtimes.dat","w")
+times = open("runtimes_5g.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=15):
+for result in sampler.sample(p0, iterations=15000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
-        times = open("runtimes.dat","a")
+        times = open("runtimes_5g.dat","a")
         times.write("*****TIME FOR CYCLE*****")
         times.write(str(tcycle))
         times.close()
     k=k+1
     position = result[0]
-    f = open("status_ball.txt", "w")
+    f = open("status_ball_5g.txt", "w")
     f.write("****Itteration*****")
     f.write(str(k))
     f.write("****Reduced Chi2*****")
@@ -189,8 +190,8 @@ for result in sampler.sample(p0, iterations=15):
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("MCMC.pic","wb"))
-pickle.dump(chain[:,-1,:], open('MCMC_last.pic','wb'))
+pickle.dump(output,open("/nobackup/bburning/MCMC_5g.pic","wb"))
+pickle.dump(chain[:,-1,:], open('/nobackup/bburning/MCMC_last_5g.pic','wb'))
 
 
 
@@ -202,6 +203,7 @@ def save_object(obj, filename):
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
 save_object(sampler,'5gas_retrieval_result.pk1')
+save_object(sampler,'/nobackup/bburning/5gas_retrieval_result.pk1')
 
 
 

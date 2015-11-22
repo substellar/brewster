@@ -1,11 +1,11 @@
 #PBS -S /bin/tcsh
-#PBS -N bb_5g_fulltest
+#PBS -N bb_nugget
 #PBS -m abe
-#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+4:ncpus=20:mpiprocs=20:model=has
-#PBS -l walltime=12:00:00
+#PBS -l select=1:ncpus=24:mpiprocs=24:model=has
+#PBS -l walltime=02:00:00
 #PBS -k oe
 #PBS -r n
-#PBS -q long
+#PBS -q devel
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
@@ -43,7 +43,7 @@ cd /home1/bburning/retrievals/marks_RT_version
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 81 python brewster.py > brew_fulltest.log
+mpiexec -machinefile $PBS_NODEFILE -np 24 python mcnuggets.py > nugget.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

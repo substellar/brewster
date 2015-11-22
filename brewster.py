@@ -50,21 +50,6 @@ finePress = 1000.* pow(10,logfinePress)
 # forward model wants pressure in mbar
 press = finePress
 nprof = coarsePress.size
-# This bit is all to cover reading in Mike's profile - we don't need this.
-#array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
-#leveltemp = array[0]
-#levelpress = array[1]
-#mikespec = np.array([array[2],array[3]],dtype='f')
-#mikespec[0] = 10000.0 / mikespec[0]
-#mikepress = np.empty(levelpress.size - 1,dtype='float64')
-#miketemp = np.empty(leveltemp.size -1, dtype='float64')
-#for i in range(0,mikepress.size):
-#    mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
-#mtfit = interp1d(np.log10(levelpress),leveltemp)
-#miketemp = mtfit(np.log10(mikepress))
-#tfit = interp1d(np.log10(mikepress),miketemp,bounds_error=False,fill_value=miketemp[miketemp.size-1])
-#temp = tfit(np.log10(finePress))
-#intemp = temp
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
@@ -89,6 +74,7 @@ for gas in range (0,ngas):
             pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
             linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(finePress)))
 
+linelist[np.isnan(linelist)] = -50.0
 r2d2 = 1.
 logg = 4.5
 dlam = 0.
@@ -133,13 +119,13 @@ obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 20, 96
+ndim, nwalkers = 20, 160
 p0 = np.empty([nwalkers,ndim])
-p0[:,0] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
-p0[:,1] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 3.0
-p0[:,2] = -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.5
-p0[:,3] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.0
-p0[:,4] =  -1.* np.random.rand(nwalkers).reshape(nwalkers) - 7.2
+p0[:,0] = -2.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
+p0[:,1] = -2.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
+p0[:,2] = -2.* np.random.rand(nwalkers).reshape(nwalkers) - 8.0
+p0[:,3] =  -2.* np.random.rand(nwalkers).reshape(nwalkers) - 8.0
+p0[:,4] =  -2.* np.random.rand(nwalkers).reshape(nwalkers) - 8.0
 #p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
 p0[:,5] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
 p0[:,6] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
@@ -162,7 +148,7 @@ clock = np.empty(20000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=10):
+for result in sampler.sample(p0, iterations=20000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
