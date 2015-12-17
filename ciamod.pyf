@@ -6,7 +6,7 @@ python module ciamod ! in
         module sizes ! in :ciamod:sizes_mod.f90
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
-            integer, parameter,optional :: nlayers=65
+            integer, parameter,optional :: nlayers=80
             integer, parameter,optional :: ngas=5
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000

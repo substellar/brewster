@@ -27,25 +27,21 @@ __status__ = "Development"
 def teff(theta,runargs):
     
     invmr = theta[0:5]
-    intemp = theta[6:]
-    w1,w2,pcover, cloudparams, r2d2,logg, \
+    w1,w2,intemp,pcover, cloudparams, r2d2,logg, \
         dlam, do_clouds,gasnum,cloudnum,inlinetemps,\
         coarsePress,press,inwavenum,linelist,cia,ciatemps,\
         use_disort = runargs
-
-
-    # interp temp onto finer grid coarsePress => press
-    # spline fit with max smoothing
-    tfit = sp.interpolate.splrep(np.log10(coarsePress),np.log10(intemp),s=10)
-    temp = 10.**(np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d'))
-
 
     # get the ngas
     ngas = invmr.shape[0]
     # interp temp onto finer grid coarsePress => press
     # Hard code nlayers
     nlayers = press.shape[0]
- 
+    # spline fit with no smoothing
+    # tfit = sp.interpolate.splrep(coarsePress,intemp,s=0)
+    # temp = np.asfortranarray(sp.interpolate.splev(press,tfit, der=0),dtype='f')
+    # For now we're just using the T profile from Mike's file
+    temp = intemp
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
@@ -115,16 +111,16 @@ def teff(theta,runargs):
 
 # how many samples are we using?
 
-with open('temp_retrieval_result.pk1', 'rb') as input:
+with open('5gas_retrieval_result.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
-ndim = sampler.chain.shape[2]
-samples = sampler.chain[:,15000:,:].reshape((-1, ndim))
+
+samples = sampler.chain[:,12000:,0:5].reshape((-1, 5))
 
 slen = samples.shape[0]
-samplus = np.zeros([slen,ndim+1])
+samplus = np.empty([slen,6])
 
-samplus[:,0:ndim] = samples
+samplus[:,0:5] = samples
 
 
 # set up run arguments
@@ -140,11 +136,27 @@ use_disort = 0
 
 
 # set up pressure grids
-logcoarsePress = np.arange(-4.0, 3.0, 0.5)
+logcoarsePress = np.arange(-4.0, 2.5, 0.5)
 coarsePress = 1000.* pow(10,logcoarsePress)
-logfinePress = np.arange(-4.0, 2.4, 0.08)
+logfinePress = np.arange(-4.0, 2.5, 0.1)
 finePress = 1000.* pow(10,logfinePress)
+
+array = pickle.load(open("test_H2H2_H2He_CIA_H2O.pic", "rb")) 
+leveltemp = array[0]
+# Put pressure in mbar
+levelpress = 1000. * array[1]
+mikespec = np.array([array[2],array[3]],dtype='f')
+mikespec[0] = 10000.0 / mikespec[0]
+mikepress = np.empty(levelpress.size - 1,dtype='float64')
+miketemp = np.empty(leveltemp.size -1, dtype='float64')
+for i in range(0,mikepress.size):
+    mikepress[i] = np.sqrt(levelpress[i] * levelpress[i+1])
+mtfit = interp1d(np.log10(levelpress),leveltemp)
+miketemp = mtfit(np.log10(mikepress))
+tfit = interp1d(np.log10(mikepress),miketemp,bounds_error=False,fill_value=miketemp[miketemp.size-1])
+temp = tfit(np.log10(finePress))
 press = finePress
+intemp = temp
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
@@ -196,7 +208,7 @@ cia = np.asfortranarray(cia, dtype='float32')
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
 
-runargs = w1,w2,pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort
+runargs = w1,w2,intemp, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort
 
 # set up parallel bits
 
@@ -228,16 +240,16 @@ jobs = COMM.scatter(jobs, root=0)
 # exchanged over MPI.
 results = []
 for job in jobs:
-    results.append(teff(samplus[job,0:19],runargs))
+    results.append(teff(samplus[job,0:5],runargs))
 
 # Gather results on rank 0.
 results = MPI.COMM_WORLD.gather(results, root=0)
 
 if COMM.rank == 0:
     # Flatten list of lists.
-    results = [_i for tmp in results for _i in tmp]
+    results = [_i for temp in results for _i in temp]
 
-samplus[:,19] = results
+samplus[:,5] = results
 
 # WE WANT TO PARALLELIZE THIS BIT!!
 #for i in range(0, nsamp):
@@ -249,5 +261,5 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'temp_postproductchain.pk1')
+save_object(samplus,'5gas_postproductchain.pk1')
 
