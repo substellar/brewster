@@ -2,10 +2,10 @@
 #PBS -N bb_5g_fulltest
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mpiprocs=1:model=has+4:ncpus=20:mpiprocs=20:model=has
-#PBS -l walltime=12:00:00
+#PBS -l walltime=08:00:00
 #PBS -k oe
 #PBS -r n
-#PBS -q long
+#PBS -q normal
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10

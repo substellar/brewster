@@ -43,9 +43,10 @@ __status__ = "Development"
 # set up the model arguments the drop these into theta(state vector) or runargs
 
 # set up pressure grids in bar cos its intuitive
-logcoarsePress = np.arange(-4.0, 2.5, 0.5)
+logcoarsePress = np.arange(-4.0, 2.5, 0.53)
+#logcoarsePress = np.arange(-4.0, 3.0, 0.5)
 coarsePress = 1000.* pow(10,logcoarsePress)
-logfinePress = np.arange(-4.0, 2.5, 0.1)
+logfinePress = np.arange(-4.0, 2.4, 0.08)
 finePress = 1000.* pow(10,logfinePress)
 # forward model wants pressure in mbar
 press = finePress
@@ -76,10 +77,10 @@ for gas in range (0,ngas):
 
 linelist[np.isnan(linelist)] = -50.0
 r2d2 = 1.
-logg = 4.5
+logg = 5.0
 dlam = 0.
-w1 = 1.05
-w2 = 5.0
+w1 = 1.0
+w2 = 6.0
 pcover = 1.0
 do_clouds = 0
 use_disort = 0 
@@ -119,7 +120,7 @@ obspec = np.asfortranarray(np.loadtxt("5gas_spectrum.dat",dtype='d',unpack='true
 runargs = w1,w2, pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = 20, 160
+ndim, nwalkers = (nprof + ngas + 1), 160
 p0 = np.empty([nwalkers,ndim])
 p0[:,0] = -2.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
 p0[:,1] = -2.* np.random.rand(nwalkers).reshape(nwalkers) - 3.5
@@ -128,11 +129,12 @@ p0[:,3] =  -2.* np.random.rand(nwalkers).reshape(nwalkers) - 8.0
 p0[:,4] =  -2.* np.random.rand(nwalkers).reshape(nwalkers) - 8.0
 #p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (min(obspec[2,10::3]**2)*(0.1 - 0.001))) + (0.001*min(obspec[2,10::3]**2)))
 p0[:,5] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
-p0[:,6] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
-p0[:,7] = 200. + ( np.random.rand(nwalkers).reshape(nwalkers) * 100. )
-for i in range (8,7+nprof):
-    p0[:,i] = p0[:,7] + (150.*(i-7))
-
+#p0[:,6] = (-2. *  np.random.rand(nwalkers).reshape(nwalkers)) - 2.
+#p0[:,6] = 200. + ( np.random.rand(nwalkers).reshape(nwalkers) * 100. )
+for i in range (6,5+nprof):
+    #p0[:,i] = p0[:,6] + (150.*(i-6))
+    p0[:,i] = (250.+(200.* np.random.rand(nwalkers).reshape(nwalkers))) + ((coarsePress[i-6]/100.)**1.1)
+p0[:,18] = 3000. + 200 * np.random.rand(nwalkers).reshape(nwalkers)
 # Now we set up the MPI bits
 pool=MPIPool(loadbalance=True)
 if not pool.is_master():

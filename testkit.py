@@ -38,7 +38,7 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # Hard code nlayers
     nlayers = press.shape[0]
     # interp temp onto finer grid coarsePress => press
-    # spline fit with no smoothing
+    # spline fit with max smoothing
     tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
     temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
     # now loop through gases and get VMR for model
@@ -123,8 +123,8 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
-    s2=obspec[2,10::3]**2 #+ 10.**logf
-    lnLik=-0.5*np.sum((((obspec[1,10::3] - modspec[10::3])**2) / s2) + np.log(2.*np.pi*s2))
+    s2=obspec[2,5::3]**2 #+ 10.**logf
+    lnLik=-0.5*np.sum((((obspec[1,5::3] - modspec[5::3])**2) / s2) + np.log(2.*np.pi*s2))
 
 
     return lnLik
@@ -137,8 +137,8 @@ def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cl
     invmr = theta[0:5]
     logf = 0.0 #theta[5]
     gam = theta[5]
-    logbeta = theta[6]    
-    intemp = theta[7:]
+#    logbeta = theta[6]    
+    intemp = theta[6:]
     
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
@@ -146,7 +146,10 @@ def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cl
         return -np.inf
     # else run the likelihood
     lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
-    return lp + lnlike_value
+    lnprb = lp+lnlike_value
+    if np.isnan(lnprb):
+        lnprb = -np.inf
+    return lnprb
 
 
 def lnprior(theta,obspec):
@@ -154,18 +157,20 @@ def lnprior(theta,obspec):
     invmr = theta[0:5]
 #    logf = theta[5]
     gam = theta[5]
-    logbeta = theta[6]
-    T = theta[7:]
+#    logbeta = theta[6]
+    T = theta[6:]
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-    if (all(invmr[0:5] > -12.0) and (np.sum(10**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 4000) and (gam > 0) and (-5. < logbeta < 0)):
-#        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and
+    #        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  and (-5. < logbeta < 0))
+    if (all(invmr[0:5] > -12.0) and (np.sum(10.**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 5000.) and (gam > 0.)):
+        logbeta = -5.0
     	beta=10.**logbeta
     	alpha=1.0
     	x=gam
-    	invgamma=beta**alpha/math.gamma(alpha)*x**(-alpha-1)*np.exp(-beta/x)
-        return -0.5/gam*np.sum(diff[1:-1]**2)-0.5*pp*np.log(gam)+np.log(invgamma)
+    	invgamma=((beta**alpha)/math.gamma(alpha)) * (x**(-alpha-1)) * np.exp(-beta/x)
+        prprob = (-0.5/gam)*np.sum(diff[1:-1]**2) - 0.5*pp*np.log(gam) + np.log(invgamma)
+        return prprob 
     return -np.inf
 
 
