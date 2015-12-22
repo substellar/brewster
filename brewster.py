@@ -46,7 +46,7 @@ __status__ = "Development"
 logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
 coarsePress = 1000.* pow(10,logcoarsePress)
-logfinePress = np.arange(-4.0, 2.4, 0.08)
+logfinePress = np.arange(-4.0, 2.4, 0.1)
 finePress = 1000.* pow(10,logfinePress)
 # forward model wants pressure in mbar
 press = finePress
