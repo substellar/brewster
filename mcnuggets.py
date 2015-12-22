@@ -130,7 +130,7 @@ samplus[:,0:ndim] = samples
 # set up run arguments
 
 r2d2 = 1.
-logg = 4.5
+logg = 5.0
 dlam = 0.
 w1 = 1.0
 w2 = 20.0
@@ -143,7 +143,7 @@ use_disort = 0
 logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
 coarsePress = 1000.* pow(10,logcoarsePress)
-logfinePress = np.arange(-4.0, 2.4, 0.08)
+logfinePress = np.arange(-4.0, 2.4, 0.1)
 finePress = 1000.* pow(10,logfinePress)
 press = finePress
 

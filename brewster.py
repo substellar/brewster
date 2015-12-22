@@ -135,6 +135,7 @@ for i in range (6,5+nprof):
     #p0[:,i] = p0[:,6] + (150.*(i-6))
     p0[:,i] = (250.+(200.* np.random.rand(nwalkers).reshape(nwalkers))) + ((coarsePress[i-6]/100.)**1.1)
 p0[:,18] = 3000. + 200 * np.random.rand(nwalkers).reshape(nwalkers)
+
 # Now we set up the MPI bits
 pool=MPIPool(loadbalance=True)
 if not pool.is_master():
