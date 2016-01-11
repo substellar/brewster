@@ -1,28 +1,31 @@
-subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
+subroutine read_cia(filename,wavenum,outcia,ciatemps)
 
   use sizes
   
   implicit none
 
   !f2py integer, parameter :: nciatemps
-  !f2py integer, parameter :: nwave
+  !f2py integer :: nwave
   !f2py integer, parameter :: ncwave
 
   !f2py intent(in) filename
-  !f2py intent(in) wavenum
-  !f2py intent(out) ciaarray
+  !f2py intent(inout) wavenum
+  !f2py intent(out) outcia
   !f2py intent(out) ciatemps
   
   character(len=50):: filename
-  real,dimension(4,nciatemps,nwave) :: ciaarray
+  real,allocatable,dimension(:,:,:) :: ciaarray
+  real,dimension(4,nciatemps,maxwave)::outcia
   real,dimension(nciatemps) :: ciatemps
   real,dimension(4,nciatemps,ncwave):: oldcia
   integer:: iciatemp,icwaven,iwave,oldw1,oldw2,idum1,idum2,i
-  real,dimension(nwave) :: wavenum
+  double precision,intent(inout) :: wavenum(:)
   real,dimension(ncwave) :: ciawaven,wdiff
   real:: intfact, fdum1
 
+  call initwave(size(wavenum))
 
+  outcia = 0.0
   open(15,file=filename,status="old")
   do i=1, 3
      read(15,*)
@@ -36,8 +39,8 @@ subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
      stop
   end if
 
+  allocate(ciaarray(4,nciatemps,nwave))
 
-  
   do iciatemp = 1, nciatemps
      read(15,*) ciatemps(iciatemp)
      do icwaven = 1, ncwave
@@ -77,8 +80,14 @@ subroutine read_cia(filename,wavenum,ciaarray,ciatemps)
      ciaarray(4,:,iwave) = ((oldcia(4,:,oldw2) - oldcia(4,:,oldw1)) * intfact) &
           + oldcia(4,:,oldw1)
 
-
+     do i= 1,4
+        do iciatemp = 1, nciatemps
+           outcia(i,iciatemp,iwave) = ciaarray(i,iciatemp,iwave)
+        end do
+     end do
   end do  ! wave do
 
+        
+  deallocate(ciaarray)
 
 end subroutine read_cia

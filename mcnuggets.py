@@ -24,40 +24,57 @@ __status__ = "Development"
 
 
 
-def teff(theta,runargs):
+def teffRM(theta,runargs):
     
-    invmr = theta[0:5]
-    intemp = theta[6:]
-    w1,w2,pcover, cloudparams, r2d2,logg, \
-        dlam, do_clouds,gasnum,cloudnum,inlinetemps,\
+    invmr = theta[0:7]
+    logf = 0.0 #theta[5]
+    #logbeta = theta[6]
+    logg = theta[7]
+    r2d2 = theta[8]
+    dlam = theta[9]
+    gam = theta[10]
+    intemp = theta[11:]
+    pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,\
         coarsePress,press,inwavenum,linelist,cia,ciatemps,\
         use_disort = runargs
 
 
     # interp temp onto finer grid coarsePress => press
     # spline fit with max smoothing
-    tfit = sp.interpolate.splrep(np.log10(coarsePress),np.log10(intemp),s=10)
+    tfit = sp.interpolate.splrep(np.log10(coarsePress),np.log10(intemp),s=0)
     temp = 10.**(np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d'))
 
-
     # get the ngas
-    ngas = invmr.shape[0]
-    # interp temp onto finer grid coarsePress => press
+    ngas = invmr.shape[0] + 1
     # Hard code nlayers
     nlayers = press.shape[0]
- 
+    # interp temp onto finer grid coarsePress => press
+    # spline fit with max smoothing
+    tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
+    temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
+    alkratio = 16.2 #  from Asplund et al (2009)
     if invmr.size > invmr.shape[0]:
+        # now sort Na and K
+        tmpvmr = np.empty((ngas,nlayers),dtype='d')
+        tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
+        tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
+        tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
         for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(inlayer,invmr[i,:],s=0)
-            logVMR[i,:] = sp.interpolate.splev(layer,vfit,der=0)
+            vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
+            logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
     else:
-        for i in range(0,ngas):
-            logVMR[i,:] = invmr[i]
-            
+        # now sort Na and K
+        tmpvmr = np.empty(ngas,dtype='d')
+        tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
+        tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
+        tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+        for i in range(0,ngas):                              
+            logVMR[i,:] = tmpvmr[i]
+
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
     # 5 entries for cloudparams for simple slab model are:
@@ -90,9 +107,9 @@ def teff(theta,runargs):
         cloudrad = np.ones((npatch,nlayers,ncloud),dtype='d')
         cloudsig = np.ones_like(cloudrad)
         cloudprof = np.ones_like(cloudrad)
-                    
+
     # now we can call the forward model
-    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
+    outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
 
     wave = np.array(outspec[0,::-1])
     flux = np.array(outspec[1,::-1])
@@ -107,7 +124,26 @@ def teff(theta,runargs):
 
     # now get T_eff
     t_ff = ((fbol/(r2d2 * 5.670367e-8))**(1./4.))
-    return t_ff
+
+    # and Radius
+    parallax = 5.84
+    sigpi = 0.03
+    sigphot = 0.02
+    
+    sigR2d2 = sigphot * r2d2 * (-1./2.5)* log(10.)
+
+    sigD = sigpi * 3.086e16
+    D = parallax * 3.086e16
+
+    R = np.sqrt(((np.random.randn() * sigR2D2)+ r2d2)) \
+        * ((np.random.randn()* sigD) + D)
+    
+    # and mass
+
+    M = (R**2 * g/(6.67E-11))/1.898E27
+
+    
+    return t_ff, R, M
 
 
 
@@ -122,16 +158,13 @@ ndim = sampler.chain.shape[2]
 samples = sampler.chain[:,15000:,:].reshape((-1, ndim))
 
 slen = samples.shape[0]
-samplus = np.zeros([slen,ndim+1])
+samplus = np.zeros([slen,ndim+3])
 
 samplus[:,0:ndim] = samples
 
 
 # set up run arguments
 
-r2d2 = 1.
-logg = 5.0
-dlam = 0.
 w1 = 1.0
 w2 = 20.0
 pcover = 1.0
@@ -149,28 +182,32 @@ press = finePress
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 5
-gasnum = np.asfortranarray(np.array([1,2,20,4,5],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCH4_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrK_new_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO2_1wno_500_10000_02.save" ]
-
-# get the basic framework from water list.
-# Pressure is in bars for Mike's list, we use mbar.
+ngas = 8
+gasnum = np.asfortranarray(np.array([1,2,4,5,6,3,20,21],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCH4_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCO_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO2_1wno_500_10000_02.save" ,"/nobackup/bburning/Linelists/xsecarrNH3_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrH2S_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrK_new_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrNa_new_1wno_500_10000_02.save"]
+# get the basic framework from water list
 x=readsav('/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save')
 inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
 inlinetemps=np.asfortranarray(x.t,dtype='float64')
-inpress=1000. * x.p
-inwavenum=x.wno
+inpress=1000.*x.p
+rawwavenum=x.wno
+wn1 = 10000./w2
+wn2 = 10000. / w1
+inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))],dtype='float64')
 ntemps = inlinetemps.size
 npress= finePress.size
 nwave = inwavenum.size
-# Here we are interpolating the linelist onto Mike's pressure scale. 
+r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
+r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
+
+# Here we are interpolating the linelist onto our fine pressure scale. 
 linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
 for gas in range (0,ngas):
     inlinelist=readsav(lists[gas]).xsecarr
     for i in range (0,ntemps):
-        for j in range (0,nwave):
+        for j in range (r1,r2+1):
             pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
-            linelist[gas,:,i,j] = np.asfortranarray(pfit(np.log10(finePress)))
+            linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(finePress)))
 
 linelist[np.isnan(linelist)] = -50.0
 
@@ -192,12 +229,12 @@ cloudparams[4] = 1e-5
 cloudnum = np.array([1],dtype='i')
 
 # Get the cia bits
-cia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
-cia = np.asfortranarray(cia, dtype='float32')
+tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
+cia = np.asfortranarray(np.empty((4,ciatemps.size,nwave)),dtype='float32')
+cia[:,:,:] = tmpcia[:,:,:nwave] 
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
-
-runargs = w1,w2,pcover, cloudparams,r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort
+runargs = pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # set up parallel bits
 
@@ -229,7 +266,7 @@ jobs = COMM.scatter(jobs, root=0)
 # exchanged over MPI.
 results = []
 for job in jobs:
-    results.append(teff(samplus[job,0:ndim],runargs))
+    results.append(teffRM(samplus[job,0:ndim],runargs))
 
 # Gather results on rank 0.
 results = MPI.COMM_WORLD.gather(results, root=0)
@@ -238,17 +275,14 @@ if COMM.rank == 0:
     # Flatten list of lists.
     results = [_i for tmp in results for _i in tmp]
 
-samplus[:,ndim] = results
+samplus[:,ndim:ndim+2] = results
 
-# WE WANT TO PARALLELIZE THIS BIT!!
-#for i in range(0, nsamp):
-#    theta = samplus[i,0:5]
-#    samplus[i,5] = teff(theta,runargs)
+
 
 
 def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'temp_postproductchain.pk1')
+save_object(samplus,'570D_postproductchain.pk1')
 

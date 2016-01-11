@@ -16,10 +16,10 @@ contains
 
     
     type(a_layer),intent(inout) :: layer
-    double precision, dimension(nwave),intent(out) :: opd_lines
+    double precision, intent(inout) :: opd_lines(:)
     double precision,intent(in):: linelist(:,:,:,:)
     integer :: Tlay1, Tlay2, torder, index, iounit
-    double precision, dimension(ngas,nwave) :: logkap1, logkap2,logintkappa
+    double precision, allocatable,dimension(:,:) :: logkap1, logkap2,logintkappa
     real, dimension(nlinetemps):: tdiff
     double precision :: ndens, intfact, junk
     character(len=50) :: lines1,lines2,name
@@ -27,7 +27,7 @@ contains
     ! counters
     integer:: igas, j
     
-
+    allocate(logkap1(ngas,nwave),logkap2(ngas,nwave),logintkappa(ngas,nwave))
     
     ! get line temp array locations bracketing our temperature
     
@@ -110,7 +110,7 @@ contains
     enddo
     
     
-    
+    deallocate(logkap1, logkap2,logintkappa)
     
   end subroutine line_mixer
   

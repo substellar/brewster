@@ -7,7 +7,7 @@
   integer, parameter :: nclouds = 1
 
   ! number of gases for mixing
-  integer, parameter :: ngas = 5
+  integer, parameter :: ngas = 8
 
   ! number of patches
   integer,parameter:: npatch = 1
@@ -19,10 +19,7 @@
 
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 43
-  
-  ! number of wavelength/number bins in full range
-  integer, parameter :: nwave = 9501
-
+ 
   
   ! number of temperatures in CIA tables
   integer,parameter :: nciatemps = 198
@@ -42,9 +39,22 @@
 
   ! Volume ratio for sets in particle sizes
   real, parameter :: vrat = 2.2 
+
+  ! max wave number
+  integer, parameter :: maxwave = 9501
   
-  
+  ! number of wavelength/number bins in full range
+  integer,protected :: nwave
+
   save
+
+  
+contains
+  subroutine initwave(val)
+    integer :: val
+    nwave = val
+  end subroutine initwave
+  
 
   
 end module sizes

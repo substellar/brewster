@@ -39,11 +39,11 @@ echo ------------------------------------------------------
 
 
 
-cd /home1/bburning/retrievals/marks_RT_version
+cd /home1/bburning/retrievals/G570Dtest
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 24 python mcnuggets.py > nugget.log
+mpiexec -machinefile $PBS_NODEFILE -np 20 python mcnuggets.py > nugget.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

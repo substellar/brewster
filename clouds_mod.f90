@@ -29,6 +29,7 @@ contains
 
     ! first set up the grids and get the Mie coefficients, cloud by cloud
 
+    call init_column(column)
     do icloud = 1, nclouds
        
        ! This bit is lifted from setup_clouds3.1.f in EGP
@@ -207,9 +208,9 @@ contains
     end do  ! layer loop
 
  ! TK test line see what we've got
- write(*,*) "clouds line 187 opd_scat layer ",column(1:20)%opd_scat(300)
- write(*,*) "clouds line 188 opd_ext layer ",column(1:20)%opd_ext(300)
- write(*,*) "clouds line 189 gg layer ",column(1:20)%gg(300)
+! write(*,*) "clouds line 187 opd_scat layer ",column(1:20)%opd_scat(300)
+! write(*,*) "clouds line 188 opd_ext layer ",column(1:20)%opd_ext(300)
+! write(*,*) "clouds line 189 gg layer ",column(1:20)%gg(300)
 
  
  

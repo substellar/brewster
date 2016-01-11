@@ -2,7 +2,7 @@
 
 contains
 
-  subroutine run_RT(spectrum,nw1,nw2,disorting)
+  subroutine run_RT(spectrum,disorting)
 
     use sizes
     use common_arrays
@@ -28,7 +28,7 @@ contains
     integer ::ntau
     double precision,dimension(MAXULV) :: utau
     
-    double precision,dimension(nwave), INTENT(OUT):: spectrum
+    double precision,allocatable,dimension(:), INTENT(OUT):: spectrum
     double precision, dimension(nlayers) :: DTAUC, SSALB, COSBAR
     double precision, dimension(nlayers+1) :: temper
     double precision :: WVNMLO, WVNMHI, wint
@@ -40,7 +40,7 @@ contains
     double precision,dimension(maxumu,maxulv,maxphi) :: UU
     double precision,dimension(maxumu) :: ALBMED, TRNMED
     double precision:: BTEMP, TTEMP
-    double precision,dimension(nwave):: upflux
+    double precision,allocatable,dimension(:):: upflux
     logical, dimension(5) :: PRNT
     character(len=0):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
@@ -49,7 +49,7 @@ contains
     
 
 
-    integer :: nw1, nw2
+!    integer :: nw1, nw2
     
     HEADER = ""
 
@@ -82,6 +82,7 @@ contains
     ! all temps the same across patches
     call set_temp_levels(temper)
 
+    allocate(upflux(nwave),spectrum(nwave))
     spectrum = 0.0
     
     do ipatch = 1, npatch
@@ -98,7 +99,7 @@ contains
 
 
        upflux = 0.0
-       do iwave = nw2, nw1
+       do iwave = 1, nwave
        
        ! need PMOM
         ! get this calling Mark's GETMOM code
@@ -128,7 +129,10 @@ contains
 
 !          write(*,*) sum(dtauc)
 
-         DTAUC = patch(ipatch)%atm%opd_ext(iwave)              
+          do ilayer = 1, nlayers
+             
+             DTAUC(ilayer) = patch(ipatch)%atm(ilayer)%opd_ext(iwave)
+          end do
           
           
 
@@ -185,7 +189,7 @@ contains
     end do ! patch loop
 
        
-       
+    deallocate(upflux)
 
 
     

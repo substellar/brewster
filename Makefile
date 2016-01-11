@@ -114,7 +114,7 @@ ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
 #	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 # Utility targets

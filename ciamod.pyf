@@ -6,22 +6,26 @@ python module ciamod ! in
         module sizes ! in :ciamod:sizes_mod.f90
             integer, parameter,optional :: nclouds=1
             real, parameter,optional :: rmin=1e-05
-            integer, parameter,optional :: nlayers=80
-            integer, parameter,optional :: ngas=5
+            integer, parameter,optional :: nlayers=64
+            integer, parameter,optional :: ngas=8
             integer, parameter,optional :: nlinetemps=43
             integer, parameter,optional :: ncwave=1000
+            integer, parameter,optional :: maxwave=9501
             integer, parameter,optional :: nciatemps=198
             real, parameter,optional :: vrat=2.2
             integer, parameter,optional :: npatch=1
             integer, parameter,optional :: nrad=40
-            integer, parameter,optional :: nwave=9501
+            integer, protected :: nwave
             integer, parameter,optional :: nmiewave=180
+            subroutine initwave(val) ! in :ciamod:sizes_mod.f90:sizes
+                integer :: val
+            end subroutine initwave
         end module sizes
-        subroutine read_cia(filename,wavenum,ciaarray,ciatemps) ! in :ciamod:read_cia.f90
+        subroutine read_cia(filename,wavenum,outcia,ciatemps) ! in :ciamod:read_cia.f90
             use sizes
             character*50 intent(in) :: filename
-            real dimension(9501),intent(in) :: wavenum
-            real dimension(4,198,9501),intent(out) :: ciaarray
+            double precision dimension(:),intent(inout) :: wavenum
+            real dimension(4,198,9501),intent(out) :: outcia
             real dimension(198),intent(out) :: ciatemps
         end subroutine read_cia
     end interface 
