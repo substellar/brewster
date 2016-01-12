@@ -107,21 +107,21 @@ f90wrap:
 
 libfile:
 #	$(FC) -fPIC -shared -O3 -m64 *.o -o libmarvin.so
-	$(FC) -fPIC -shared -O0 -g -axCORE-AVX2 *.o -o libmarvin.so
+	$(FC) -fPIC -shared -O3 -axCORE-AVX2 *.o -o libmarvin.so
 
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
-	f2py --fcompiler=intelem --f90flags="-O0 -g -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf sizes_mod.f90 marv.f90
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
-	f2py --fcompiler=intelem --f90flags="-O0 -g -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
 
 # Utility targets
 

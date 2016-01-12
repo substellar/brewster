@@ -32,9 +32,9 @@ __status__ = "Development"
 
 
 
-def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
+def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
     # get the ngas
-    ngas = invmr.shape[0]
+    ngas = invmr.shape[0] + 1
     # Hard code nlayers
     nlayers = press.shape[0]
     # interp temp onto finer grid coarsePress => press
@@ -45,13 +45,24 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
+    alkratio = 16.2 #  from Asplund et al (2009)
     if invmr.size > invmr.shape[0]:
+        # now sort Na and K
+        tmpvmr = np.empty((ngas,nlayers),dtype='d')
+        tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
+        tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
+        tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
         for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(np.log10(coarsepress),invmr[i,:],s=0)
+            vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
             logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
     else:
-        for i in range(0,ngas):
-            logVMR[i,:] = invmr[i]
+        # now sort Na and K
+        tmpvmr = np.empty(ngas,dtype='d')
+        tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
+        tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
+        tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+        for i in range(0,ngas):                              
+            logVMR[i,:] = tmpvmr[i]
 
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
@@ -93,24 +104,27 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
         cloudprof = np.ones_like(cloudrad)
 
     # now we can call the forward model
-    outspec = forwardmodel.marv(w1,w2,temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
-
+    outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
     # Trim to length where it is defined.
-    trimspec =  outspec[:,np.logical_not(np.logical_or(outspec[0,:] > w2, outspec[0,:] < w1))] 
-
+    nwave = inwavenum.size
+    trimspec = np.zeros((2,nwave),dtype='d')
+    trimspec[:,:] = outspec[:,:nwave]
+ 
     # now shift wavelen by delta_lambda
-    shiftspec = np.array([trimspec[0,:]+dlam,trimspec[1,:]])
-
+    shiftspec = np.empty_like(trimspec)
+    shiftspec[0,:] =  trimspec[0,:] + dlam
+    shiftspec[1,:] =  trimspec[1,:]
  
     # length and interval for later
     wlen = shiftspec.shape[1]
     wint =  shiftspec[0,0] - shiftspec[0,wlen-1]
-    
+
     # convolve with instrumental profile
     # start by setting up kernel
     # First step is finding the array index length of the FWHM
     disp = wint / wlen
-    gwidth = int(round(fwhm / disp))
+    gwidth = int((((fwhm / disp) // 2) * 2) +1)
+
     # needs to be odd
     # now get the kernel and convolve
     gauss = Gaussian1DKernel(gwidth)
@@ -129,8 +143,8 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
-    s2=obspec[2,5::3]**2 #+ 10.**logf
-    lnLik=-0.5*np.sum((((obspec[1,5::3] - modspec[5::3])**2) / s2) + np.log(2.*np.pi*s2))
+    s2=obspec[2,::3]**2 #+ 10.**logf
+    lnLik=-0.5*np.sum((((obspec[1,::3] - modspec[::3])**2) / s2) + np.log(2.*np.pi*s2))
 
 
     return lnLik
@@ -139,19 +153,22 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
-    invmr = theta[0:5]
+def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+    invmr = theta[0:7]
     logf = 0.0 #theta[5]
-    gam = theta[5]
-#    logbeta = theta[6]    
-    intemp = theta[6:]
-    
+    #logbeta = theta[6]
+    logg = theta[7]
+    r2d2 = theta[8]
+    dlam = theta[9]
+    gam = theta[10]
+    intemp = theta[11:]
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(w1,w2,intemp, invmr,pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
+
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
         lnprb = -np.inf
@@ -160,16 +177,32 @@ def lnprob(theta,w1,w2,pcover, cloudparams, r2d2,logg, dlam, do_clouds,gasnum,cl
 
 def lnprior(theta,obspec):
     # set up the priors here
-    invmr = theta[0:5]
-#    logf = theta[5]
-    gam = theta[5]
-#    logbeta = theta[6]
-    T = theta[6:]
+    invmr = theta[0:7]
+    logf = 0.0 #theta[5]
+    #logbeta = theta[6]
+    logg = theta[7]
+    r2d2 = theta[8]
+    dlam = theta[9]
+    gam = theta[10]
+    T = theta[11:]
+
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-    #        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  and (-5. < logbeta < 0))
-    if (all(invmr[0:5] > -12.0) and (np.sum(10.**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 5000.) and (gam > 0.)):
+    #for mass prior
+    D = 3.086e+16 * 5.84
+    R = np.sqrt(r2d2) * D
+    g = (10.**logg)/100.
+    M = (R**2 * g/(6.67E-11))/1.898E27
+    
+    #        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2qq,:]**2))) and  and (-5. < logbeta < 0))
+    if (all(invmr[0:7] > -12.0) and (np.sum(10.**(invmr[0:7])) < 1.0) 
+        and  0.0 < logg < 6.0 
+        and 1. < M < 80. 
+        and  0. < r2d2 < 1. 
+        and -0.01 < dlam < 0.01 
+        and (min(T) > 1.0) and (max(T) < 5000.) 
+        and (gam > 0.)): 
         logbeta = -5.0
     	beta=10.**logbeta
     	alpha=1.0

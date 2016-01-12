@@ -3,7 +3,7 @@ module main
   implicit none
 
 contains 
-  subroutine forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
+  subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,out_spec)
     
@@ -22,7 +22,7 @@ contains
     
     ! input variables
     double precision,dimension(nlayers), INTENT(IN):: temp
-    double precision,INTENT(IN) :: w1,w2
+!    double precision,INTENT(IN) :: w1,w2
     real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
@@ -30,27 +30,27 @@ contains
     double precision, dimension(ngas),INTENT(IN) :: molmass
     double precision, dimension(ngas,nlayers),INTENT(IN) :: logVMR
     character(len=10),dimension(npatch,nclouds), INTENT(IN) :: cloudname
+
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
-    double precision, dimension(nwave) :: inwavenum
+    double precision,intent(inout) :: inwavenum(:)
     real,dimension(nlinetemps) :: inlinetemps
     real,dimension(nlayers) :: inpress
     double precision,intent(inout):: linelist(:,:,:,:)
     real, dimension(nciatemps), intent(in):: ciatemp
-    real, dimension(4,nciatemps,nwave), intent(in) :: cia
+    real, intent(inout) :: cia(:,:,:)
     integer, dimension(ngas), intent(in) :: ingasnum
-    double precision,dimension(2,nwave),INTENT(OUT) :: out_spec
-
+    double precision,allocatable, dimension(:,:),INTENT(OUT) :: out_spec
+    double precision,allocatable, dimension(:)::specflux
     real:: metal,grav,test
-    double precision,dimension(nwave) :: wdiff
+    double precision,allocatable :: wdiff(:)
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish
     logical :: disorting
-
-    
+!    double precision, allocatable,dimension(:) :: wavenum, wavelen
 
     ! Are we using DISORT
     disorting = use_disort
@@ -58,16 +58,21 @@ contains
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
 
-!   allocate(linelist(ngas,nlayers,nlinetemps,nwave))
+    allocate(wdiff(nwave))
+    call init_wscales
+    !wavenum[nwave],wavelen[nwave])
+
+    do ipatch = 1, npatch
+       call init_column(patch(ipatch)%atm)
+    end do
     
     patch(1)%atm%temp = temp
    
     wavenum = inwavenum
     linetemps = inlinetemps
     press = inpress
-!    linelist = inlinelist
     gasnum = ingasnum
-!    deallocate(inlinelist) 
+
     call set_pressure_scale
 
     ! TEST LINE - set artificial temp profile
@@ -140,11 +145,11 @@ contains
     
     wavelen = 1e4 / wavenum
     
-    wdiff = abs(w1 - wavelen)
-    nw1 = minloc(wdiff,1)
+ !   wdiff = abs(w1 - wavelen)
+ !   nw1 = minloc(wdiff,1)
       
-    wdiff = abs(w2 - wavelen)
-    nw2 = minloc(wdiff,1)
+ !   wdiff = abs(w2 - wavelen)
+ !   nw2 = minloc(wdiff,1)
     
     call cpu_time(opstart)
     call cpu_time(linstart)
@@ -235,27 +240,21 @@ contains
     end if
 
     ! tests to see what's going to DISORT
-!    do ipatch = 1, npatch
-!       do ilayer = 1, nlayers
-          !patch(ipatch)%atm(ilayer)%opd_lines = 0.
-          !patch(ipatch)%atm(ilayer)%opd_CIA = 0.
+    !do ipatch = 1, npatch
+    !   do ilayer = 1, nlayers
+    !      patch(ipatch)%atm(ilayer)%opd_lines = 0.
+    !      patch(ipatch)%atm(ilayer)%opd_CIA = 0.
     !       end do
- !end do
-
-    ! now let put it all into DISORT
-    
-!    write(*,*) "TEST: calling RUN_DISORT"
-!    write(*,*) " running between wavenum entries nw1, nw2: ", nw1,nw2
+    !    end do
 
     ! test line
     call cpu_time(distart)
-    call run_RT(out_spec(2,:),nw1,nw2,disorting)
+    call run_RT(specflux,disorting)
 
+    allocate(out_spec(2,nwave))
     out_spec(1,:) = wavelen
-
+    out_spec(2,:) = specflux * R2D2
     ! scale by r2d2
-
-    out_spec(2,:) = out_spec(2,:) * R2D2
     
     call cpu_time(difinish)
     
@@ -268,9 +267,18 @@ contains
     
     write(*,*) "RT took : ", (difinish - distart), " seconds"
 
-!    deallocate(linelist)
+    deallocate(wavelen,wavenum)
+    do ipatch = 1, npatch
+       do ilayer= 1, nlayers
+          deallocate(patch(ipatch)%atm(ilayer)%opd_ext,&
+               patch(ipatch)%atm(ilayer)%opd_scat,&
+               patch(ipatch)%atm(ilayer)%opd_lines, &
+               patch(ipatch)%atm(ilayer)%opd_cia, &
+               patch(ipatch)%atm(ilayer)%gg)
+       end do
+    end do
     
   end subroutine forward
 
-
+  
 end module main

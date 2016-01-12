@@ -1,6 +1,6 @@
-subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
+subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,&
-     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec)
+     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,outspec)
 
   use sizes
   use main
@@ -13,20 +13,20 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: npatch
   !f2py integer, parameter :: nwave
   !f2py intent(in) logg,R2D2,pcover
-  !f2py intent(in) w1,w2,temp,logVMR
+  !f2py intent(in) temp,logVMR
   !f2py intent(in) ingasnum,do_clouds,cloudnum,use_disort
   !f2py intent(in) cloudrad,cloudsig,cloudprof
-  !f2py intent(in) inwavenum, inlinetemps,inpress
+  !f2py intent(in) inlinetemps,inpress
   !f2py intent(inout) cia, ciatemps
-  !f2py intent(inout) inlinelist
+  !f2py intent(inout) inlinelist, inwavenum
   !f2py intent(out) out_spec
 
-  real,dimension(4,nciatemps,nwave) :: cia
+  real,intent(inout) :: cia(:,:,:)
   real,dimension(nciatemps) :: ciatemps
   double precision,intent(inout) :: inlinelist(:,:,:,:)
   double precision,dimension(nlayers):: temp
   real :: R2D2,logg
-  double precision :: w1,w2
+!  double precision :: w1,w2
   real,dimension(npatch)::pcover
   integer,dimension(npatch)::do_clouds
   character(len=10),dimension(ngas) :: gasname
@@ -40,12 +40,18 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,dimension(npatch,nlayers,nclouds) :: cloudrad
   double precision,dimension(npatch,nlayers,nclouds) :: cloudsig
   double precision,dimension(npatch,nlayers,nclouds) :: cloudprof
-  double precision,dimension(2,nwave) :: out_spec
-  double precision,dimension(nwave) :: inwavenum
+  double precision,dimension(2,maxwave),intent(OUT):: outspec
+  double precision,dimension(:,:),allocatable :: out_spec
+  double precision,intent(inout) :: inwavenum(:)
   real,dimension(nlinetemps) :: inlinetemps
   real,dimension(nlayers) :: inpress
   integer:: maxgas,maxcloud,igas,icloud, idum1, idum2,use_disort
 
+  call initwave(size(inwavenum))
+  
+
+  allocate(out_spec(2,nwave))
+  
   open(10,file="gaslist.dat", status='old')
   read(10,*) maxgas
   allocate(gaslist(maxgas), masslist(maxgas))
@@ -83,10 +89,13 @@ subroutine marv(w1,w2,temp,logg,R2D2,ingasnum,logVMR,pcover,&
   
   deallocate(cloudlist,gaslist,masslist)  
 
-  call forward(w1,w2,temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
+  call forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec)
-
+  outspec = 0.0
+  outspec(1,:)  = out_spec(1,1:nwave)
+  outspec(2,:) = out_spec(2,1:nwave)
+  deallocate(out_spec)
  
 end subroutine marv
 

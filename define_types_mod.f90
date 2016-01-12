@@ -24,11 +24,11 @@ module define_types
      integer:: index
      double precision:: temp
      double precision :: press,logP,dz,dp,ndens,fH2,fHe,mu
-     double precision, dimension(nwave) ::opd_ext,opd_scat,gg,opd_lines,opd_CIA
+     double precision, allocatable,dimension(:) ::opd_ext,opd_scat,gg
+     double precision, allocatable,dimension(:) :: opd_lines,opd_CIA
      type(a_gas) :: gas(ngas)
      type(a_cloud) :: cloud(nclouds)
   end type a_layer
-  
 
   type a_patch
      integer:: index
@@ -37,14 +37,29 @@ module define_types
      type(a_layer)::atm(nlayers)
   end type a_patch
 
-
   ! set up patchy atmosphere object, which is an array of patches
   type(a_patch) :: patch(npatch)
-
-
   
   save
 
+contains
+  subroutine init_column(col)
+    type(a_layer) :: col(nlayers)
+    integer:: ipatch,ilayer
+    do ilayer = 1, nlayers
+          
+       if ( .NOT. allocated (col(ilayer)%opd_ext)) &
+            allocate (col(ilayer)%opd_ext(nwave))
+       if ( .NOT. allocated (col(ilayer)%opd_scat)) &
+            allocate (col(ilayer)%opd_scat(nwave))
+       if ( .NOT. allocated (col(ilayer)%opd_lines)) &
+            allocate (col(ilayer)%opd_lines(nwave))
+       if ( .NOT. allocated (col(ilayer)%opd_CIA)) &
+            allocate (col(ilayer)%opd_CIA(nwave))
+       if ( .NOT. allocated (col(ilayer)%gg)) &
+            allocate (col(ilayer)%gg(nwave))
+       
+    end do
+  end subroutine init_column
 
-  
 end module define_types
