@@ -190,9 +190,34 @@ contains
              patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
              patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              
-          end do
-          write(*,*) "calling cloud atlas"
-          call cloudatlas(patch(ipatch)%atm)
+          end do ! cloud loop
+
+          
+          ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
+          ! we'll just use the density, rg, and rsig as dtau, w0 and gg
+          ! for the cloud
+          if (patch(ipatch)%atm(1)%cloud(1)%name == "mixto") then
+             if (nclouds .ne. 1) then
+                write(*,*) "Error: mixto cloud case should have nclouds = 1"
+                stop
+             else
+                ! FOR GREY SIMPLE CASE (MIXTO): put DTAU_cloud in cloudprofile
+                ! and albedo in rg, and asymmetry in rsig
+                ! There must only be one cloud for this case
+                do ilayer= 1, nlayers
+                   patch(ipatch)%atm(ilayer)%opd_ext = &
+                        cloudprof(ipatch,ilayer,1)
+                   patch(ipatch)%atm(ilayer)%opd_scat = &
+                        patch(ipatch)%atm(ilayer)%opd_ext * &
+                        patch(ipatch)%atm(ilayer)%cloud(1)%rg
+                   patch(ipatch)%atm(ilayer)%gg = &
+                        patch(ipatch)%atm(ilayer)%cloud(1)%rsig
+                end do ! layer loop
+             end if
+          else
+             write(*,*) "calling cloud atlas"
+             call cloudatlas(patch(ipatch)%atm)
+          end if
        else
           do ilayer = 1, nlayers
              patch(ipatch)%atm(ilayer)%gg = 0.0
@@ -201,7 +226,7 @@ contains
           end do
        end if
        
-    end do
+    end do ! patch loop
     
     totcover = sum(patch%cover)
     if (abs(1.0 - totcover) .gt. 0.001) then

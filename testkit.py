@@ -39,13 +39,8 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     nlayers = press.shape[0]
     # interp temp onto finer grid coarsePress => press
     # spline fit with max smoothing
-<<<<<<< HEAD
     tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
     temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
-=======
-    tfit = sp.interpolate.splrep(np.log10(coarsePress),np.log10(intemp),s=10)
-    temp = 10.**(np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d'))
->>>>>>> 17d2c1826ddb0ff3b48c34cb9f194866e238ead5
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
@@ -61,11 +56,17 @@ def lnlike(w1,w2,intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
     # 5 entries for cloudparams for simple slab model are:
-    # 0) log10(number density)
+    # 0) log10(number density / gas number density)
     # 1) top layer id (or pressure)
-    # 2) base ID (these are both in 61 layers)
+    # 2) base ID (these are both in 64 layers)
     # 3) rg
     # 4) rsig
+    # in the case of a simple mixto cloud (i.e. cloudnum = 99) we have:
+    # 0) ndens = dtau
+    # 1) top layer ID
+    # 2) bottom later ID
+    # 3) rg = albedo
+    # 4) rsig = asymmetry
     if (do_clouds == 1):
         npatch = cloudparams.shape[0]
         ncloud = cloudparams.shape[1]
@@ -167,23 +168,14 @@ def lnprior(theta,obspec):
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
-<<<<<<< HEAD
     #        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  and (-5. < logbeta < 0))
     if (all(invmr[0:5] > -12.0) and (np.sum(10.**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 5000.) and (gam > 0.)):
-=======
-    if (all(invmr[0:5] > -12.0) and (np.sum(10.**(invmr[0:5])) < 1.0) and (min(T) > 10.0) and (max(T) < 4000) and (gam > 0)):
-#        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2))) and  and (-5. < logbeta < 0))
->>>>>>> 17d2c1826ddb0ff3b48c34cb9f194866e238ead5
         logbeta = -5.0
     	beta=10.**logbeta
     	alpha=1.0
     	x=gam
     	invgamma=((beta**alpha)/math.gamma(alpha)) * (x**(-alpha-1)) * np.exp(-beta/x)
         prprob = (-0.5/gam)*np.sum(diff[1:-1]**2) - 0.5*pp*np.log(gam) + np.log(invgamma)
-<<<<<<< HEAD
-=======
-#        print -0.5*np.sum(diff[1:]**2/gam), -0.5*np.sum(np.log(2.*np.pi*gam)), np.log(invgamma)
->>>>>>> 17d2c1826ddb0ff3b48c34cb9f194866e238ead5
         return prprob 
     return -np.inf
 
