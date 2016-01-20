@@ -1,7 +1,7 @@
 #PBS -S /bin/tcsh
 #PBS -N bb_nugget
 #PBS -m abe
-#PBS -l select=1:ncpus=24:mpiprocs=24:model=has
+#PBS -l select=1:ncpus=20:mpiprocs=20:model=has
 #PBS -l walltime=08:00:00
 #PBS -k oe
 #PBS -r n
@@ -12,8 +12,8 @@ module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
 source /usr/local/lib/global.cshrc
 
 
-setenv PATH ${PATH}:/home1/bburning/retrievals/marks_RT_version:/u/scicon/tools/bin
-setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/marks_RT_version
+setenv PATH ${PATH}:/home1/bburning/retrievals/G570Dtest:/u/scicon/tools/bin
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/G570Dtest
 #setenv MPI_BUFS_PER_PROC 512
 #setenv OMP_NUM_THREADS 20
 

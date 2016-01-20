@@ -27,22 +27,16 @@ __status__ = "Development"
 def teffRM(theta,runargs):
     
     invmr = theta[0:7]
-    logf = 0.0 #theta[5]
-    #logbeta = theta[6]
     logg = theta[7]
     r2d2 = theta[8]
     dlam = theta[9]
     gam = theta[10]
-    intemp = theta[11:]
+    logf = theta[11]
+    intemp = theta[12:]
     pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,\
         coarsePress,press,inwavenum,linelist,cia,ciatemps,\
         use_disort = runargs
 
-
-    # interp temp onto finer grid coarsePress => press
-    # spline fit with max smoothing
-    tfit = sp.interpolate.splrep(np.log10(coarsePress),np.log10(intemp),s=0)
-    temp = 10.**(np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d'))
 
     # get the ngas
     ngas = invmr.shape[0] + 1
@@ -130,20 +124,25 @@ def teffRM(theta,runargs):
     sigpi = 0.03
     sigphot = 0.02
     
-    sigR2d2 = sigphot * r2d2 * (-1./2.5)* log(10.)
+    sigR2D2 = sigphot * r2d2 * (-1./2.5)* np.log(10.)
 
     sigD = sigpi * 3.086e16
     D = parallax * 3.086e16
 
     R = np.sqrt(((np.random.randn() * sigR2D2)+ r2d2)) \
         * ((np.random.randn()* sigD) + D)
-    
+
+    g = (10.**logg)/100.
+
     # and mass
 
     M = (R**2 * g/(6.67E-11))/1.898E27
+    R = R / 71492e3
 
+    result = np.concatenate((theta,np.array([t_ff, R, M])),axis=0)
     
-    return t_ff, R, M
+    return result
+
 
 
 
@@ -151,16 +150,17 @@ def teffRM(theta,runargs):
 
 # how many samples are we using?
 
-with open('temp_retrieval_result.pk1', 'rb') as input:
+with open('/nobackup/bburning/570D_BT_2MHretrieval_result.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
 ndim = sampler.chain.shape[2]
 samples = sampler.chain[:,15000:,:].reshape((-1, ndim))
 
+#samples = samples[1500:2500,:]
 slen = samples.shape[0]
-samplus = np.zeros([slen,ndim+3])
+#samplus = np.zeros([slen,ndim+3])
 
-samplus[:,0:ndim] = samples
+#samplus[:,0:ndim] = samples
 
 
 # set up run arguments
@@ -234,7 +234,7 @@ cia = np.asfortranarray(np.empty((4,ciatemps.size,nwave)),dtype='float32')
 cia[:,:,:] = tmpcia[:,:,:nwave] 
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
-runargs = pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
+runargs = pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort
 
 # set up parallel bits
 
@@ -266,7 +266,7 @@ jobs = COMM.scatter(jobs, root=0)
 # exchanged over MPI.
 results = []
 for job in jobs:
-    results.append(teffRM(samplus[job,0:ndim],runargs))
+    results.append(teffRM(samples[job,0:ndim],runargs))
 
 # Gather results on rank 0.
 results = MPI.COMM_WORLD.gather(results, root=0)
@@ -275,7 +275,7 @@ if COMM.rank == 0:
     # Flatten list of lists.
     results = [_i for tmp in results for _i in tmp]
 
-samplus[:,ndim:ndim+2] = results
+samplus = np.array(results)
 
 
 
@@ -284,5 +284,5 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'570D_postproductchain.pk1')
+save_object(samplus,'570D_2MH_BTpostproductchain.pk1')
 

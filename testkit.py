@@ -137,7 +137,7 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
-    s2=obspec[2,::3]**2 #+ 10.**logf
+    s2=obspec[2,::3]**2 + 10.**logf
     lnLik=-0.5*np.sum((((obspec[1,::3] - modspec[::3])**2) / s2) + np.log(2.*np.pi*s2))
 
 
@@ -149,13 +149,12 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     
 def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
     invmr = theta[0:7]
-    logf = 0.0 #theta[5]
-    #logbeta = theta[6]
     logg = theta[7]
     r2d2 = theta[8]
     dlam = theta[9]
     gam = theta[10]
-    intemp = theta[11:]
+    logf = theta[11]
+    intemp = theta[12:]
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
     if not np.isfinite(lp):
@@ -172,13 +171,12 @@ def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coar
 def lnprior(theta,obspec):
     # set up the priors here
     invmr = theta[0:7]
-    logf = 0.0 #theta[5]
-    #logbeta = theta[6]
     logg = theta[7]
     r2d2 = theta[8]
     dlam = theta[9]
     gam = theta[10]
-    T = theta[11:]
+    logf = theta[11]
+    T = theta[12:]
 
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
@@ -191,14 +189,15 @@ def lnprior(theta,obspec):
 
 
     
-    #        ((0.001*np.max(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2qq,:]**2))) and  and (-5. < logbeta < 0))
+    #         and  and (-5. < logbeta < 0))
     if (all(invmr[0:7] > -12.0) and (np.sum(10.**(invmr[0:7])) < 1.0) 
         and  0.0 < logg < 6.0 
         and 1. < M < 80. 
         and  0. < r2d2 < 1. 
         and -0.01 < dlam < 0.01 
         and (min(T) > 1.0) and (max(T) < 5000.) 
-        and (gam > 0.)): 
+        and (gam > 0.)
+        and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2)))): 
         logbeta = -5.0
     	beta=10.**logbeta
     	alpha=1.0
