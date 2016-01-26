@@ -8,7 +8,7 @@ python module ciamod ! in
             real, parameter,optional :: rmin=1e-05
             integer, parameter,optional :: nlayers=64
             integer, parameter,optional :: ngas=8
-            integer, parameter,optional :: nlinetemps=43
+            integer, parameter,optional :: nlinetemps=27
             integer, parameter,optional :: ncwave=1000
             integer, parameter,optional :: maxwave=9501
             integer, parameter,optional :: nciatemps=198

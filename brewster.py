@@ -69,13 +69,10 @@ fwhm = 0.005
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 8
 gasnum = np.asfortranarray(np.array([1,2,4,5,6,3,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCH4_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrCO_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrCO2_1wno_500_10000_02.save" ,"/nobackup/bburning/Linelists/xsecarrNH3_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrH2S_1wno_500_10000.save","/nobackup/bburning/Linelists/xsecarrK_new_1wno_500_10000_02.save","/nobackup/bburning/Linelists/xsecarrNa_new_1wno_500_10000_02.save"]
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic" ,"/nobackup/bburning/Linelists/nh3_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
 # get the basic framework from water list
-x=readsav('/nobackup/bburning/Linelists/xsecarrH2O_1wno_500_10000.save')
-inlinelist=x.xsecarr  #3D array with Nwavenubmers x Ntemps x Npressure
-inlinetemps=np.asfortranarray(x.t,dtype='float64')
-inpress=1000.*x.p
-rawwavenum=x.wno
+rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
+inpress=1000.*inpress
 wn1 = 10000./w2
 wn2 = 10000. / w1
 inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))],dtype='float64')
@@ -85,10 +82,11 @@ nwave = inwavenum.size
 r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 
-# Here we are interpolating the linelist onto our fine pressure scale. 
+# Here we are interpolating the linelist onto our fine pressure scale.
+# pickles have linelist as 4th entry....
 linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
 for gas in range (0,ngas):
-    inlinelist=readsav(lists[gas]).xsecarr
+    inlinelist= pickle.load( open(lists[gas], "rb" ) )[3]
     for i in range (0,ntemps):
         for j in range (r1,r2+1):
             pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
@@ -227,7 +225,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/570D_BT_2MHretrieval_result.pk1')
+save_object(sampler,'/nobackup/bburning/570D_pickle_retrieval_result.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

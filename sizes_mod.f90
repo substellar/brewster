@@ -18,7 +18,7 @@
   integer, parameter :: nlayers = 64
 
   ! number of temperatures in line list grid
-  integer, parameter :: nlinetemps = 43
+  integer, parameter :: nlinetemps = 27
  
   
   ! number of temperatures in CIA tables
