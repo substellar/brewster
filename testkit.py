@@ -6,6 +6,7 @@ import gc
 import numpy as np
 import scipy as sp
 import forwardmodel
+import cloud
 from scipy import interpolate
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
@@ -32,11 +33,12 @@ __status__ = "Development"
 
 
 
-def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
+def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
     # get the ngas
-    ngas = invmr.shape[0] + 1
+    ngas = invmr.shape[0] #+ 1
     # Hard code nlayers
     nlayers = press.shape[0]
+    npatch = cloudparams.shape[0]
     # interp temp onto finer grid coarsePress => press
     # spline fit with max smoothing
     tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
@@ -45,22 +47,26 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
-    alkratio = 16.2 #  from Asplund et al (2009)
+    #alkratio = 16.2 #  from Asplund et al (2009)
     if invmr.size > invmr.shape[0]:
+        # this case is a profile
         # now sort Na and K
-        tmpvmr = np.empty((ngas,nlayers),dtype='d')
-        tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
-        tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
-        tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
+        #tmpvmr = np.empty((ngas,nlayers),dtype='d')
+        #tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
+        #tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
+        #tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
+        tmpvmr = invmr
         for i in range(0,ngas):
             vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
             logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
     else:
+        # This caseis fixed VMR
         # now sort Na and K
-        tmpvmr = np.empty(ngas,dtype='d')
-        tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
-        tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
-        tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+        #tmpvmr = np.empty(ngas,dtype='d')
+        #tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
+        #tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
+        #tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+        tmpvmr = invmr
         for i in range(0,ngas):                              
             logVMR[i,:] = tmpvmr[i]
 
@@ -78,30 +84,16 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     # 2) bottom later ID
     # 3) rg = albedo
     # 4) rsig = asymmetry
-    if (do_clouds == 1):
-        npatch = cloudparams.shape[0]
-        ncloud = cloudparams.shape[1]
-        cloudrad = np.empty((npatch,nlayers,ncloud),dtype='d')
-        cloudsig = np.empty_like(cloudrad)
-        cloudprof = np.zeros_like(cloudrad)
-        ndens= np.reshape(cloudparams['f0'],(npatch,ncloud))
-        c1 = np.reshape(cloudparams['f1'],(npatch,ncloud))
-        c2 = np.reshape(cloudparams['f2'],(npatch,ncloud))
-        rad = np.reshape(cloudparams['f3'],(npatch,ncloud))
-        sig = np.reshape(cloudparams['f4'],(npatch,ncloud))
-        for i in range(0, npatch):
-            for j in range(0, ncloud):
-                b1 = c1[i,j] - 1
-                b2 = c2[i,j] -1 
-                cloudprof[i,b1:b2+1,j] = ndens[i,j]
-                cloudrad[i,:,j] = rad[i,j]
-                cloudsig[i,:,j] = sig[i,j]        
+    if (npatch > 1 or do_clouds == 1):
+        cloudprof,cloudrad,cloudsig = cloud.atlas(do_clouds,cloudnum,cloudtype,cloudparams,press)
+        npatch = cloudprof.shape[0]
+        ncloud = cloudprof.shape[1]
     else:
         npatch = 1
         ncloud = 1
-        cloudrad = np.ones((npatch,nlayers,ncloud),dtype='d')
-        cloudsig = np.ones_like(cloudrad)
-        cloudprof = np.ones_like(cloudrad)
+        cloudrad = np.zeros((npatch,nlayers,ncloud),dtype='d')
+        cloudsig = np.zeros_like(cloudrad)
+        cloudprof = np.zeros_like(cloudrad)
 
     # now we can call the forward model
     outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
@@ -109,7 +101,7 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     nwave = inwavenum.size
     trimspec = np.zeros((2,nwave),dtype='d')
     trimspec[:,:] = outspec[:,:nwave]
- 
+    print trimspec
     # now shift wavelen by delta_lambda
     shiftspec = np.empty_like(trimspec)
     shiftspec[0,:] =  trimspec[0,:] + dlam
@@ -139,7 +131,6 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     #    oblen = obspec.shape[1]
     #    modspec = np.empty((2,oblen),dtype='d')
     #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
-
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
@@ -153,20 +144,22 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
-    invmr = theta[0:7]
-    logg = theta[7]
-    r2d2 = theta[8]
-    dlam = theta[9]
-    gam = theta[10]
-    logf = theta[11]
-    intemp = theta[12:]
+def lnprob(theta,pcover, cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+    invmr = theta[0:4]
+    # This is a fudge to make 1 patch 1 cloud work
+    cloudparams = theta[4:9]
+    logg = theta[9]
+    r2d2 = theta[10]
+    dlam = theta[11]
+    gam = theta[12]
+    logf = theta[13]
+    intemp = theta[14:]
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(intemp, invmr,pcover, cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -176,28 +169,35 @@ def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coar
 
 def lnprior(theta,obspec):
     # set up the priors here
-    invmr = theta[0:7]
-    logg = theta[7]
-    r2d2 = theta[8]
-    dlam = theta[9]
-    gam = theta[10]
-    logf = theta[11]
-    T = theta[12:]
+    invmr = theta[0:4]
+    # This is a fudge to make 1 patch 1 cloud work
+    cloudparams = theta[4:9]
+    logg = theta[9]
+    r2d2 = theta[10]
+    dlam = theta[11]
+    gam = theta[12]
+    logf = theta[13]
+    T = theta[14:]
 
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
     #for mass prior
-    D = 3.086e+16 * 5.84
-    R = np.sqrt(r2d2) * D
-    g = (10.**logg)/100.
-    M = (R**2 * g/(6.67E-11))/1.898E27
+    #D = 3.086e+16 * dist
+    #R = np.sqrt(r2d2) * D
+    #g = (10.**logg)/100.
+    #M = (R**2 * g/(6.67E-11))/1.898E27
     
     #         and  and (-5. < logbeta < 0))
-    if (all(invmr[0:7] > -12.0) and (np.sum(10.**(invmr[0:7])) < 1.0) 
-        and  0.0 < logg < 6.0 
-        and 1. < M < 80. 
-        and  0. < r2d2 < 1. 
+    if (all(invmr[0:4] > -12.0) and (np.sum(10.**(invmr[0:4])) < 1.0) 
+        and  0.0 < logg < 6.0
+        and cloudparams[0] > 0.0
+        and 1e-2  < cloudparams[1] < 2e5
+        and cloudparams[2] >  cloudparams[1]
+        and 0. < cloudparams[3] < 1.0
+        and -1.0 < cloudparams[4] < +1.0
+#        and 1. < M < 80. 
+        and  0.5 < r2d2 < 1.5 
         and -0.01 < dlam < 0.01 
         and (min(T) > 1.0) and (max(T) < 5000.) 
         and (gam > 0.)

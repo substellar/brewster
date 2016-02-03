@@ -57,9 +57,15 @@ nprof = coarsePress.size
 #logg = 5.0
 #dlam = 0.
 w1 = 1.0
-w2 = 2.5
-pcover = 1.0
-do_clouds = 0
+w2 = 10.0
+npatches = 1
+pcover = np.array([npatches],dtype='f']
+pcover[:] = 1.0
+do_clouds = np.array([npatches],dtype='i']
+do_clouds[:] = 1
+cloudnum = np.array([npatches],dtype='i')
+cloudnum[:] = 3
+cloudtype = 2
 use_disort = 0 
 
 # hardwired FWHM of data in microns
@@ -67,9 +73,9 @@ fwhm = 0.005
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 8
-gasnum = np.asfortranarray(np.array([1,2,4,5,6,3,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic" ,"/nobackup/bburning/Linelists/nh3_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 4
+gasnum = np.asfortranarray(np.array([1,2,6,3],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/nh3_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 inpress=1000.*inpress
@@ -96,20 +102,21 @@ linelist[np.isnan(linelist)] = -50.0
 
 # cloudparams is structured array with 5 entries
 # each one has a patch*cloud entries
-cloudparams = np.ones(5)
+# ^^^^  this won't work with EMCEE
+#cloudparams = np.ones(5)
 # 5 entries in cloudparams for simple slab model are:
 # 0) log10(number density)
 # 1) top layer id (or pressure)
 # 2) base ID (these are both in 61 layers)
 # 3) rg
 # 4) rsig
-cloudparams[0] = -20.
-cloudparams[1] = 10
-cloudparams[2] = 12
-cloudparams[3] = 1e-4
-cloudparams[4] = 1e-5
+#cloudparams[0] = -20.
+#cloudparams[1] = 10
+#cloudparams[2] = 12
+#cloudparams[3] = 1e-4
+#cloudparams[4] = 1e-5
 # hardwired gas and cloud IDs
-cloudnum = np.array([1],dtype='i')
+
 
 # Get the cia bits
 tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
@@ -122,14 +129,15 @@ ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("G570D_2MHcalib.dat",dtype='d',unpack='true'))
 
+
 # NEXT LINE ADDS SYTEMATIC TO SPECTRUM FOR Log F retrieval
 #obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 
-runargs = pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
+runargs = pcover, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = (nprof + (ngas-1) + 5), 400
+ndim, nwalkers = (nprof + (ngas-1) + 10), 540
 
 # If we want fresh guess set to 0, total inherit the previous set 1, inherit plus randomise the VMRs. 2.
 fresh = 0
@@ -137,19 +145,25 @@ p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
     p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # CH4
-    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 7.5 # CO
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CO2
-    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.6 # NH3
-    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 9.0  #H2S
-    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5  # Na+K
-    p0[:,7] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
-    p0[:,8] =  1.5e-19 + (np.random.randn(nwalkers).reshape(nwalkers) * 1.e-20)
-    p0[:,9] = np.random.randn(nwalkers).reshape(nwalkers) * 0.01
-    p0[:,10] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
-    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.6 # NH3
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.0  #H2S
+    p0[:,4] = (3*np.random.randn(nwalkers).reshape(nwalkers))-19. #ref density
+    p0[:,5] = 100. * random.rand(nwalkers).reshape(nwalkers) #cloud top
+    p0[:,6] = 10. * random.rand(nwalkers).reshape(nwalkers) #scale height
+    #  radii in um
+    p0[:,7] = 10. * random.rand(nwalkers).reshape(nwalkers) # rg
+    p0[:,8] = 1.0 * random.rand(nwalkers).reshape(nwalkers) # rsig
+    p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
+    p0[:,10] = 0.95 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1)
+    p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,12] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     BTprof = np.loadtxt("BTtemp800_45_13.dat")
-    for i in range(0,13):
-        p0[:,i+12] = (BTprof[i] - 200.) + (150. * np.random.randn(nwalkers).reshape(nwalkers))
+    for i in range(0,nwalkers):
+        p0[i,14:] = (BTprof - 300.) + (100. * np.random.rand())
+
+    #for i in range(0,13):
+    #    p0[:,i+14] = (BTprof[i] - 200.) + (150. * np.random.randn(nwalkers).reshape(nwalkers))
     #toffset = 200.* np.random.randn(nwalkers).reshape(nwalkers)
     #for i in range (11,10+nprof):
     #    p0[:,i] = 750.+toffset + ((coarsePress[i-11]/100.)**1.1)
@@ -180,7 +194,7 @@ clock = np.empty(30000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=15000):
+for result in sampler.sample(p0, iterations=12000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]

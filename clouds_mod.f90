@@ -95,9 +95,9 @@ contains
        do icloud = 1, nclouds
           if (column(ilayer)%cloud(icloud)%density .gt. 0.) then
              
-             
-             rsig = column(ilayer)%cloud(icloud)%rsig
-             rg  = column(ilayer)%cloud(icloud)%rg
+             ! radii supplied in um, convert to cm
+             rsig = column(ilayer)%cloud(icloud)%rsig * 1e-4
+             rg  = column(ilayer)%cloud(icloud)%rg * 1e-4
              
              r2 = rg**2 * exp( 2*log(rsig)**2 )
              
