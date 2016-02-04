@@ -7,7 +7,7 @@
   integer, parameter :: nclouds = 1
 
   ! number of gases for mixing
-  integer, parameter :: ngas = 8
+  integer, parameter :: ngas = 10
 
   ! number of patches
   integer,parameter:: npatch = 1

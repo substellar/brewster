@@ -61,15 +61,15 @@ w2 = 2.5
 pcover = 1.0
 do_clouds = 0
 use_disort = 0 
-
+dist = 11.35
 # hardwired FWHM of data in microns
 fwhm = 0.005
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 8
-gasnum = np.asfortranarray(np.array([1,2,4,5,6,3,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic" ,"/nobackup/bburning/Linelists/nh3_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 10
+gasnum = np.asfortranarray(np.array([1,4,7,8,10,11,3,2,20,21],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 inpress=1000.*inpress
@@ -120,36 +120,41 @@ ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("G570D_2MHcalib.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("2M2224_mkoJcalib.dat",dtype='d',unpack='true'))
 
 # NEXT LINE ADDS SYTEMATIC TO SPECTRUM FOR Log F retrieval
 #obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 
-runargs = pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
+runargs = dist, pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
-ndim, nwalkers = (nprof + (ngas-1) + 5), 400
+ndim, nwalkers = (nprof + (ngas-1) + 5), 540
 
 # If we want fresh guess set to 0, total inherit the previous set 1, inherit plus randomise the VMRs. 2.
 fresh = 0
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
-    p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
-    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # CH4
-    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 7.5 # CO
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CO2
-    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.6 # NH3
-    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 9.0  #H2S
-    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5  # Na+K
-    p0[:,7] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
-    p0[:,8] =  1.5e-19 + (np.random.randn(nwalkers).reshape(nwalkers) * 1.e-20)
-    p0[:,9] = np.random.randn(nwalkers).reshape(nwalkers) * 0.01
-    p0[:,10] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
-    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.0 # H2O
+    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.0 # CO
+    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
+    p0[:,4] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # CrH
+    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.0 # FeH
+    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.0 # H2S
+    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.5 # CH4
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
+    p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
+    p0[:,10] =  1.5e-19 + (np.random.randn(nwalkers).reshape(nwalkers) * 1.e-20)
+    p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.01
+    p0[:,12] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     BTprof = np.loadtxt("BTtemp800_45_13.dat")
-    for i in range(0,13):
-        p0[:,i+12] = (BTprof[i] - 200.) + (150. * np.random.randn(nwalkers).reshape(nwalkers))
+    #for i in range(0,13):
+    #p0[:,i+14] = (BTprof[i] + 1000.) + (200. * np.random.randn(nwalkers).reshape(nwalkers))
+    for i in range(0,nwalkers):
+        p0[i,14:] = (BTprof + 1000.) + (300. * np.random.randn())
+
     #toffset = 200.* np.random.randn(nwalkers).reshape(nwalkers)
     #for i in range (11,10+nprof):
     #    p0[:,i] = 750.+toffset + ((coarsePress[i-11]/100.)**1.1)
@@ -160,7 +165,7 @@ if (fresh != 0):
     pic=pickle.load(open(fname,'rb'))
     p0=pic
     if (fresh == 2):
-        for i in range(0,7):
+        for i in range(0,9):
             p0[:,i] = (np.random.rand(nwalkers).reshape(nwalkers)*0.5) + p0[:,i]
 
 
@@ -180,7 +185,7 @@ clock = np.empty(30000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=15000):
+for result in sampler.sample(p0, iterations=12000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -225,7 +230,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/570D_pickle_retrieval_result.pk1')
+save_object(sampler,'/nobackup/bburning/2M2224_nc_retrieval_result.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

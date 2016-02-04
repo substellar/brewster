@@ -153,16 +153,16 @@ def lnlike(intemp, invmr, pcover, cloudparams, r2d2, logg, dlam, do_clouds,gasnu
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
-    invmr = theta[0:7]
-    logg = theta[7]
-    r2d2 = theta[8]
-    dlam = theta[9]
-    gam = theta[10]
-    logf = theta[11]
-    intemp = theta[12:]
+def lnprob(theta,dist, pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+    invmr = theta[0:9]
+    logg = theta[9]
+    r2d2 = theta[10]
+    dlam = theta[11]
+    gam = theta[12]
+    logf = theta[13]
+    intemp = theta[14:]
     # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta,obspec)
+    lp = lnprior(theta,obspec,dist)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
@@ -174,27 +174,27 @@ def lnprob(theta,pcover, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coar
     return lnprb
 
 
-def lnprior(theta,obspec):
+def lnprior(theta,obspec,dist):
     # set up the priors here
-    invmr = theta[0:7]
-    logg = theta[7]
-    r2d2 = theta[8]
-    dlam = theta[9]
-    gam = theta[10]
-    logf = theta[11]
-    T = theta[12:]
+    invmr = theta[0:9]
+    logg = theta[9]
+    r2d2 = theta[10]
+    dlam = theta[11]
+    gam = theta[12]
+    logf = theta[13]
+    T = theta[14:]
 
     diff=np.roll(T,-1)-2.*T+np.roll(T,1)
     pp=len(T)
 
     #for mass prior
-    D = 3.086e+16 * 5.84
+    D = 3.086e+16 * dist
     R = np.sqrt(r2d2) * D
     g = (10.**logg)/100.
     M = (R**2 * g/(6.67E-11))/1.898E27
     
     #         and  and (-5. < logbeta < 0))
-    if (all(invmr[0:7] > -12.0) and (np.sum(10.**(invmr[0:7])) < 1.0) 
+    if (all(invmr[0:9] > -12.0) and (np.sum(10.**(invmr[0:9])) < 1.0) 
         and  0.0 < logg < 6.0 
         and 1. < M < 80. 
         and  0. < r2d2 < 1. 
