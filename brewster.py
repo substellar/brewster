@@ -57,9 +57,15 @@ nprof = coarsePress.size
 #logg = 5.0
 #dlam = 0.
 w1 = 1.0
-w2 = 2.5
-pcover = 1.0
-do_clouds = 0
+w2 = 10.0
+npatches = 1
+pcover = np.array([npatches],dtype='f']
+pcover[:] = 1.0
+do_clouds = np.array([npatches],dtype='i']
+do_clouds[:] = 0
+cloudnum = np.array([npatches],dtype='i')
+cloudnum[:] = 3
+cloudtype = 2
 use_disort = 0 
 dist = 11.35
 # hardwired FWHM of data in microns
@@ -96,20 +102,21 @@ linelist[np.isnan(linelist)] = -50.0
 
 # cloudparams is structured array with 5 entries
 # each one has a patch*cloud entries
-cloudparams = np.ones(5)
+# ^^^^  this won't work with EMCEE
+#cloudparams = np.ones(5)
 # 5 entries in cloudparams for simple slab model are:
 # 0) log10(number density)
 # 1) top layer id (or pressure)
 # 2) base ID (these are both in 61 layers)
 # 3) rg
 # 4) rsig
-cloudparams[0] = -20.
-cloudparams[1] = 10
-cloudparams[2] = 12
-cloudparams[3] = 1e-4
-cloudparams[4] = 1e-5
+#cloudparams[0] = -20.
+#cloudparams[1] = 10
+#cloudparams[2] = 12
+#cloudparams[3] = 1e-4
+#cloudparams[4] = 1e-5
 # hardwired gas and cloud IDs
-cloudnum = np.array([1],dtype='i')
+
 
 # Get the cia bits
 tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
@@ -122,11 +129,12 @@ ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 # get the observed spectrum
 obspec = np.asfortranarray(np.loadtxt("2M2224_mkoJcalib.dat",dtype='d',unpack='true'))
 
+
 # NEXT LINE ADDS SYTEMATIC TO SPECTRUM FOR Log F retrieval
 #obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 
-runargs = dist, pcover, cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
+runargs = dist, pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
 
 # now set up the EMCEE stuff
 ndim, nwalkers = (nprof + (ngas-1) + 5), 540
@@ -154,7 +162,6 @@ if (fresh == 0):
     #p0[:,i+14] = (BTprof[i] + 1000.) + (200. * np.random.randn(nwalkers).reshape(nwalkers))
     for i in range(0,nwalkers):
         p0[i,14:] = (BTprof + 1000.) + (300. * np.random.randn())
-
     #toffset = 200.* np.random.randn(nwalkers).reshape(nwalkers)
     #for i in range (11,10+nprof):
     #    p0[:,i] = 750.+toffset + ((coarsePress[i-11]/100.)**1.1)
