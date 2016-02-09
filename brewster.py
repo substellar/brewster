@@ -110,12 +110,11 @@ linelist[np.isnan(linelist)] = -50.0
 # 2) base ID (these are both in 61 layers)
 # 3) rg
 # 4) rsig
-#cloudparams[0] = -20.
-#cloudparams[1] = 10
-#cloudparams[2] = 12
-#cloudparams[3] = 1e-4
-#cloudparams[4] = 1e-5
-# hardwired gas and cloud IDs
+cloudparams[0] = -20.
+cloudparams[1] = 10
+cloudparams[2] = 12
+cloudparams[3] = 1e-4
+cloudparams[4] = 1e-5
 
 
 # Get the cia bits
