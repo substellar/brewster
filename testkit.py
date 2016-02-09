@@ -35,7 +35,7 @@ __status__ = "Development"
 
 def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
     # get the ngas
-    ngas = invmr.shape[0] #+ 1
+    ngas = invmr.shape[0] + 1
     # Hard code nlayers
     nlayers = press.shape[0]
     npatch = cloudparams.shape[0]
@@ -47,14 +47,14 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
     logVMR = np.empty((ngas,nlayers),dtype='d')
-    #alkratio = 16.2 #  from Asplund et al (2009)
+    alkratio = 16.2 #  from Asplund et al (2009)
     if invmr.size > invmr.shape[0]:
         # this case is a profile
         # now sort Na and K
-        #tmpvmr = np.empty((ngas,nlayers),dtype='d')
-        #tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
-        #tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
-        #tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
+        tmpvmr = np.empty((ngas,nlayers),dtype='d')
+        tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
+        tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
+        tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
         tmpvmr = invmr
         for i in range(0,ngas):
             vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
@@ -62,10 +62,10 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     else:
         # This caseis fixed VMR
         # now sort Na and K
-        #tmpvmr = np.empty(ngas,dtype='d')
-        #tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
-        #tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
-        #tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+        tmpvmr = np.empty(ngas,dtype='d')
+        tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
+        tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
+        tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
         tmpvmr = invmr
         for i in range(0,ngas):                              
             logVMR[i,:] = tmpvmr[i]
@@ -91,9 +91,9 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     else:
         npatch = 1
         ncloud = 1
-        cloudrad = np.zeros((npatch,nlayers,ncloud),dtype='d')
-        cloudsig = np.zeros_like(cloudrad)
-        cloudprof = np.zeros_like(cloudrad)
+        cloudrad = np.ones((npatch,nlayers,ncloud),dtype='d')
+        cloudsig = np.ones_like(cloudrad)
+        cloudprof = np.ones_like(cloudrad)
 
     # now we can call the forward model
     outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)

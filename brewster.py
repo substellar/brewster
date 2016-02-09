@@ -13,7 +13,6 @@ import os
 import gc
 import sys
 import pickle
-from scipy.io.idl import readsav
 from scipy import interpolate
 from scipy.interpolate import interp1d
 from emcee.utils import MPIPool
@@ -99,23 +98,6 @@ for gas in range (0,ngas):
             linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(finePress)))
 
 linelist[np.isnan(linelist)] = -50.0
-
-# cloudparams is structured array with 5 entries
-# each one has a patch*cloud entries
-# ^^^^  this won't work with EMCEE
-#cloudparams = np.ones(5)
-# 5 entries in cloudparams for simple slab model are:
-# 0) log10(number density)
-# 1) top layer id (or pressure)
-# 2) base ID (these are both in 61 layers)
-# 3) rg
-# 4) rsig
-#cloudparams[0] = -20.
-#cloudparams[1] = 10
-#cloudparams[2] = 12
-#cloudparams[3] = 1e-4
-#cloudparams[4] = 1e-5
-# hardwired gas and cloud IDs
 
 
 # Get the cia bits
