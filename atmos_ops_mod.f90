@@ -12,7 +12,7 @@ contains
 
   subroutine set_pressure_scale
 
-    ! pressure scale in mbar
+
     integer:: i,ipatch
 
     do ipatch= 1, npatch

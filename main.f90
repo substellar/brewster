@@ -142,9 +142,9 @@ program main
 
   ! now get number density of layers
   ! number density in /m3:
-  ! pressure is in mbar... so x100 to get N/m2
+  ! pressure is in bar... so x1e5 to get N/m2
     
-  patch(1)%atm%ndens = 100 * patch(1)%atm%press  / (K_BOLTZ * patch(1)%atm%temp)
+  patch(1)%atm%ndens = 1e5 * patch(1)%atm%press  / (K_BOLTZ * patch(1)%atm%temp)
 
 
   ! zero all the opacities

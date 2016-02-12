@@ -7,6 +7,7 @@ import numpy as np
 import scipy as sp
 import forwardmodel
 import cloud
+import TPmod
 from scipy import interpolate
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
@@ -33,16 +34,14 @@ __status__ = "Development"
 
 
 
-def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf):
+def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype):
     # get the ngas
     ngas = invmr.shape[0] + 1
     # Hard code nlayers
     nlayers = press.shape[0]
     npatch = cloudparams.shape[0]
-    # interp temp onto finer grid coarsePress => press
-    # spline fit with max smoothing
-    tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
-    temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
+    # set the profile
+    temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
     # now loop through gases and get VMR for model
     # check if its a fixed VMR or a profile
     # VMR is log10(VMR) !!!
@@ -55,7 +54,6 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
         tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
         tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
         tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
-        tmpvmr = invmr
         for i in range(0,ngas):
             vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
             logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
@@ -66,7 +64,6 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
         tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
         tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
         tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
-        tmpvmr = invmr
         for i in range(0,ngas):                              
             logVMR[i,:] = tmpvmr[i]
 
@@ -144,20 +141,26 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec):
+def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype):
     invmr = theta[0:9]
     logg = theta[9]
     r2d2 = theta[10]
     dlam = theta[11]
-    gam = theta[12]
-    logf = theta[13]
-    intemp = theta[14:]
+    logf = theta[12]
+
+    if (proftype == 1):
+        gam = theta[13]
+        intemp = theta[14:]
+    elif (proftype == 2 or proftype ==3):
+        intemp = theta[13:]
+    else:
+        raise ValueError("not valid profile type %proftype" % (char, string))
     # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta,obspec,dist)
+    lp = lnprior(theta,obspec,dist,proftype,press)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf)
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -165,42 +168,104 @@ def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum
     return lnprb
 
 
-def lnprior(theta,obspec,dist):
+def lnprior(theta,obspec,dist,proftype,press):
     # set up the priors here
     invmr = theta[0:9]
     logg = theta[9]
     r2d2 = theta[10]
     dlam = theta[11]
-    gam = theta[12]
-    logf = theta[13]
-    T = theta[14:]
+    logf = theta[12]
 
-    diff=np.roll(T,-1)-2.*T+np.roll(T,1)
-    pp=len(T)
-
-    #for mass prior
-    D = 3.086e+16 * dist
-    R = np.sqrt(r2d2) * D
-    g = (10.**logg)/100.
-    M = (R**2 * g/(6.67E-11))/1.898E27
+    if (proftype == 1):
+        gam = theta[13]
+        T = theta[14:]
+        diff=np.roll(T,-1)-2.*T+np.roll(T,1)
+        pp=len(T)
     
-    #         and  and (-5. < logbeta < 0))
-    if (all(invmr[0:9] > -12.0) and (np.sum(10.**(invmr[0:9])) < 1.0) 
-        and  0.0 < logg < 6.0 
-        and 1. < M < 80. 
-        and  0. < r2d2 < 1. 
-        and -0.01 < dlam < 0.01 
-        and (min(T) > 1.0) and (max(T) < 5000.) 
-        and (gam > 0.)
-        and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf < (100.*np.max(obspec[2,:]**2)))): 
-        logbeta = -5.0
-    	beta=10.**logbeta
-    	alpha=1.0
-    	x=gam
-    	invgamma=((beta**alpha)/math.gamma(alpha)) * (x**(-alpha-1)) * np.exp(-beta/x)
-        prprob = (-0.5/gam)*np.sum(diff[1:-1]**2) - 0.5*pp*np.log(gam) + np.log(invgamma)
-#        print -0.5*np.sum(diff[1:]**2/gam), -0.5*np.sum(np.log(2.*np.pi*gam)), np.log(invgamma)
-        return prprob 
-    return -np.inf
+        #for mass prior
+        D = 3.086e+16 * dist
+        R = np.sqrt(r2d2) * D
+        g = (10.**logg)/100.
+        M = (R**2 * g/(6.67E-11))/1.898E27
+        
+        #         and  and (-5. < logbeta < 0))
+        if (all(invmr[0:9] > -12.0) and (np.sum(10.**(invmr[0:9])) < 1.0) 
+            and  0.0 < logg < 6.0 
+            and 1. < M < 80. 
+            and  0. < r2d2 < 1. 
+            and -0.01 < dlam < 0.01 
+            and (min(T) > 1.0) and (max(T) < 5000.) 
+            and (gam > 0.)
+            and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
+                 < (100.*np.max(obspec[2,:]**2)))): 
+            logbeta = -5.0
+    	    beta=10.**logbeta
+    	    alpha=1.0
+    	    x=gam
+    	    invgamma=((beta**alpha)/math.gamma(alpha)) * (x**(-alpha-1)) * np.exp(-beta/x)
+            prprob = (-0.5/gam)*np.sum(diff[1:-1]**2) - 0.5*pp*np.log(gam) + np.log(invgamma)
+            return prprob 
+        
+        return -np.inf
+
+    elif (proftype ==2):
+        a1 = theta[13]
+        a2 = theta[14]
+        P1 = theta[15]
+        P3 = theta[16]
+        T3 = theta[17]
+
+        #for mass prior
+        D = 3.086e+16 * dist
+        R = np.sqrt(r2d2) * D
+        g = (10.**logg)/100.
+        M = (R**2 * g/(6.67E-11))/1.898E27
+            
+        if (all(invmr[0:9] > -12.0) and (np.sum(10.**(invmr[0:9])) < 1.0) 
+            and  0.0 < logg < 6.0 
+            and 1. < M < 80. 
+            and  0. < r2d2 < 1. 
+            and -0.01 < dlam < 0.01 
+            and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
+                 < (100.*np.max(obspec[2,:]**2)))
+            and 0. < a1 < 1. and 0. < a2 < 1.0
+            and T3 > 0.0 and P3 > P1 and P1 > press[0]
+            and P3 < press[press.size-1]):
+                
+            return 0.0
+        return -np.inf
+        
+    elif (proftype == 3):
+        a1 = theta[13]
+        a2 = theta[14]
+        P1 = theta[15]
+        P2 = theta[16]
+        P3 = theta[17]
+        T3 = theta[18]
+
+        #for mass prior
+        D = 3.086e+16 * dist
+        R = np.sqrt(r2d2) * D
+        g = (10.**logg)/100.
+        M = (R**2 * g/(6.67E-11))/1.898E27
+            
+        if (all(invmr[0:9] > -12.0) and (np.sum(10.**(invmr[0:9])) < 1.0) 
+            and  0.0 < logg < 6.0 
+            and 1. < M < 80. 
+            and  0. < r2d2 < 1. 
+            and -0.01 < dlam < 0.01 
+            and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
+                 < (100.*np.max(obspec[2,:]**2)))
+            and 0. < a1 < 1. and 0. < a2 < 1.0
+            and T3 > 0.0 and P3 > P2 and P2 > P1 and P1 > press[0]
+            and P3 < press[press.size-1]):
+                
+            return 0.0
+        return -np.inf
 
 
+            
+
+
+
+                

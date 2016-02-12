@@ -44,9 +44,9 @@ __status__ = "Development"
 # set up pressure grids in bar cos its intuitive
 logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
-coarsePress = 1000.* pow(10,logcoarsePress)
+coarsePress = pow(10,logcoarsePress)
 logfinePress = np.arange(-4.0, 2.4, 0.1)
-finePress = 1000.* pow(10,logfinePress)
+finePress = pow(10,logfinePress)
 # forward model wants pressure in mbar
 press = finePress
 nprof = coarsePress.size
@@ -56,7 +56,7 @@ nprof = coarsePress.size
 #logg = 5.0
 #dlam = 0.
 w1 = 1.0
-w2 = 10.0
+w2 = 2.5
 npatches = 1
 pcover = np.array([npatches],dtype='f']
 pcover[:] = 1.0
@@ -70,6 +70,9 @@ dist = 11.35
 # hardwired FWHM of data in microns
 fwhm = 0.005
 
+# Set the profile type
+proftype = 1
+
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 10
@@ -77,7 +80,7 @@ gasnum = np.asfortranarray(np.array([1,4,7,8,10,11,3,2,20,21],dtype='i'))
 lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
-inpress=1000.*inpress
+
 wn1 = 10000./w2
 wn2 = 10000. / w1
 inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))],dtype='float64')
@@ -116,7 +119,7 @@ obspec = np.asfortranarray(np.loadtxt("2M2224_mkoJcalib.dat",dtype='d',unpack='t
 #obspec[1,:] = obspec[1,:] + 0.1*(min(obspec[2,10::3]**2))
 
 
-runargs = dist, pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec
+runargs = dist, pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype
 
 # now set up the EMCEE stuff
 ndim, nwalkers = (nprof + (ngas-1) + 5), 540
@@ -137,8 +140,9 @@ if (fresh == 0):
     p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
     p0[:,10] =  1.5e-19 + (np.random.randn(nwalkers).reshape(nwalkers) * 1.e-20)
     p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.01
-    p0[:,12] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
-    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,12] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,13] =  50. + (np.random.randn(nwalkers).reshape(nwalkers))
+
     BTprof = np.loadtxt("BTtemp800_45_13.dat")
     #for i in range(0,13):
     #p0[:,i+14] = (BTprof[i] + 1000.) + (200. * np.random.randn(nwalkers).reshape(nwalkers))

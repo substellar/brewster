@@ -74,8 +74,8 @@ contains
 
 
        ! Neglecting H2-H CIA  
-       ! number density in amagats P0 in millibar
-       n_amg = (patch(1)%atm(ilayer)%press / 1013.25 ) * (273.15 / patch(1)%atm(ilayer)%temp)
+       ! number density in amagats P0 in bar
+       n_amg = (patch(1)%atm(ilayer)%press / 1.01325) * (273.15 / patch(1)%atm(ilayer)%temp)
 
        ! now calculate optical depth using amagats density unit
        ! put layer thickness in cm as CIA cross sections are in cm^-1 amg^-2
