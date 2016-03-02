@@ -32,15 +32,22 @@ Where not calculated WISE details are taken from Jarrett et al (2011)
 
 """
 
-
-
-
-def mag2flux(mag,magerr,filtname,iso=False):
-
+def getfilt(filtname):
+    
     if (filtname == "Jmko"):
         rawfilt = np.loadtxt("UKIRT-UKIDSS.J.dat",unpack="True",skiprows=0)
+        tempfilt = rawfilt[1,:] * rawfilt[0,:]
+        rawfilt[1,:] = tempfilt / np.amax(tempfilt) 
     elif  (filtname == "Hmko"):
         rawfilt = np.loadtxt("UKIRT-UKIDSS.H.dat",unpack="True",skiprows=0)
+        tempfilt = rawfilt[1,:] * rawfilt[0,:]
+        rawfilt[1,:] = tempfilt / np.amax(tempfilt) 
+    elif  (filtname == "nirc_Lp"):
+        rawfilt = np.loadtxt("nirc_Lp.txt",unpack="True",skiprows=1)
+        bw = 0.700
+        isow = 3.776
+        tempfilt = rawfilt[1,:] * rawfilt[0,:]
+        rawfilt[1,:] = tempfilt / np.amax(tempfilt)         
     elif (filtname == "w1"):
         rawfilt = np.loadtxt("RSR-W1.EE.txt",unpack="True",skiprows=0)
         bw = 6.6256e-01
@@ -61,6 +68,13 @@ def mag2flux(mag,magerr,filtname,iso=False):
         print "Filter ", filtname," not recognised"
         return np.nan
 
+    return rawfil,bw,isow
+
+
+def mag2flux(mag,magerr,filtname,iso=False):
+ 
+    rawfilt,bw,isow = getfilt(filtname)
+    
     # First trim vega to match filter, and put filter on same wave grid as vega
 
     rawvega = np.loadtxt("STSci_Vega.txt", unpack="True", skiprows=0)
@@ -110,29 +124,7 @@ def mag2flux(mag,magerr,filtname,iso=False):
 
 def spec2flux(rawspec,filtname,iso=False):
 
-    if (filtname == "Jmko"):
-        rawfilt = np.loadtxt("UKIRT-UKIDSS.J.dat",unpack="True",skiprows=0)
-    elif  (filtname == "Hmko"):
-        rawfilt = np.loadtxt("UKIRT-UKIDSS.H.dat",unpack="True",skiprows=0)
-    elif (filtname == "w1"):
-        rawfilt = np.loadtxt("RSR-W1.EE.txt",unpack="True",skiprows=0)
-        bw = 6.6256e-01
-        isow = 3.35
-    elif (filtname == "w2"):
-        rawfilt = np.loadtxt("RSR-W2.EE.txt",unpack="True",skiprows=0)
-        bw = 1.0423
-        isow = 4.60
-    elif (filtname == "w3"):
-        rawfilt = np.loadtxt("RSR-W3.EE.txt",unpack="True",skiprows=0)
-        bw = 5.5069
-        isow = 11.56
-    elif (filtname == "w4"):
-        rawfilt = np.loadtxt("RSR-W4.EE.txt",unpack="True",skiprows=0)
-        bw = 4.1013
-        isow  = 22.08
-    else:
-        print "Filter ", filtname," not recognised"
-        return np.nan
+    rawfilt,bw,isow = getfilt(filtname)
 
     # Now trim target spectrum to wavelength region of filter, and rebin filter onto new target grid
     w1 = rawfilt[0,0]
