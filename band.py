@@ -35,7 +35,7 @@ Where not calculated WISE details are taken from Jarrett et al (2011)
 
 
 
-def mag2flux(mag,filtname,iso=False):
+def mag2flux(mag,magerr,filtname,iso=False):
 
     if (filtname == "Jmko"):
         rawfilt = np.loadtxt("UKIRT-UKIDSS.J.dat",unpack="True",skiprows=0)
@@ -63,7 +63,7 @@ def mag2flux(mag,filtname,iso=False):
 
     # First trim vega to match filter, and put filter on same wave grid as vega
 
-    rawvega = np.loadtxt("vega.txt", unpack="True", skiprows=6)
+    rawvega = np.loadtxt("STSci_Vega.txt", unpack="True", skiprows=0)
 
     rawvega[0,:] = rawvega[0,:] / 10000.
     rawvega[1,:] = rawvega[1,:] * 10. # erg/cm/s/A to W/m2/um
@@ -95,12 +95,17 @@ def mag2flux(mag,filtname,iso=False):
 
     bandflux = bandvega * 10.**(-mag/2.5)
 
+    banderr = bandflux * (-1./2.5) * np.log(10) * magerr
 
     if iso:
         isoflux = bandflux  / bw
-        return isow, isoflux
+        isofluxerr = banderr / bw
+        return isow, isoflux,isofluxerr
 
-    return bandflux
+    
+    return bandflux,banderr
+
+
 
 
 def spec2flux(rawspec,filtname,iso=False):
