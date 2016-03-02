@@ -41,7 +41,7 @@
   real, parameter :: vrat = 2.2 
 
   ! max wave number
-  integer, parameter :: maxwave = 9501
+  integer, parameter :: maxwave = 19501
   
   ! number of wavelength/number bins in full range
   integer,protected :: nwave

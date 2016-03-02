@@ -13,6 +13,8 @@ module common_arrays
    real,dimension(nlinetemps) :: linetemps
    real,dimension(nlayers) :: press
    integer, dimension(ngas) :: gasnum
+   integer,dimension(npatch,nclouds) :: cloudnum
+
 
    save
  contains

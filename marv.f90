@@ -1,5 +1,5 @@
 subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
-     do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,&
+     do_clouds,incloudnum,cloudrad,cloudsig,cloudprof,&
      inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,outspec)
 
   use sizes
@@ -11,10 +11,9 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: ngas
   !f2py integer, parameter :: nclouds
   !f2py integer, parameter :: npatch
-  !f2py integer, parameter :: nwave
   !f2py intent(in) logg,R2D2,pcover
   !f2py intent(in) temp,logVMR
-  !f2py intent(in) ingasnum,do_clouds,cloudnum,use_disort
+  !f2py intent(in) ingasnum,do_clouds,incloudnum,use_disort
   !f2py intent(in) cloudrad,cloudsig,cloudprof
   !f2py intent(in) inlinetemps,inpress
   !f2py intent(inout) cia, ciatemps
@@ -35,7 +34,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   character(len=10),dimension(:),allocatable::gaslist,cloudlist
   double precision,dimension(:),allocatable:: masslist
   double precision,dimension(ngas,nlayers) :: logVMR
-  integer,dimension(npatch,nclouds):: cloudnum
+  integer,dimension(npatch,nclouds)::incloudnum
   character(len=10),dimension(npatch,nclouds) :: cloudname
   double precision,dimension(npatch,nlayers,nclouds) :: cloudrad
   double precision,dimension(npatch,nlayers,nclouds) :: cloudsig
@@ -74,27 +73,29 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   end do
   close(10)
 
-  
-  do ipatch = 1, npatch
+   do ipatch = 1, npatch
      do icloud = 1, nclouds
         ! check if we're doing a specific cloud or a generic/mixed cloud
-        if (cloudnum(ipatch,icloud) .eq. 99) then
+        if (incloudnum(ipatch,icloud) .eq. 99) then
            cloudname(ipatch,icloud) = "mixto"
         else
-           cloudname(ipatch,icloud) = trim(adjustl(cloudlist(cloudnum(ipatch,icloud))))
+           cloudname(ipatch,icloud) = trim(adjustl(cloudlist(incloudnum(ipatch,icloud))))
         endif
      end do
   end do
 
   
   deallocate(cloudlist,gaslist,masslist)  
-
   call forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
-       do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
+       do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,out_spec)
+
   outspec = 0.0
-  outspec(1,:)  = out_spec(1,1:nwave)
-  outspec(2,:) = out_spec(2,1:nwave)
+  outspec(1,1:nwave)  = out_spec(1,1:nwave)
+  outspec(2,1:nwave) = out_spec(2,1:nwave)
+
+  
+
   deallocate(out_spec)
  
 end subroutine marv

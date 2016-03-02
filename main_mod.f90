@@ -4,7 +4,7 @@ module main
 
 contains 
   subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
-       pcover,do_clouds,cloudname,cloudrad,cloudsig,cloudprof,&
+       pcover,do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,out_spec)
     
     use sizes
@@ -22,7 +22,6 @@ contains
     
     ! input variables
     double precision,dimension(nlayers), INTENT(IN):: temp
-!    double precision,INTENT(IN) :: w1,w2
     real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
@@ -34,6 +33,7 @@ contains
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
     double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
+    integer,dimension(npatch,nclouds),intent(in):: incloudnum
     double precision,intent(inout) :: inwavenum(:)
     real,dimension(nlinetemps) :: inlinetemps
     real,dimension(nlayers) :: inpress
@@ -50,17 +50,16 @@ contains
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish
     logical :: disorting
-!    double precision, allocatable,dimension(:) :: wavenum, wavelen
 
     ! Are we using DISORT
     disorting = use_disort
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
-
     allocate(wdiff(nwave))
     call init_wscales
     !wavenum[nwave],wavelen[nwave])
+
 
     do ipatch = 1, npatch
        call init_column(patch(ipatch)%atm)
@@ -72,6 +71,7 @@ contains
     linetemps = inlinetemps
     press = inpress
     gasnum = ingasnum
+    cloudnum = incloudnum
 
     call set_pressure_scale
 
@@ -124,7 +124,6 @@ contains
     ! now we want the layer thickness in LENGTH units
     
 !    write(*,*) "Test line main L164. mu at layer 6 is: ", patch(1)%atm(6)%mu
-    
     call layer_thickness(grav)
     
     ! now get number density of layers
@@ -201,7 +200,9 @@ contains
           ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
           ! we'll just use the density, rg, and rsig as dtau, w0 and gg
           ! for the cloud
-          if (patch(ipatch)%atm(1)%cloud(1)%name == "mixto") then
+
+          !if (trim(patch(ipatch)%atm(1)%cloud(1)%name) .eq. 'mixto') then
+          if (cloudnum(ipatch,1) .eq. 99) then
              if (nclouds .ne. 1) then
                 write(*,*) "Error: mixto cloud case should have nclouds = 1"
                 stop
@@ -219,7 +220,7 @@ contains
                         patch(ipatch)%atm(ilayer)%cloud(1)%rsig
                 end do ! layer loop
              end if
-          else
+          else 
              write(*,*) "calling cloud atlas"
              call cloudatlas(patch(ipatch)%atm)
           end if
@@ -277,7 +278,7 @@ contains
                patch(ipatch)%atm(ilayer)%gg)
        end do
     end do
-    
+   
   end subroutine forward
 
   

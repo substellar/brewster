@@ -124,39 +124,53 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
             for j in range(0, ncloud):
                 
-                pdiff = abs(np.log(press) - np.log(p0))
-                l0 = np.argmin(pdiff)
-                cloudprof[i,l0+1:,j] = ndens
-                # now for top layer of cloud
-                # need levels for this
-                pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
-                pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
-                print "l0 =",l0
-                print "p0 =",p0
-                print "pl1 =", pl1
-                print "pl2 =",pl2
-                # This is done in logP for now
-                # want geometric weighted mean of top layer, and level above
                 if (cloudnum != 99):
+
+                    pdiff = abs(np.log(press) - np.log(p0))
+                    l0 = np.argmin(pdiff)
+                    if (l0 <= press.size-2):
+                        cloudprof[i,l0+1:,j] = ndens
+                        # now for top layer of cloud
+                        # need levels for this
+                        pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
+                        pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
+                    else:
+                        pl1 = np.exp((0.5 * np.log(press[l0-1] * press[l0])))
+                        pl2 = press[l0]**2 / pl1
+
+                    # want geometric weighted mean of level above p0 and ndens
                     dl1 = (10.**ndens) * np.exp((pl1 - p0)/scale)
-                    cloudprof[i,l0,j] = np.log10(np.sqrt((dl1 * ((p0 - pl1)/(pl2-pl1))) *
-                                                ((10.**ndens)*((pl2 - p0)/(pl2-pl1)))))
+                    cloudprof[i,l0,j] = np.log10(np.sqrt(dl1 *  10.**ndens))
                     # now the rest of the layers
                     for k in range(0, l0):
                         cloudprof[i,k,j] = np.log10((10.**ndens) * np.exp((press[k] - p0)/scale))
                 else:
-                    dl1 = ndens * np.exp((pl1 - p0)/scale)
-                    cloudprof[i,l0,j] = np.sqrt((dl1 * ((p0 - pl1)/(pl2-pl1))) *
-                                                ((ndens)*((pl2 - p0)/(pl2-pl1))))
+                    #  cloud 99 case!!
+                    pdiff = abs(np.log(press) - np.log(p0))
+                    l0 = np.argmin(pdiff)
+                    if (l0 <= press.size-2):
+                        # now for top layer of cloud
+                        # need levels for this
+                        pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
+                        pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
+                    else:
+                        pl1 = np.exp((0.5 * np.log(press[l0-1] * press[l0])))
+                        pl2 = press[l0]**2 / pl1
+  
+                    dtau0 = (pl2 - pl1) / (p0 - pl1)    
+                    cloudprof[i,l0,j] = dtau0
+
+                    if (l0 <= press.size-2):
+                        cloudprof[i,l0+1:,j] = dtau0
                     # now the rest of the layers
                     for k in range(0, l0):
-                        cloudprof[i,k,j] = ndens * np.exp((press[k] - p0)/scale)
+                        cloudprof[i,k,j] = dtau0 * np.exp((press[k] - p0)/scale)
 
                 cloudrad[i,:,j] = rad
                 cloudsig[i,:,j] = sig       
 
 
-                print "dl1 = ",dl1
+                #print "dl1 = ",dl1
                     
         if (cloudtype[i] != 1 and cloudtype != 2):
             print "cloud layout not recognised. stopping" 

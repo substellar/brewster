@@ -1,11 +1,11 @@
 #PBS -S /bin/tcsh
-#PBS -N bb_2M2224
+#PBS -N bb_2M2224_cloud
 #PBS -m abe
-#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=20:mpiprocs=20:model=has
-#PBS -l walltime=08:00:00
+#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
+#PBS -l walltime=35:00:00
 #PBS -k oe
 #PBS -r n
-#PBS -q normal
+#PBS -q long
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
@@ -17,8 +17,9 @@ setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/2M2224spex
 #setenv MPI_BUFS_PER_PROC 512
 #setenv OMP_NUM_THREADS 20
 
+unlimit stacksize
 
-
+limit coredumpsize 0
 
 set time_start=`date '+%T%t%d_%h_06'`
   
@@ -43,7 +44,7 @@ cd /home1/bburning/retrievals/2M2224spex
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 100 python brewster.py > brew_2M2224spex.log
+mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster.py > brew_2M2224spex.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
