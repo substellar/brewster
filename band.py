@@ -109,7 +109,7 @@ def mag2flux(mag,magerr,filtname,iso=False):
 
     bandflux = bandvega * 10.**(-mag/2.5)
 
-    banderr = bandflux * (-1./2.5) * np.log(10) * magerr
+    banderr = abs(bandflux * (-1./2.5) * np.log(10) * magerr)
 
     if iso:
         isoflux = bandflux  / bw
