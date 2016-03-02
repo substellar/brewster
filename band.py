@@ -68,7 +68,7 @@ def getfilt(filtname):
         print "Filter ", filtname," not recognised"
         return np.nan
 
-    return rawfil,bw,isow
+    return rawfilt,bw,isow
 
 
 def mag2flux(mag,magerr,filtname,iso=False):
