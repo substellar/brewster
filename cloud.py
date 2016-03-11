@@ -71,36 +71,41 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             for j in range(0, ncloud):
                 pdiff = abs(np.log(press) - np.log(p1))
                 l1 = np.argmin(pdiff)
-                # Whichever layer mean P the cloud top is closest
+                # Whichever layer-mean-P the cloud top is closest
                 # to is the +1 layer of the cloud
                 # same for the -1 layer of the base
                 pdiff = abs(np.log(press) - np.log(p2))
                 l2 = np.argmin(pdiff)
-                cloudprof[i,l1+1:l2-1,j] = ndens
-                # now account for partial fill of bottom and top layers
-                # need levels for this
-                pl1 = np.exp(((1.5)*np.log(press[l1])) - ((0.5)*np.log(press[l1+1])))
-                pl2 = np.exp((0.5)*(np.log(press[l1] * press[l1+1])))
-                # This is done in logP for now
+
                 if (cloudnum != 99):
+
+                    cloudprof[i,l1+1:l2-1,j] = ndens
+                    # now account for partial fill of bottom and top layers
+                    # need levels for this
+                    pl1, pl2 = atlev(l1,press)
+                    # This is done in logP for now
                     cloudprof[i,l1,j] = np.log10(10.**ndens * \
-                                                 ((np.log10(pl2) - np.log10(p1)) /
+                                                 ((np.log10(pl2) - np.log10(p1))
+                                                  /
                                                   (np.log10(pl2) - np.log10(pl1))))
-                else:
-                     cloudprof[i,l1,j] = ndens * ((np.log10(pl2) - np.log10(p1)) /
-                                                  (np.log10(pl2) - np.log10(pl1)))
-                    
-                # same for bottom
-                pl1 = np.exp(((1.5)*np.log(press[l2])) - ((0.5)*np.log(press[l2+1])))
-                pl2 = np.exp((0.5)*(np.log(press[l2] * press[l2+1])))
-                # This is done in logP for now
-                if (cloudnum != 99):
+                    # same for bottom
+                    pl1, pl2 = atlev(l2,press)
                     cloudprof[i,l2,j] = np.log10(10.**ndens * \
-                                                 ((np.log10(p2) - np.log10(pl1)) /
-                                                  (np.log10(pl2) - np.log10(pl1))))
+                                                ((np.log10(p2) - np.log10(pl1))
+                                                 /
+                                                 (np.log10(pl2) - np.log10(pl1))))
                 else:
-                    cloudprof[i,l2,j] = ndens * ((np.log10(p2) - np.log10(pl1)) /
-                                                  (np.log10(pl2) - np.log10(pl1)))
+                    # This is a slab cloud
+                    # dtau/dP propto P
+                    tau = ndens
+                    const = tau / (p2**2 - p1**2)
+                    # partial top fill
+                    pl1, pl2 = atlev(l1,press)
+                    cloudprof[i,l1,j] = const * (pl2**2 - p1**2)
+                    pl1, pl2 = atlev(l2,press)
+                    cloudprof[i,l2,j] = const *  (pl2**2 - p2**2) 
+                    for k in range (l1+1,l2-1):
+                        cloudprof[j,k,j] = const * (p2**2 - p1**2)
  
                 cloudrad[i,:,j] = rad
                 cloudsig[i,:,j] = sig        
@@ -115,7 +120,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             # 4) rsig
             
             ndens= cloudparams[0]
-            p0 =cloudparams[1]
+            p0 = cloudparams[1]
             scale = cloudparams[2]
             rad = cloudparams[3]
             sig = cloudparams[4]
@@ -128,16 +133,11 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
                     pdiff = abs(np.log(press) - np.log(p0))
                     l0 = np.argmin(pdiff)
-                    if (l0 <= press.size-2):
+                    if (l0 <= nlayers-2):
                         cloudprof[i,l0+1:,j] = ndens
-                        # now for top layer of cloud
-                        # need levels for this
-                        pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
-                        pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
-                    else:
-                        pl1 = np.exp((0.5 * np.log(press[l0-1] * press[l0])))
-                        pl2 = press[l0]**2 / pl1
-
+                    # now for top layer of cloud
+                    # need levels for this
+                    pl1, pl2 = atlev(l0,press)
                     # want geometric weighted mean of level above p0 and ndens
                     dl1 = (10.**ndens) * np.exp((pl1 - p0)/scale)
                     cloudprof[i,l0,j] = np.log10(np.sqrt(dl1 *  10.**ndens))
@@ -146,26 +146,21 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                         cloudprof[i,k,j] = np.log10((10.**ndens) * np.exp((press[k] - p0)/scale))
                 else:
                     #  cloud 99 case!!
-                    pdiff = abs(np.log(press) - np.log(p0))
-                    l0 = np.argmin(pdiff)
-                    if (l0 <= press.size-2):
-                        # now for top layer of cloud
-                        # need levels for this
-                        pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
-                        pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
-                    else:
-                        pl1 = np.exp((0.5 * np.log(press[l0-1] * press[l0])))
-                        pl2 = press[l0]**2 / pl1
-  
-                    dtau0 = (pl2 - pl1) / (p0 - pl1)    
-                    cloudprof[i,l0,j] = dtau0
-
-                    if (l0 <= press.size-2):
-                        cloudprof[i,l0+1:,j] = dtau0
-                    # now the rest of the layers
-                    for k in range(0, l0):
-                        cloudprof[i,k,j] = dtau0 * np.exp((press[k] - p0)/scale)
-
+                    # Here P0 is the pressure where tau = 1 for the cloud
+                    # so dtau / dP = const * exp((P-P0) / scale)
+                    # See notes for derivation of constant and integral
+                    const = 1. / (1 - np.exp(-p0 / scale))
+                    for k in range (0,nlayers):
+                        pl1, pl2 = atlev(k,press)
+                        # now get dtau for each layer, where tau = 1 at P0
+                        term1 = (pl2 - p0) / scale
+                        term2 = (pl1 - p0) / scale
+                        if (term1 > 10 or term2 > 10):
+                            cloudprof[i,k,j] = 100.00
+                        else:
+                            cloudprof[i,k,j] = const * (np.exp(term1) -
+                                                        np.exp(term2))
+                                                     
                 cloudrad[i,:,j] = rad
                 cloudsig[i,:,j] = sig       
 
@@ -177,3 +172,14 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
     
     return cloudprof,cloudrad,cloudsig
+
+def atlev(l0,press):
+    nlayers = press.size
+    if (l0 <= nlayers-2):
+        pl1 = np.exp(((1.5)*np.log(press[l0])) - ((0.5)*np.log(press[l0+1])))
+        pl2 = np.exp((0.5)*(np.log(press[l0] * press[l0+1])))
+    else:
+        pl1 = np.exp((0.5 * np.log(press[l0-1] * press[l0])))
+        pl2 = press[l0]**2 / pl1
+
+    return pl1, pl2
