@@ -12,8 +12,7 @@ contains
     use define_types
     use phys_const
     use atmos_ops
-    use gas_mixing
-    use cia_arg
+    use gas_opacity
     use clouds
     use setup_RT
     
@@ -151,21 +150,21 @@ contains
  !   nw2 = minloc(wdiff,1)
     
     call cpu_time(opstart)
-    call cpu_time(linstart)
     ! now mix the gases in each layer to get optical depth from lines
     do ilayer = 1, nlayers
        call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
-    end do
-    
-    call cpu_time(linfinish)
-    
-!    write(*,*) "lines mixed in", (linfinish - linstart), "seconds. moving on to CIA"
+       ! now let's get the CIA.  
+       call get_cia(cia,ciatemp,grav,ch4index,ilayer)
 
-    ! now let's get the CIA.  
-    call get_cia(cia,ciatemp,grav,ch4index)
+       ! now the Rayleigh scattering
+       call get_ray(ilayer,ch4index)
+       
+    end do
     
     call cpu_time(opfinish)
     
+    
+     
     ! COPY ALL PATCH 1 PROPERTIES TO OTHER PATCHES BEFORE DOING CLOUDS
     
     if (npatch .gt. 1) then
@@ -250,6 +249,8 @@ contains
 
     ! test line
     call cpu_time(distart)
+
+    
     call run_RT(specflux,disorting)
 
     allocate(out_spec(2,nwave))
