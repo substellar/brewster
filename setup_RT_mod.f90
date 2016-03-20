@@ -92,7 +92,12 @@ contains
           patch(ipatch)%atm(ilayer)%opd_ext = &
                patch(ipatch)%atm(ilayer)%opd_ext + &
                patch(ipatch)%atm(ilayer)%opd_lines + &
-               patch(ipatch)%atm(ilayer)%opd_CIA
+               patch(ipatch)%atm(ilayer)%opd_CIA + &
+               patch(ipatch)%atm(ilayer)%opd_rayl
+
+          patch(ipatch)%atm(ilayer)%opd_scat = &
+               patch(ipatch)%atm(ilayer)%opd_scat + &
+               patch(ipatch)%atm(ilayer)%opd_rayl
        end do
      
 
@@ -118,7 +123,8 @@ contains
                 COSBAR(ilayer) = patch(ipatch)%atm(ilayer)%gg(iwave)
              else     
                 CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer))
-                SSALB(ilayer) = 0.0
+                SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
+                     patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
                 COSBAR(ilayer) = 0.0
              end if
              

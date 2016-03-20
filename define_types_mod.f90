@@ -25,7 +25,7 @@ module define_types
      double precision:: temp
      double precision :: press,logP,dz,dp,ndens,fH2,fHe,mu
      double precision, allocatable,dimension(:) ::opd_ext,opd_scat,gg
-     double precision, allocatable,dimension(:) :: opd_lines,opd_CIA
+     double precision, allocatable,dimension(:) :: opd_lines,opd_CIA,opd_rayl
      type(a_gas) :: gas(ngas)
      type(a_cloud) :: cloud(nclouds)
   end type a_layer
@@ -56,6 +56,8 @@ contains
             allocate (col(ilayer)%opd_lines(nwave))
        if ( .NOT. allocated (col(ilayer)%opd_CIA)) &
             allocate (col(ilayer)%opd_CIA(nwave))
+       if ( .NOT. allocated (col(ilayer)%opd_rayl)) &
+            allocate (col(ilayer)%opd_rayl(nwave))
        if ( .NOT. allocated (col(ilayer)%gg)) &
             allocate (col(ilayer)%gg(nwave))
        

@@ -3,8 +3,7 @@ make phys_const_mod.o
 make define_types_mod.o
 make common_arrays_mod.o
 make atmos_ops_mod.o
-make gas_mixing_mod.o
-make cia_arg_mod.o
+make gas_opacity_mod.o
 make clouds_mod.o
 make setup_RT_mod.o
 make f77mods
