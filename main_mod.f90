@@ -138,6 +138,8 @@ contains
           patch(ipatch)%atm(ilayer)%opd_CIA = 0.0
           patch(ipatch)%atm(ilayer)%opd_ext = 0.0
           patch(ipatch)%atm(ilayer)%opd_lines = 0.0
+          patch(ipatch)%atm(ilayer)%opd_rayl = 0.0
+          
        end do
     end do
     
@@ -153,13 +155,15 @@ contains
     ! now mix the gases in each layer to get optical depth from lines
     do ilayer = 1, nlayers
        call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
-       ! now let's get the CIA.  
-       call get_cia(cia,ciatemp,grav,ch4index,ilayer)
-
+ 
        ! now the Rayleigh scattering
        call get_ray(ilayer,ch4index)
        
     end do
+
+    ! now let's get the CIA.  
+    call get_cia(cia,ciatemp,grav,ch4index)
+
     
     call cpu_time(opfinish)
     

@@ -116,8 +116,8 @@ contains
 
 
 
-    subroutine get_ray(ilayer,ch4index)
-
+  subroutine get_ray(ilayer,ch4index)
+    
     use sizes
     use common_arrays
     use phys_const
@@ -125,15 +125,16 @@ contains
     
     
     implicit none
-
+    
     integer :: ilayer,ch4index,nn,iwave,ng
-    double precision :: cfray, tec, XN0,cold,taur
+    double precision :: cfray, XN0,cold
     double precision, dimension(3):: gasss,dpol
     double precision,dimension(2,3):: gnu
-   
+    double precision,allocatable,dimension(:):: wa,tec, taur
     dpol = [1.022d0,1.0d0,1.0d0]
-
-
+    
+    allocate(wa(nwave),tec(nwave),taur(nwave))
+    
     gnu(1,1)=1.355d-4
     gnu(2,1)=1.235d-6
     gnu(1,2)=3.469d-5
@@ -141,10 +142,10 @@ contains
     gnu(1,3)=4.318d-4
     gnu(2,3)=3.408d-6
     XN0=2.687d19
-
+    
     cfray = 32.d0*pi**3*1.d21/(3.d0*2.687d19)
-
-
+    
+    
     gasss(1) = patch(1)%atm(ilayer)%fH2
     gasss(2) = patch(1)%atm(ilayer)%fHe
     if (ch4index .ne. 0) then
@@ -153,30 +154,31 @@ contains
     else
        ng = 2
     end if
+
+    wa = wavelen !* 1e-4
+
+    cold = patch(1)%atm(ilayer)%ndens * patch(1)%atm(ilayer)%dz * 1.e-4
     
-    cold = patch(1)%atm(ilayer)%ndens
-
- 
-    do iwave = 1, nwave
-       taur = 0.0      
-       do nn =1,ng
-          tec = cfray*(dpol(nn)/wavelen(iwave)**4)*(gnu(1,nn)+gnu(2,nn) &
-               / wavelen(iwave)**2)**2
-          taur = taur + COLD*gasss(nn)* tec*1.d-5/XN0
-          
-       end do !nn loop
+    
+    taur = 0.0      
+    do nn =1,ng
+       tec = cfray*(dpol(nn)/wa**4)*(gnu(1,nn)+gnu(2,nn) &
+            / wa**2)**2
+       taur = taur + COLD*gasss(nn) * tec * 1.d-5 / XN0
        
-       patch(1)%atm(ilayer)%opd_rayl(iwave) = taur
-       
-    end do ! wave loop
+    end do !nn loop
 
-
+!    taur = cold * 8.49e-45 / wa**4
+    patch(1)%atm(ilayer)%opd_rayl = taur
+    
+    
+    deallocate(tec,taur,wa)
     
   end subroutine get_ray
 
 
 
-    subroutine get_cia(cia,ciatemp,grav,ch4index,ilayer)
+  subroutine get_cia(cia,ciatemp,grav,ch4index)
 
     use sizes
     use common_arrays
@@ -208,64 +210,64 @@ contains
     ph2ch4 = cia(4,:,:)
 
 
-
+    do ilayer = 1, nlayers
        
 
-    ! now we need to inpterpolate for the temperature
+       ! now we need to inpterpolate for the temperature
 
 
        
-    tdiff = abs(ciatemp - patch(1)%atm(ilayer)%temp)
-
-    tcia1 = minloc(tdiff,1)
-    if (ciatemp(tcia1) .lt. patch(1)%atm(ilayer)%temp)  then
-       tcia2 = tcia1 + 1
-    else
-       tcia2 = tcia1
-       tcia1 = tcia2 - 1
-    end if
-    
-    
-    if (tcia1 .eq. 0) then
-       intfact = (log10(patch(1)%atm(ilayer)%temp) - log10(ciatemp(1))) / (log10(ciatemp(2)) - log10(ciatemp(1)))
+       tdiff = abs(ciatemp - patch(1)%atm(ilayer)%temp)
        
-       ciaH2H2 = 10.0**(((ph2h2(2,:) - ph2h2(1,:))* intfact) + ph2h2(1,:))
-       ciaH2He = 10.0**(((ph2he(2,:) - ph2he(1,:))* intfact) + ph2he(1,:))
-       ciaH2CH4 = 10.0**(((ph2ch4(2,:) - ph2ch4(1,:))* intfact) + ph2ch4(1,:))
-    else
-       intfact =  (log10(patch(1)%atm(ilayer)%temp) - log10(ciatemp(tcia1))) / (log10(ciatemp(tcia2)) - log10(ciatemp(tcia1)))
-       
-       ! resultant CIA is then:
-       ciaH2H2 = 10.0**(((ph2h2(tcia2,:) - ph2h2(tcia1,:))* intfact) + ph2h2(tcia1,:))
-       ciaH2He = 10.0**(((ph2he(tcia2,:) - ph2he(tcia1,:))* intfact) + ph2he(tcia1,:))
-       ciaH2CH4 = 10.0**(((ph2ch4(tcia2,:) - ph2ch4(tcia1,:))* intfact) + ph2ch4(tcia1,:))
+       tcia1 = minloc(tdiff,1)
+       if (ciatemp(tcia1) .lt. patch(1)%atm(ilayer)%temp)  then
+          tcia2 = tcia1 + 1
+       else
+          tcia2 = tcia1
+          tcia1 = tcia2 - 1
+       end if
        
        
-    endif
-    
-    
-    ! Neglecting H2-H CIA  
-    ! number density in amagats P0 in bar
-    n_amg = (patch(1)%atm(ilayer)%press / 1.01325) * (273.15 / patch(1)%atm(ilayer)%temp)
-    
-    ! now calculate optical depth using amagats density unit
-    ! put layer thickness in cm as CIA cross sections are in cm^-1 amg^-2
-    
-    ! Check if CH4 is present and include CH4-H2 if present       
-    if (ch4index .ne. 0) then 
-       patch(1)%atm(ilayer)%opd_cia = (n_amg**2. * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz*100.) * &
-            ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
-            + (patch(1)%atm(ilayer)%fHe * ciaH2He) &
-            + (patch(1)%atm(ilayer)%gas(ch4index)%VMR * ciaH2CH4))
-    else
-       ! If no CH4 just sum the H2-H2 and H2-He CIAs
-       patch(1)%atm(ilayer)%opd_cia = (n_amg**2. * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz*100.) * &
-            ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
-            + (patch(1)%atm(ilayer)%fHe * ciaH2He))
-    end if
-    
-    
+       if (tcia1 .eq. 0) then
+          intfact = (log10(patch(1)%atm(ilayer)%temp) - log10(ciatemp(1))) / (log10(ciatemp(2)) - log10(ciatemp(1)))
+          
+          ciaH2H2 = 10.0**(((ph2h2(2,:) - ph2h2(1,:))* intfact) + ph2h2(1,:))
+          ciaH2He = 10.0**(((ph2he(2,:) - ph2he(1,:))* intfact) + ph2he(1,:))
+          ciaH2CH4 = 10.0**(((ph2ch4(2,:) - ph2ch4(1,:))* intfact) + ph2ch4(1,:))
+       else
+          intfact =  (log10(patch(1)%atm(ilayer)%temp) - log10(ciatemp(tcia1))) / (log10(ciatemp(tcia2)) - log10(ciatemp(tcia1)))
+          
+          ! resultant CIA is then:
+          ciaH2H2 = 10.0**(((ph2h2(tcia2,:) - ph2h2(tcia1,:))* intfact) + ph2h2(tcia1,:))
+          ciaH2He = 10.0**(((ph2he(tcia2,:) - ph2he(tcia1,:))* intfact) + ph2he(tcia1,:))
+          ciaH2CH4 = 10.0**(((ph2ch4(tcia2,:) - ph2ch4(tcia1,:))* intfact) + ph2ch4(tcia1,:))
+          
+          
+       endif
+       
+       
+       ! Neglecting H2-H CIA  
+       ! number density in amagats P0 in bar
+       n_amg = (patch(1)%atm(ilayer)%press / 1.01325) * (273.15 / patch(1)%atm(ilayer)%temp)
+       
+       ! now calculate optical depth using amagats density unit
+       ! put layer thickness in cm as CIA cross sections are in cm^-1 amg^-2
+       
+       ! Check if CH4 is present and include CH4-H2 if present       
+       if (ch4index .ne. 0) then 
+          patch(1)%atm(ilayer)%opd_cia = (n_amg**2. * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz*100.) * &
+               ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
+               + (patch(1)%atm(ilayer)%fHe * ciaH2He) &
+               + (patch(1)%atm(ilayer)%gas(ch4index)%VMR * ciaH2CH4))
+       else
+          ! If no CH4 just sum the H2-H2 and H2-He CIAs
+          patch(1)%atm(ilayer)%opd_cia = (n_amg**2. * patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%dz*100.) * &
+               ((patch(1)%atm(ilayer)%fH2 * ciaH2H2) &
+               + (patch(1)%atm(ilayer)%fHe * ciaH2He))
+       end if
+       
+    end do ! layer do
   end subroutine get_cia
-
+  
   
 end module gas_opacity
