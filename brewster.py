@@ -9,7 +9,6 @@ import scipy as sp
 import emcee
 import testkit
 import ciamod
-import TPmod
 import os
 import gc
 import sys
@@ -64,7 +63,7 @@ nclouds = 1
 pcover = np.ones([npatches],dtype='f')
 pcover[:] = 1.0
 do_clouds = np.zeros([npatches],dtype='i')
-do_clouds[:] = 0
+do_clouds[:] = 1
 cloudnum = np.zeros([npatches,nclouds],dtype='i')
 cloudnum[:,:] = 99
 cloudtype = np.array([npatches],dtype='i')
@@ -79,7 +78,7 @@ proftype = 2
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 10
 gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -132,8 +131,8 @@ runargs = dist, pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinete
 
 # now set up the EMCEE stuff
 
-ndim  = 18 #((ngas-1) + 9 + 5)
-nwalkers = ndim * 24
+ndim  = 22 #((ngas-1) + 9 + 5)
+nwalkers = ndim * 16
 #int(((ndim * ndim) // 2) * 2)
 
 
@@ -151,34 +150,34 @@ if (fresh == 0):
     p0[:,7] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # MgH
     p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
     p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
-    p0[:,10] =  1e-21 + (np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20)
+    p0[:,10] =  1.0e-22 + np.random.rand(nwalkers).reshape(nwalkers) * 1.e-20
     p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
     p0[:,12] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(10. - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, so need pressure of top where dtau > 1 for first time, plus scale height, SSA, w
-#    p0[:,13] = 1e-4 + 100. *  np.random.rand(nwalkers).reshape(nwalkers) 
-#    p0[:,14] = 1e-4 + np.random.rand(nwalkers).reshape(nwalkers) 
-#    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers)
-#    p0[:,16] = np.random.choice([-1,+1]) * np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,13] = 1e-4 + 10. *  np.random.rand(nwalkers).reshape(nwalkers) 
+    p0[:,14] = 1e-4 + np.random.rand(nwalkers).reshape(nwalkers) 
+    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,16] = np.random.choice([-1,+1]) * np.random.rand(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,13] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,14] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,15] = 1e-4 + (10.* np.random.rand(nwalkers).reshape(nwalkers))
-    p0[:,16] = p0[:,15] +(100. *  np.random.rand(nwalkers).reshape(nwalkers))
-    p0[:,17] = 1000. + (3000.*  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,18] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,19] = 1e-4 + (10.* np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,20] = p0[:,19] +(100. *  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,21] = 1000. + (3000.*  np.random.rand(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,13:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,17:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,13] = np.random.rand()
-                p0[i,14] = np.random.rand()
-                p0[i,15] = 1e-4 + (10.* np.random.rand())
-                p0[i,16] = p0[i,15] +(100. *  np.random.rand())
-                p0[i,17] = 1000. + (3000.*  np.random.rand())
- 
+                p0[i,17] = np.random.rand()
+                p0[i,18] = np.random.rand()
+                p0[i,19] = 1e-4 + (10.* np.random.rand())
+                p0[i,20] = p0[i,19] +(100. *  np.random.rand())
+                p0[i,21] = 1000. + (3000.*  np.random.rand())
 
+    
 if (fresh != 0):
     fname='MCMC_last.pic'
     pic=pickle.load(open(fname,'rb'))
@@ -206,7 +205,7 @@ clock = np.empty(30000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-for result in sampler.sample(p0, iterations=20000):
+for result in sampler.sample(p0, iterations=30000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -230,14 +229,14 @@ for result in sampler.sample(p0, iterations=20000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
-	pickle.dump(output,open("/nobackup/bburning/MCMC_2m2224.pic","wb"))
+	pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
 	pickle.dump(chain[:,k-1,:], open('MCMC_last.pic','wb'))
 
 
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("/nobackup/bburning/MCMC_2m2224.pic","wb"))
+pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
 pickle.dump(chain[:,-1,:], open('MCMC_last.pic','wb'))
 
 
@@ -251,7 +250,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/2M2224_nc_retrieval_result.pk1')
+save_object(sampler,'/nobackup/bburning/2M2224_cloud_retrieval_result.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

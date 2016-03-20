@@ -42,7 +42,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
-    # get the ngas
+    # get the ngas for forward model (ngas, not ng
     if (gasnum[gasnum.size-1] == 21):
         ngas = invmr.shape[0] + 1
     else:
@@ -156,26 +156,33 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     
 def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype):
     
-    invmr = theta[0:9]
-    logg = theta[9]
-    r2d2 = theta[10]
-    dlam = theta[11]
-    logf = theta[12]
-
+    if (gasnum[gasnum.size-1] == 21):
+        ng = gasnum.size - 1
+    else:
+        ng = gasnum.size
+        
+    invmr = theta[0:ng]
+    logg = theta[ng]
+    r2d2 = theta[ng+1]
+    dlam = theta[ng+2]
+    logf = theta[ng+3]
+    
+    pc = ng + 4
     nc = 0
     if (do_clouds == 1):
         if ((cloudtype == 2) and (cloudnum == 99)):
-            cloudparams[1:5] = theta[13:17]
             nc = 4
+            cloudparams[1:5] = theta[pc:pc+nc]
         else:
-            cloudparams = theta[13:18]
             nc = 5
+            cloudparams = theta[pc:pc+nc]
+
         
     if (proftype == 1):
-        gam = theta[13+nc]
-        intemp = theta[14+nc:]
+        gam = theta[pc+nc]
+        intemp = theta[pc+1+nc:]
     elif (proftype == 2 or proftype ==3):
-        intemp = theta[13+nc:]
+        intemp = theta[pc+nc:]
     else:
         raise ValueError("not valid profile type %proftype" % (char, string))
 
@@ -195,16 +202,16 @@ def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum
 def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype):
     # set up the priors here
     if (gasnum[gasnum.size-1] == 21):
-        ngas = gasnum.size - 1
+        ng = gasnum.size - 1
     else:
-        ngas = gasnum.size
-    invmr = theta[0:ngas]
-    logg = theta[ngas]
-    r2d2 = theta[ngas+1]
-    dlam = theta[ngas+2]
-    logf = theta[ngas+3]
+        ng = gasnum.size
+    invmr = theta[0:ng]
+    logg = theta[ng]
+    r2d2 = theta[ng+1]
+    dlam = theta[ng+2]
+    logf = theta[ng+3]
     
-    pc = ngas + 4
+    pc = ng + 4
     nc = 0
     if (do_clouds == 1):
         if (cloudnum == 99):
@@ -276,17 +283,18 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     
         #for mass prior
         D = 3.086e+16 * dist
-        R = 1.0
+        R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D
+            R = np.sqrt(r2d2) * D 
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-        
+        Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ngas] > -12.0) and (np.sum(10.**(invmr[0:ngas])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
-            and 1. < M < 80. 
-            and  0. < r2d2 < 1. 
+            and 1.0 < M < 80. 
+            and  0. < r2d2 < 1.
+            and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
             and (min(T) > 1.0) and (max(T) < 5000.) 
             and (gam > 0.)
@@ -322,21 +330,23 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         T[:] = -100.
         junkP = np.ones([13])
         if (0. < a1 < 1. and 0. < a2 < 1.0
-            and T3 > 0.0 and P3 > P1 and P1 > press[0]
-            and P3 < press[press.size-1]):
+            and T3 > 0.0 and P3 >= P1 and P1 >= press[0]
+            and P3 <= press[press.size-1]):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])
         #for mass prior
         D = 3.086e+16 * dist
-        R = 1.
+        R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D
+            R = np.sqrt(r2d2) * D 
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-            
-        if (all(invmr[0:ngas] > -12.0) and (np.sum(10.**(invmr[0:ngas])) < 1.0) 
+        Rj = R / 69911.e3 
+        #         and  and (-5. < logbeta < 0))
+        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
-            and 1. < M < 80. 
-            and  0. < r2d2 < 1. 
+            and 1.0 < M < 80. 
+            and  0. < r2d2 < 1.
+            and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
@@ -365,22 +375,24 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         T = np.empty([press.size])
         T[:] = -100.
         if  (0. < a1 < 1. and 0. < a2 < 1.0
-            and T3 > 0.0 and P3 > P2 and P2 > P1 and P1 > press[0]
-            and P3 < press[press.size-1]):
+            and T3 > 0.0 and P3 >= P2 and P2 >= P1 and P1 >= press[0]
+            and P3 <= press[press.size-1]):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])
 
         #for mass prior
         D = 3.086e+16 * dist
-        R = 1.
+        R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D
+            R = np.sqrt(r2d2) * D 
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-            
-        if (all(invmr[0:ngas] > -12.0) and (np.sum(10.**(invmr[0:ngas])) < 1.0) 
+        Rj = R / 69911.e3 
+        #         and  and (-5. < logbeta < 0))
+        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
-            and 1. < M < 80. 
-            and  0. < r2d2 < 1. 
+            and 1.0 < M < 80. 
+            and  0. < r2d2 < 1.
+            and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
