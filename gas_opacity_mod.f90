@@ -3,7 +3,7 @@ module gas_opacity
 
 contains
 
-  subroutine line_mixer(layer,opd_lines,index,linelist)
+  subroutine line_mixer(linelist)
 
     use sizes
     use common_arrays
@@ -14,10 +14,8 @@ contains
     implicit none
 
     
-    type(a_layer),intent(inout) :: layer
-    double precision, intent(inout) :: opd_lines(:)
     double precision,intent(in):: linelist(:,:,:,:)
-    integer :: Tlay1, Tlay2, torder, index, iounit
+    integer :: Tlay1, Tlay2, torder, ilayer, iounit
     double precision, allocatable,dimension(:,:) :: logkap1, logkap2,logintkappa
     real, dimension(nlinetemps):: tdiff
     double precision :: ndens, intfact, junk
@@ -30,53 +28,61 @@ contains
     
     ! get line temp array locations bracketing our temperature
     
-    tdiff = abs(linetemps - layer%temp)
+    do ilayer= 1, nlayers
+       
+       tdiff = abs(linetemps - patch(1)%atm(ilayer)%temp)
     
     
-    Tlay1 = minloc(tdiff,1)
+       Tlay1 = minloc(tdiff,1)
     
     
-    if (linetemps(Tlay1) .lt. layer%temp) then
-       Tlay2 = Tlay1+1
-    else
-       Tlay2 = Tlay1 - 1
-    end if
-    
-
-
-
-    if (layer%temp .lt. linetemps(1)) then
-       Tlay1 = 1
-       Tlay2 = 2
-    else if (layer%temp .gt. linetemps(nlinetemps)) then
-       Tlay1 = nlinetemps - 1
-       Tlay2 = nlinetemps
-    endif
-
-
-    
-    ! get linear interpolation factor
-    
-    if (Tlay1 .gt. Tlay2) then
-       torder = 1
-       intfact = (log10(layer%temp) - log10(linetemps(Tlay2))) / (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
-    else
-       torder = 2
-       intfact =  (log10(layer%temp) -log10(linetemps(Tlay1))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
-    endif
-
-    if (layer%temp .gt. linetemps(nlinetemps)) then
-       intfact =  (log10(layer%temp) -log10(linetemps(Tlay2))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
-    endif
-
-    
-    
-    opd_lines = 0.0
-    
-
-    !! CODE FUCKS UP HERE.. segfault 
-    logkap1 = linelist(:,layer%index,Tlay1,:)
-    logkap2 = linelist(:,layer%index,Tlay2,:) 
+       if (linetemps(Tlay1) .lt. patch(1)%atm(ilayer)%temp) then
+          Tlay2 = Tlay1+1
+       else
+          Tlay2 = Tlay1 - 1
+       end if
+       
+       
+       
+       
+       if (patch(1)%atm(ilayer)%temp .lt. linetemps(1)) then
+          Tlay1 = 1
+          Tlay2 = 2
+       else if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
+          Tlay1 = nlinetemps - 1
+          Tlay2 = nlinetemps
+       endif
+       
+       
+       
+       ! get linear interpolation factor
+       
+       if (Tlay1 .gt. Tlay2) then
+          torder = 1
+          intfact = (log10(patch(1)%atm(ilayer)%temp) - &
+               log10(linetemps(Tlay2))) / &
+               (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
+       else
+          torder = 2
+          intfact =  (log10(patch(1)%atm(ilayer)%temp) -&
+               log10(linetemps(Tlay1))) / &
+               (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
+       endif
+       
+       if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
+          intfact =  (log10(patch(1)%atm(ilayer)%temp) &
+               - log10(linetemps(Tlay2))) &
+               / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
+       endif
+       
+       
+       
+       patch(1)%atm(ilayer)%opd_lines = 0.0
+       
+       
+       !! CODE FUCKS UP HERE.. segfault 
+       logkap1 = linelist(:,ilayer,Tlay1,:)
+       logkap2 = linelist(:,ilayer,Tlay2,:) 
        
        !  do the interpolation in log(cross section) !!!         !
 
@@ -88,8 +94,8 @@ contains
        else
           write(*,*) "something wrong with interpolate order"           
        endif
-
-       if (layer%temp .gt. linetemps(nlinetemps)) then
+       
+       if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
           logintkappa = ((logkap2 - logkap1)*intfact)+logkap2
        endif
 
@@ -102,13 +108,15 @@ contains
        ! to get optical depth
 
        
-    do igas = 1, ngas       
-       opd_lines = opd_lines + &
-            ((layer%gas(igas)%VMR * layer%ndens * layer%dz * 1d-4) &
-            * (10.0**logintkappa(igas,:)))
-    enddo
-    
-    
+       do igas = 1, ngas       
+          patch(1)%atm(ilayer)%opd_lines = patch(1)%atm(ilayer)%opd_lines + &
+               ((patch(1)%atm(ilayer)%gas(igas)%VMR * &
+               patch(1)%atm(ilayer)%ndens * &
+               patch(1)%atm(ilayer)%dz * 1d-4) &
+               * (10.0**logintkappa(igas,:)))
+       end do
+    end do ! do loop
+ 
     deallocate(logkap1, logkap2,logintkappa)
     
   end subroutine line_mixer
@@ -116,7 +124,7 @@ contains
 
 
 
-  subroutine get_ray(ilayer,ch4index)
+  subroutine get_ray(ch4index)
     
     use sizes
     use common_arrays
@@ -143,34 +151,35 @@ contains
     gnu(2,3)=3.408d-6
     XN0=2.687d19
     
-    cfray = 32.d0*pi**3*1.d21/(3.d0*2.687d19)
-    
-    
-    gasss(1) = patch(1)%atm(ilayer)%fH2
-    gasss(2) = patch(1)%atm(ilayer)%fHe
-    if (ch4index .ne. 0) then
-       gasss(3) = patch(1)%atm(ilayer)%gas(ch4index)%VMR
-       ng = 3
-    else
-       ng = 2
-    end if
-
+    cfray = 32.d0*pi**3*1.d21/(3.d0*2.687d19) 
     wa = wavelen !* 1e-4
-
-    cold = patch(1)%atm(ilayer)%ndens * patch(1)%atm(ilayer)%dz * 1.e-4
-    
-    
-    taur = 0.0      
-    do nn =1,ng
-       tec = cfray*(dpol(nn)/wa**4)*(gnu(1,nn)+gnu(2,nn) &
-            / wa**2)**2
-       taur = taur + COLD*gasss(nn) * tec * 1.d-5 / XN0
+   
+    do ilayer = 1, nlayers    
+       gasss(1) = patch(1)%atm(ilayer)%fH2
+       gasss(2) = patch(1)%atm(ilayer)%fHe
+       if (ch4index .ne. 0) then
+          gasss(3) = patch(1)%atm(ilayer)%gas(ch4index)%VMR
+          ng = 3
+       else
+          ng = 2
+       end if
        
-    end do !nn loop
-
-!    taur = cold * 8.49e-45 / wa**4
-    patch(1)%atm(ilayer)%opd_rayl = taur
+       
+       
+       cold = patch(1)%atm(ilayer)%ndens * patch(1)%atm(ilayer)%dz * 1.e-4
     
+    
+       taur = 0.0      
+       do nn =1,ng
+          tec = cfray*(dpol(nn)/wa**4)*(gnu(1,nn)+gnu(2,nn) &
+               / wa**2)**2
+          taur = taur + COLD*gasss(nn) * tec * 1.d-5 / XN0
+          
+       end do !nn loop
+
+       !    taur = cold * 8.49e-45 / wa**4
+       patch(1)%atm(ilayer)%opd_rayl = taur
+    end do ! layer do
     
     deallocate(tec,taur,wa)
     

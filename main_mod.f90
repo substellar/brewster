@@ -145,21 +145,13 @@ contains
     
     wavelen = 1e4 / wavenum
     
- !   wdiff = abs(w1 - wavelen)
- !   nw1 = minloc(wdiff,1)
-      
- !   wdiff = abs(w2 - wavelen)
- !   nw2 = minloc(wdiff,1)
-    
+     
     call cpu_time(opstart)
     ! now mix the gases in each layer to get optical depth from lines
-    do ilayer = 1, nlayers
-       call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
- 
-       ! now the Rayleigh scattering
-       call get_ray(ilayer,ch4index)
-       
-    end do
+    call line_mixer(linelist)
+     
+    ! now the Rayleigh scattering
+    call get_ray(ch4index)
 
     ! now let's get the CIA.  
     call get_cia(cia,ciatemp,grav,ch4index)
