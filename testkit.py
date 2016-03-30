@@ -218,33 +218,33 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             if (cloudtype == 1):
                 nc = 5
                 cloud_tau0 = theta[pc]
-                cloud_bot = theta[pc+1]
-                cloud_top = theta[pc+2]
-                cloud_height = 1.0
+                cloud_top = theta[pc+1]
+                cloud_height = theta[pc+2]
+                cloud_bot = cloud_top + cloud_height
                 w0 = theta[pc+3]
                 gg = theta[pc+4]
                 cloud_dens0 = -100.0
-                rg = 1e-4
-                rsig = 1e-6
+                rg = 1.0
+                rsig = 0.1
 
             if (cloudtype == 2):
                 nc = 4
                 cloud_tau0 = 1.0
-                cloud_bot = press[press.size - 1]
+                cloud_bot = np.log10(press[press.size - 1])
                 cloud_top = theta[pc]
                 cloud_height = theta[pc+1]
                 w0 = theta[pc+2]
                 gg = theta[pc+3]
                 cloud_dens0 = -100.0
-                rg = 1e-4
-                rsig = 1e-6
+                rg = 1.0
+                rsig = 0.1
         else:
             if (cloudtype == 1):
                 nc = 5
                 cloud_tau0 = 1.0
-                cloud_bot = theta[pc+1]
-                cloud_top = theta[pc+2]
-                cloud_height = 1.0
+                cloud_top = theta[pc+1]
+                cloud_height = theta[pc+2]
+                cloud_bot = cloud_top + cloud_height
                 w0 = 0.5
                 gg = 0.0
                 cloud_dens0 = theta[pc]
@@ -254,7 +254,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             if (cloudtype == 2):
                 nc = 5
                 cloud_tau0 = 1.0
-                cloud_bot = press[press.size-1]
+                cloud_bot = np.log10(press[press.size-1])
                 cloud_top = theta[pc+1]
                 cloud_height = theta[pc+2]
                 w0 =0.5
@@ -267,12 +267,12 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         cloud_tau0 = 1.0
         cloud_bot = press[press.size-1]
         cloud_top = press[0]
-        cloud_height = 1.0
+        cloud_height = 0.1
         w0 =0.5
         gg =0.0
         cloud_dens0 = -100.
-        rg =  1e-4
-        rsig = 1e-6
+        rg =  1.0
+        rsig = 0.1
                 
 
     if (proftype == 1):
@@ -290,7 +290,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -301,13 +301,13 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and (cloud_tau0 >= 0.0)
-            and (0 < cloud_bot <= press[press.size-1])
-            and (0 < cloud_top < cloud_bot)
-            and (cloud_height > 0.0)
+            and (cloud_top < cloud_bot <= np.log10(press[press.size-1]))
+            and (np.log10(press[0]) <= cloud_top < cloud_bot)
+            and (0.0 < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 1.e-5)
+            and (rg > 0.1)
             and (rsig > 0.0)):
                  
             logbeta = -5.0
@@ -330,8 +330,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         T[:] = -100.
         junkP = np.ones([13])
         if (0. < a1 < 1. and 0. < a2 < 1.0
-            and T3 > 0.0 and P3 >= P1 and P1 >= press[0]
-            and P3 <= press[press.size-1]):
+            and T3 > 0.0 and P3 >= P1 and P1 >= np.log10(press[0])
+            and P3 < 5.):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])
         #for mass prior
         D = 3.086e+16 * dist
@@ -342,7 +342,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -351,13 +351,13 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and (cloud_tau0 >= 0.0)
-            and (0. < cloud_bot <= press[press.size-1])
-            and (0. < cloud_top < cloud_bot)
-            and (cloud_height > 0.0)
+            and (cloud_top < cloud_bot <= np.log10(press[press.size-1]))
+            and (np.log10(press[0]) <= cloud_top < cloud_bot)
+            and (0. < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 1.e-5)
+            and (rg > 1.)
             and (rsig > 0.0)
             and  (min(T) > 1.0)
             and (max(T) < 5000.)):
@@ -375,8 +375,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         T = np.empty([press.size])
         T[:] = -100.
         if  (0. < a1 < 1. and 0. < a2 < 1.0
-            and T3 > 0.0 and P3 >= P2 and P2 >= P1 and P1 >= press[0]
-            and P3 <= press[press.size-1]):
+            and T3 > 0.0 and P3 >= P2 and P2 >= P1 and P1 >= np.log10(press[0])
+             and P3 < 5.):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])
 
         #for mass prior
@@ -388,7 +388,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -397,13 +397,13 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and (cloud_tau0 >= 0.0)
-            and (0. < cloud_bot <= press[press.size-1])
-            and (0. < cloud_top < cloud_bot)
-            and (cloud_height > 0.0)
+            and (cloud_top < cloud_bot <= np.log10(press[press.size-1]))
+            and (np.log10(press[0]) <= cloud_top < cloud_bot)
+            and (0. < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 1.e-5)
+            and (rg > 1.0)
             and (rsig > 0.0)
             and  (min(T) > 1.0) and (max(T) < 5000.)):               
             return 0.0

@@ -39,17 +39,24 @@ def set_prof(proftype, coarsePress,press,intemp):
         beta = 0.5
         P0 = press[0]
         #  We can either have T0 or T3 as a parameter. We're taking T3
-        a1, a2, P1,P3,T3 = intemp[0:5]
+        a1, a2, logP1,logP3,T3 = intemp[0:5]
 
-        # Set T0 from T3
-        T0 = T3 - (np.log(P3/P1) / a2)**(1/beta)-(np.log(P1/P0) / a1)**(1/beta)
+        P1 = 10.**logP1
+        P3 = 10.**logP3
 
-        # And T1 from T0
-        T1 = T0 + (np.log(P1/P0) / a1)**(1/beta)
-        
+
+        # set T1 from T3
+        T1 = T3 - (np.log(P3/P1) / a2)**(1/beta)
+    
+        # Set T0 from T1
+        T0 = T1 - ((np.log(P1/P0) / a1)**(1/beta))
+
+        print T0, T1, T3
+        print P0, P1, P3
+         
         temp = np.zeros_like(press)
         
-        for i in range(1,press.size):
+        for i in range(0,press.size):
             if (press[i] < P1):
                 temp[i] = T0 + (np.log(press[i] / P0) / a1)**(1/beta)
             elif (press[i] >= P1 and press[i] < P3):
@@ -66,8 +73,12 @@ def set_prof(proftype, coarsePress,press,intemp):
         beta = 0.5
         P0 = press[0]
         #  We can either have T0 or T3 as a parameter. We're taking T3
-        a1, a2, P1,P2,P3,T3 = intemp[0:6]
+        a1, a2, logP1,logP2,logP3,T3 = intemp[0:6]
 
+        P1 = 10.**logP1
+        P2 = 10.**logP2
+        P3 = 10.**logP3
+        
         # set up Ts at boundaries from continuity
 
         T2 = T3 - (np.log(P3/P2) / a2)**(1/beta)
@@ -77,7 +88,7 @@ def set_prof(proftype, coarsePress,press,intemp):
         
         temp = np.zeros_like(press)
         
-        for i in range(1,press.size):
+        for i in range(0,press.size):
             if (press[i] < P1):
                 temp[i] = T0 + (np.log(press[i] / P0) / a1)**(1/beta)
             elif (press[i] >= P1 and press[i] < P3):

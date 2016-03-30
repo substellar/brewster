@@ -3,7 +3,7 @@ module gas_opacity
 
 contains
 
-  subroutine line_mixer(linelist)
+   subroutine line_mixer(layer,opd_lines,index,linelist)
 
     use sizes
     use common_arrays
@@ -13,9 +13,10 @@ contains
 
     implicit none
 
-    
+    type(a_layer),intent(inout) :: layer
+    double precision, intent(inout) :: opd_lines(:)
     double precision,intent(in):: linelist(:,:,:,:)
-    integer :: Tlay1, Tlay2, torder, ilayer, iounit
+    integer :: Tlay1, Tlay2, torder, index, iounit
     double precision, allocatable,dimension(:,:) :: logkap1, logkap2,logintkappa
     real, dimension(nlinetemps):: tdiff
     double precision :: ndens, intfact, junk
@@ -28,61 +29,54 @@ contains
     
     ! get line temp array locations bracketing our temperature
     
-    do ilayer= 1, nlayers
-       
-       tdiff = abs(linetemps - patch(1)%atm(ilayer)%temp)
+     
+    tdiff = abs(linetemps - layer%temp)
     
     
-       Tlay1 = minloc(tdiff,1)
+    Tlay1 = minloc(tdiff,1)
     
     
-       if (linetemps(Tlay1) .lt. patch(1)%atm(ilayer)%temp) then
-          Tlay2 = Tlay1+1
-       else
-          Tlay2 = Tlay1 - 1
-       end if
-       
-       
-       
-       
-       if (patch(1)%atm(ilayer)%temp .lt. linetemps(1)) then
-          Tlay1 = 1
-          Tlay2 = 2
-       else if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
-          Tlay1 = nlinetemps - 1
-          Tlay2 = nlinetemps
-       endif
-       
-       
-       
-       ! get linear interpolation factor
-       
-       if (Tlay1 .gt. Tlay2) then
-          torder = 1
-          intfact = (log10(patch(1)%atm(ilayer)%temp) - &
-               log10(linetemps(Tlay2))) / &
-               (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
-       else
-          torder = 2
-          intfact =  (log10(patch(1)%atm(ilayer)%temp) -&
-               log10(linetemps(Tlay1))) / &
-               (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
-       endif
-       
-       if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
-          intfact =  (log10(patch(1)%atm(ilayer)%temp) &
-               - log10(linetemps(Tlay2))) &
-               / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
-       endif
-       
-       
-       
-       patch(1)%atm(ilayer)%opd_lines = 0.0
-       
-       
-       !! CODE FUCKS UP HERE.. segfault 
-       logkap1 = linelist(:,ilayer,Tlay1,:)
-       logkap2 = linelist(:,ilayer,Tlay2,:) 
+    if (linetemps(Tlay1) .lt. layer%temp) then
+       Tlay2 = Tlay1+1
+    else
+       Tlay2 = Tlay1 - 1
+    end if
+    
+
+
+
+    if (layer%temp .lt. linetemps(1)) then
+       Tlay1 = 1
+       Tlay2 = 2
+    else if (layer%temp .gt. linetemps(nlinetemps)) then
+       Tlay1 = nlinetemps - 1
+       Tlay2 = nlinetemps
+    endif
+
+
+    
+    ! get linear interpolation factor
+    
+    if (Tlay1 .gt. Tlay2) then
+       torder = 1
+       intfact = (log10(layer%temp) - log10(linetemps(Tlay2))) / (log10(linetemps(Tlay1)) - log10(linetemps(Tlay2)))
+    else
+       torder = 2
+       intfact =  (log10(layer%temp) -log10(linetemps(Tlay1))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
+    endif
+
+    if (layer%temp .gt. linetemps(nlinetemps)) then
+       intfact =  (log10(layer%temp) -log10(linetemps(Tlay2))) / (log10(linetemps(Tlay2)) - log10(linetemps(Tlay1)))
+    endif
+
+    
+    
+    opd_lines = 0.0
+    
+
+    !! CODE FUCKS UP HERE.. segfault 
+    logkap1 = linelist(:,layer%index,Tlay1,:)
+    logkap2 = linelist(:,layer%index,Tlay2,:) 
        
        !  do the interpolation in log(cross section) !!!         !
 
@@ -94,8 +88,8 @@ contains
        else
           write(*,*) "something wrong with interpolate order"           
        endif
-       
-       if (patch(1)%atm(ilayer)%temp .gt. linetemps(nlinetemps)) then
+
+       if (layer%temp .gt. linetemps(nlinetemps)) then
           logintkappa = ((logkap2 - logkap1)*intfact)+logkap2
        endif
 
@@ -108,15 +102,13 @@ contains
        ! to get optical depth
 
        
-       do igas = 1, ngas       
-          patch(1)%atm(ilayer)%opd_lines = patch(1)%atm(ilayer)%opd_lines + &
-               ((patch(1)%atm(ilayer)%gas(igas)%VMR * &
-               patch(1)%atm(ilayer)%ndens * &
-               patch(1)%atm(ilayer)%dz * 1d-4) &
-               * (10.0**logintkappa(igas,:)))
-       end do
-    end do ! do loop
- 
+    do igas = 1, ngas       
+       opd_lines = opd_lines + &
+            ((layer%gas(igas)%VMR * layer%ndens * layer%dz * 1d-4) &
+            * (10.0**logintkappa(igas,:)))
+    enddo
+    
+    
     deallocate(logkap1, logkap2,logintkappa)
     
   end subroutine line_mixer

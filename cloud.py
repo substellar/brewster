@@ -54,16 +54,16 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
         if (do_clouds[i] == 1 and cloudtype[i] == 1):
             # 5 entries for cloudparams are:
             # 0) density
-            # 1) top pressure
-            # 2) base pressure
+            # 1) log top pressure
+            # 2) pressure thickness in dex
             # 3) rg
             # 4) rsig
             
 
 
             ndens= cloudparams[0]
-            p1 = cloudparams[1]
-            p2 = cloudparams[2]
+            p1 = 10.**cloudparams[1]
+            p2 = p1 * 10.**cloudparams[2]
             rad = cloudparams[3]
             sig = cloudparams[4]
             pdiff = np.empty(nlayers,dtype='f')
@@ -78,19 +78,26 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                 l2 = np.argmin(pdiff)
 
                 if (cloudnum != 99):
-
-                    cloudprof[i,l1+1:l2-1,j] = ndens
-                    # now account for partial fill of bottom and top layers
-                    # need levels for this
-                    pl1, pl2 = atlev(l1,press)
-                    # This is done in logP for now
-                    cloudprof[i,l1,j] = np.log10(10.**ndens * \
+                    cloudprof[i,:,j] = -150.00
+                    if (l1 == l2):
+                        pl1, pl2 = atlev(l1,press)
+                        cloudprof[i,l1,j] = np.log10((10.**ndens) * 
+                                                     ((np.log10(p2) - np.log10(p1))
+                                                      /
+                                                      (np.log10(pl2) - np.log10(pl1))))
+                    else:
+                        cloudprof[i,l1+1:l2,j] = ndens
+                        # now account for partial fill of bottom and top layers
+                        # need levels for this
+                        pl1, pl2 = atlev(l1,press)
+                        # This is done in logP for now
+                        cloudprof[i,l1,j] = np.log10((10.**ndens) * \
                                                  ((np.log10(pl2) - np.log10(p1))
                                                   /
                                                   (np.log10(pl2) - np.log10(pl1))))
-                    # same for bottom
-                    pl1, pl2 = atlev(l2,press)
-                    cloudprof[i,l2,j] = np.log10(10.**ndens * \
+                        # same for bottom
+                        pl1, pl2 = atlev(l2,press)
+                        cloudprof[i,l2,j] = np.log10(10.**ndens * \
                                                 ((np.log10(p2) - np.log10(pl1))
                                                  /
                                                  (np.log10(pl2) - np.log10(pl1))))
@@ -98,14 +105,19 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # This is a slab cloud
                     # dtau/dP propto P
                     tau = ndens
-                    const = tau / (p2**2 - p1**2)
-                    # partial top fill
-                    pl1, pl2 = atlev(l1,press)
-                    cloudprof[i,l1,j] = const * (pl2**2 - p1**2)
-                    pl1, pl2 = atlev(l2,press)
-                    cloudprof[i,l2,j] = const *  (pl2**2 - p2**2) 
-                    for k in range (l1+1,l2-1):
-                        cloudprof[j,k,j] = const * (p2**2 - p1**2)
+                    if (l1 == l2):
+                        cloudprof[i,l1,j] = tau
+                    else:
+                        const = tau / (p2**2 - p1**2)
+                        # partial top fill
+                        pl1, pl2 = atlev(l1,press)
+                        cloudprof[i,l1,j] = const * (pl2**2 - p1**2)
+                        # partial bottom fill
+                        pl1, pl2 = atlev(l2,press)
+                        cloudprof[i,l2,j] = const *  (p2**2 - pl1**2) 
+                        for k in range (l1+1,l2):
+                            l1,l2 = atlev(k,press)
+                            cloudprof[j,k,j] = const * (l2**2 - l1**2)
  
                 cloudrad[i,:,j] = rad
                 cloudsig[i,:,j] = sig        
@@ -115,13 +127,13 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             # 5 entries for cloudparams are:
             # 0) reference density 
             # 1) top pressure
-            # 2) scale height
+            # 2) scale height (in dex)
             # 3) rg
             # 4) rsig
             
             ndens= cloudparams[0]
-            p0 = cloudparams[1]
-            scale = cloudparams[2]
+            p0 = 10.**cloudparams[1]
+            scale = ((p0 * 10.**cloudparams[2]) - p0)  / 10.**cloudparams[2]
             rad = cloudparams[3]
             sig = cloudparams[4]
             
@@ -130,7 +142,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             for j in range(0, ncloud):
                 
                 if (cloudnum != 99):
-
+                    cloudprof[i,:,j] = -150.00
                     pdiff = abs(np.log(press) - np.log(p0))
                     l0 = np.argmin(pdiff)
                     if (l0 <= nlayers-2):

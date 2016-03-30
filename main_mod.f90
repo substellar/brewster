@@ -47,7 +47,7 @@ contains
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
-    real:: linstart, linfinish,distart, difinish
+    real:: linstart, linfinish,distart, difinish,cloudstart,cloudfinish
     logical :: disorting
 
     ! Are we using DISORT
@@ -148,10 +148,16 @@ contains
      
     call cpu_time(opstart)
     ! now mix the gases in each layer to get optical depth from lines
-    call line_mixer(linelist)
-     
+    do ilayer = 1, nlayers
+       call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
+       
+    end do
+    
+
+    
     ! now the Rayleigh scattering
     call get_ray(ch4index)
+ 
 
     ! now let's get the CIA.  
     call get_cia(cia,ciatemp,grav,ch4index)
@@ -170,6 +176,7 @@ contains
     end if
     
     ! now put in the cloud details
+    call cpu_time(cloudstart)
     do ipatch = 1, npatch
        
        
@@ -215,8 +222,8 @@ contains
                         patch(ipatch)%atm(ilayer)%cloud(1)%rsig
                 end do ! layer loop
              end if
-          else 
-             write(*,*) "calling cloud atlas"
+          else
+             !write(*,*) "calling cloud atlas"
              call cloudatlas(patch(ipatch)%atm)
           end if
        else
@@ -228,7 +235,7 @@ contains
        end if
        
     end do ! patch loop
-    
+    call cpu_time(cloudfinish)
     totcover = sum(patch%cover)
     if (abs(1.0 - totcover) .gt. 0.001) then
        write(*,*) "Patch coverage doesn't sum to unity. Stopping."
@@ -262,7 +269,7 @@ contains
     write(*,*) "Time elapsed :", (tfinish - tstart), " seconds"
     
     write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
-    
+    write(*,*) "Cloud bits took: ", (cloudfinish - cloudstart), " seconds"
     write(*,*) "RT took : ", (difinish - distart), " seconds"
 
     deallocate(wavelen,wavenum)
