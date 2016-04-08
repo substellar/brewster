@@ -51,8 +51,6 @@ def set_prof(proftype, coarsePress,press,intemp):
         # Set T0 from T1
         T0 = T1 - ((np.log(P1/P0) / a1)**(1/beta))
 
-        print T0, T1, T3
-        print P0, P1, P3
          
         temp = np.zeros_like(press)
         

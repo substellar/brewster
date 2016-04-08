@@ -1,8 +1,8 @@
 #PBS -S /bin/tcsh
 #PBS -N 2M2224_thincloud
 #PBS -m abe
-#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=19:mpiprocs=19:model=has
-#PBS -l walltime=40:00:00
+#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
+#PBS -l walltime=25:00:00
 #PBS -k oe
 #PBS -r n
 #PBS -q long
@@ -44,7 +44,7 @@ cd /home1/bburning/retrievals/2M2224spex
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 96 python brewster.py > brew_2M2224spex.log
+mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster.py > brew_2M2224spex.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

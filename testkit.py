@@ -307,7 +307,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 0.1)
+            and (rg > 0.5)
             and (rsig > 0.0)):
                  
             logbeta = -5.0
@@ -357,7 +357,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 1.)
+            and (rg > 0.5)
             and (rsig > 0.0)
             and  (min(T) > 1.0)
             and (max(T) < 5000.)):
@@ -403,7 +403,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
             and (cloud_dens0 < 0.0)
-            and (rg > 1.0)
+            and (rg > 0.5)
             and (rsig > 0.0)
             and  (min(T) > 1.0) and (max(T) < 5000.)):               
             return 0.0
