@@ -24,22 +24,22 @@ contains
     real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
-    character(len=10),dimension(ngas),INTENT(IN) :: gasname
-    double precision, dimension(ngas),INTENT(IN) :: molmass
-    double precision, dimension(ngas,nlayers),INTENT(IN) :: logVMR
-    character(len=10),dimension(npatch,nclouds), INTENT(IN) :: cloudname
+    character(len=10),intent(inout) :: gasname(:)
+    double precision, intent(inout) :: molmass(:)
+    double precision, intent(inout) :: logVMR(:,:)
+    character(len=10),INTENT(INOUT) :: cloudname(:,:)
 
-    double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudrad
-    double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudsig
-    double precision, dimension(npatch,nlayers,nclouds),INTENT(IN) :: cloudprof
-    integer,dimension(npatch,nclouds),intent(in):: incloudnum
+    double precision,INTENT(INOUT) :: cloudrad(:,:,:)
+    double precision,INTENT(INOUT) :: cloudsig(:,:,:)
+    double precision,INTENT(INOUT) :: cloudprof(:,:,:)
+    integer,intent(inout):: incloudnum(:,:)
     double precision,intent(inout) :: inwavenum(:)
     real,dimension(nlinetemps) :: inlinetemps
     real,dimension(nlayers) :: inpress
     double precision,intent(inout):: linelist(:,:,:,:)
     real, dimension(nciatemps), intent(in):: ciatemp
     real, intent(inout) :: cia(:,:,:)
-    integer, dimension(ngas), intent(in) :: ingasnum
+    integer,intent(inout) :: ingasnum(:)
     double precision,allocatable, dimension(:,:),INTENT(OUT) :: out_spec
     double precision,allocatable, dimension(:)::specflux
     real:: metal,grav,test
@@ -56,7 +56,8 @@ contains
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
     allocate(wdiff(nwave))
-    call init_wscales
+
+    call init_all
     !wavenum[nwave],wavelen[nwave])
 
 
@@ -81,16 +82,17 @@ contains
     
     ch4index=0
     do igas = 1, ngas
+       do ilayer = 1, nlayers
+          
+          patch(1)%atm(ilayer)%gas(igas)%name = gasname(igas)
+          patch(1)%atm(ilayer)%gas(igas)%num = gasnum(igas)       
+          patch(1)%atm(ilayer)%gas(igas)%VMR = 10.**(logVMR(igas,ilayer))
+          patch(1)%atm(ilayer)%gas(igas)%molmass = molmass(igas)
        
-       
-       patch(1)%atm%gas(igas)%name = gasname(igas)
-       patch(1)%atm%gas(igas)%num = gasnum(igas)       
-       patch(1)%atm%gas(igas)%VMR = 10.**(logVMR(igas,:))
-       patch(1)%atm%gas(igas)%molmass = molmass(igas)
-       
+       end do
        if (trim(patch(1)%atm(1)%gas(igas)%name) .eq. "ch4") then
           ch4index = igas
-       endif
+       end if
 
     end do
     

@@ -44,7 +44,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
     # In both cases the cloud properties are density, rg, rsig for real clouds
     # and dtau, w0, and gg or cloudnum = 99
     nlayers = press.size
-    npatch = 1 #cloudparams.shape[0]
+    npatch = do_clouds.size
     ncloud = 1 # cloudparams.shape[1]
     cloudrad = np.zeros((npatch,nlayers,ncloud),dtype='d')
     cloudsig = np.zeros_like(cloudrad)

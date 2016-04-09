@@ -11,13 +11,14 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: ngas
   !f2py integer, parameter :: nclouds
   !f2py integer, parameter :: npatch
-  !f2py intent(in) logg,R2D2,pcover
+  !f2py intent(in) logg,R2D2
   !f2py intent(in) temp,logVMR
-  !f2py intent(in) ingasnum,do_clouds,incloudnum,use_disort
-  !f2py intent(in) cloudrad,cloudsig,cloudprof
+  !f2py intent(in) use_disort
   !f2py intent(in) inlinetemps,inpress
+  !f2py intent(inout) cloudrad,cloudsig,cloudprof
   !f2py intent(inout) cia, ciatemps
   !f2py intent(inout) inlinelist, inwavenum
+  !f2py intent(inout) do_clouds,pcover,ingasnum,incloudnum
   !f2py intent(out) out_spec
 
   real,intent(inout) :: cia(:,:,:)
@@ -26,19 +27,19 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,dimension(nlayers):: temp
   real :: R2D2,logg
 !  double precision :: w1,w2
-  real,dimension(npatch)::pcover
-  integer,dimension(npatch)::do_clouds
-  character(len=10),dimension(ngas) :: gasname
-  double precision,dimension(ngas) :: molmass
-  integer,dimension(ngas)::ingasnum
+  real,intent(inout) :: pcover(:)
+  integer,intent(inout) ::do_clouds(:)
+  character(len=10),dimension(:),allocatable :: gasname
+  double precision,dimension(:),allocatable :: molmass
+  integer,intent(inout) :: ingasnum(:)
   character(len=10),dimension(:),allocatable::gaslist,cloudlist
   double precision,dimension(:),allocatable:: masslist
-  double precision,dimension(ngas,nlayers) :: logVMR
-  integer,dimension(npatch,nclouds)::incloudnum
-  character(len=10),dimension(npatch,nclouds) :: cloudname
-  double precision,dimension(npatch,nlayers,nclouds) :: cloudrad
-  double precision,dimension(npatch,nlayers,nclouds) :: cloudsig
-  double precision,dimension(npatch,nlayers,nclouds) :: cloudprof
+  double precision,intent(inout) :: logVMR(:,:)
+  integer,intent(inout) :: incloudnum(:,:)
+  character(len=10),dimension(:,:),allocatable :: cloudname
+  double precision,intent(inout) :: cloudrad(:,:,:)
+  double precision,intent(inout) :: cloudsig(:,:,:)
+  double precision,intent(inout) :: cloudprof(:,:,:)
   double precision,dimension(2,maxwave),intent(OUT):: outspec
   double precision,dimension(:,:),allocatable :: out_spec
   double precision,intent(inout) :: inwavenum(:)
@@ -47,8 +48,13 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   integer:: maxgas,maxcloud,igas,icloud, idum1, idum2,use_disort
 
   call initwave(size(inwavenum))
-  
+  call initgas(size(ingasnum))
+  call initpatch(size(do_clouds))
 
+  allocate(molmass(ngas),gasname(ngas))
+  allocate(cloudname(npatch,nclouds))
+  
+  
   allocate(out_spec(2,nwave))
   
   open(10,file="gaslist.dat", status='old')
@@ -58,7 +64,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      read(10,"(I4,A8,F9.5)") idum1,gaslist(igas),masslist(igas)
   end do
   close(10)
-
+  
   
   do igas = 1, ngas
      gasname(igas) = adjustl(trim(gaslist(ingasnum(igas))))

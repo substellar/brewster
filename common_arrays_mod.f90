@@ -12,17 +12,24 @@ module common_arrays
    double precision, allocatable,dimension(:) :: wavenum, wavelen
    real,dimension(nlinetemps) :: linetemps
    real,dimension(nlayers) :: press
-   integer, dimension(ngas) :: gasnum
-   integer,dimension(npatch,nclouds) :: cloudnum
+   integer, allocatable,dimension(:) :: gasnum
+   integer,allocatable,dimension(:,:) :: cloudnum
 
+   ! set up patchy atmosphere object, which is an array of patches
+   type(a_patch),allocatable,dimension(:) :: patch
 
    save
  contains
-   subroutine init_wscales
+   
+   subroutine init_all
      if ( .NOT. allocated (wavenum)) allocate(wavenum(nwave))
      if ( .NOT. allocated (wavelen)) allocate(wavelen(nwave))
+     if ( .NOT. allocated (gasnum)) allocate(gasnum(ngas))
+     if ( .NOT. allocated (cloudnum)) allocate(cloudnum(npatch,nclouds))
+     if ( .NOT. allocated (patch)) allocate(patch(npatch))     
      
-   end subroutine init_wscales
-     
+   end subroutine init_all
+
+
      
 end module common_arrays

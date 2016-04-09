@@ -11,7 +11,7 @@ contains
    
     
     implicit none
-    type(a_layer):: column(nlayers)
+    type(a_layer), intent(inout):: column(nlayers)
     integer :: icloud, imiewave, irad,ilayer,oldw1, oldw2, idum1, idum2, iwave
     character(len=50) :: miefile
     double precision, dimension(nmiewave,nrad,nclouds):: qscat,qext,cos_qscat
@@ -29,7 +29,7 @@ contains
 
     ! first set up the grids and get the Mie coefficients, cloud by cloud
 
-    call init_column(column)
+    !call init_column(column)
     do icloud = 1, nclouds
        
        ! This bit is lifted from setup_clouds3.1.f in EGP

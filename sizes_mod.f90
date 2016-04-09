@@ -7,10 +7,10 @@
   integer, parameter :: nclouds = 1
 
   ! number of gases for mixing
-  integer, parameter :: ngas = 10
+  integer, protected :: ngas
 
   ! number of patches
-  integer,parameter:: npatch = 1
+  integer,protected :: npatch
   
   ! declares and values size parameters for arrays 
   
@@ -54,7 +54,16 @@ contains
     integer :: val
     nwave = val
   end subroutine initwave
-  
+
+  subroutine initgas(gasval)
+    integer :: gasval
+    ngas = gasval
+  end subroutine initgas
+
+  subroutine initpatch(pval)
+    integer :: pval
+    npatch =  pval
+  end subroutine initpatch
 
   
 end module sizes
