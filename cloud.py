@@ -77,7 +77,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                 pdiff = abs(np.log(press) - np.log(p2))
                 l2 = np.argmin(pdiff)
 
-                if (cloudnum != 99):
+                if (cloudnum[i] != 99):
                     cloudprof[i,:,j] = -150.00
                     if (l1 == l2):
                         pl1, pl2 = atlev(l1,press)
@@ -141,7 +141,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
             for j in range(0, ncloud):
                 
-                if (cloudnum != 99):
+                if (cloudnum[i] != 99):
                     cloudprof[i,:,j] = -150.00
                     pdiff = abs(np.log(press) - np.log(p0))
                     l0 = np.argmin(pdiff)
@@ -179,7 +179,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
                 #print "dl1 = ",dl1
                     
-        if (cloudtype[i] != 1 and cloudtype != 2):
+        if (cloudtype[i] >  2):
             print "cloud layout not recognised. stopping" 
 
     

@@ -1,8 +1,8 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_thincloud
+#PBS -N 2M2224_patchycloud
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
-#PBS -l walltime=25:00:00
+#PBS -l walltime=40:00:00
 #PBS -k oe
 #PBS -r n
 #PBS -q long

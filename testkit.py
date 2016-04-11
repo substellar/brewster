@@ -38,7 +38,6 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
 
     # Hard code nlayers
     nlayers = press.shape[0]
-    npatch = cloudparams.shape[0]
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
@@ -82,29 +81,16 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
 
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
-    # 5 entries for cloudparams for simple slab model are:
-    # 0) log10(number density / gas number density)
-    # 1) top layer id (or pressure)
-    # 2) base ID (these are both in 64 layers)
-    # 3) rg
-    # 4) rsig
-    # in the case of a simple mixto cloud (i.e. cloudnum = 99) we have:
-    # 0) ndens = dtau
-    # 1) top layer ID
-    # 2) bottom later ID
-    # 3) rg = albedo
-    # 4) rsig = asymmetry
-    if (npatch > 1 or do_clouds == 1):
-        cloudprof,cloudrad,cloudsig = cloud.atlas(do_clouds,cloudnum,cloudtype,cloudparams,press)
-        npatch = cloudprof.shape[0]
-        ncloud = cloudprof.shape[1]
-    else:
-        npatch = 1
-        ncloud = 1
-        cloudrad = np.ones((npatch,nlayers,ncloud),dtype='d')
-        cloudsig = np.ones_like(cloudrad)
-        cloudprof = np.ones_like(cloudrad)
 
+    cloudprof,cloudrad,cloudsig = cloud.atlas(do_clouds,cloudnum,cloudtype,cloudparams,press)
+
+    cloudprof = np.asfortranarray(cloudprof,dtype = 'float64')
+    cloudrad = np.asfortranarray(cloudrad,dtype = 'float64')
+    cloudsig = np.asfortranarray(cloudsig,dtype = 'float64')
+    pcover = np.asfortranarray(pcover,dtype = 'float32')
+    cloudnum = np.asfortranarray(cloudnum,dtype='i')
+    do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
+    
     # now we can call the forward model
     outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
     # Trim to length where it is defined.
@@ -154,7 +140,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype):
+def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype):
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
@@ -166,18 +152,34 @@ def lnprob(theta,dist, pcover, cloudtype, cloudparams, do_clouds,gasnum,cloudnum
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
     logf = theta[ng+3]
-    
-    pc = ng + 4
-    nc = 0
-    if (do_clouds == 1):
-        if ((cloudtype == 2) and (cloudnum == 99)):
-            nc = 4
-            cloudparams[1:5] = theta[pc:pc+nc]
-        else:
-            nc = 5
-            cloudparams = theta[pc:pc+nc]
 
+    npatches = do_clouds.size
+    if (npatches > 1):
+        prat = theta[ng+4]
+        pcover = np.array([prat,(1.-prat)])
+        pc = ng + 5
+    else:
+        pc = ng + 4 
+        pcover = 1.0
         
+    nc = 0
+    # CURRENTLY CAN ONLY COPE WITH ONE CLOUDY PATCH
+    # WE WRITE THETA TO BOTH PATCHES THOUGH
+    # IN FUTURE WILL FIGURE OUT HOW TO DYNAMICALLY UNPACK THETA FOR SEVERAL
+    # CLOUDY PATCHES.
+    if (sum(do_clouds) == 1):
+        for i in range (0,npatches):
+            if (do_clouds[i] == 1):
+                if ((cloudtype[i] == 2) and (cloudnum[i] == 99)):
+                    nc = 4
+                    cloudparams[1:5] = theta[pc:pc+nc]
+                else:
+                    nc = 5
+                    cloudparams[:] = theta[pc:pc+nc]
+    elif (sum(do_clouds) > 1):
+        raise ValueError( "Only < 2 cloudy patch is currently supported for retrieval. Please try again in a year or two. Sorry for the inconvenience")
+
+    
     if (proftype == 1):
         gam = theta[pc+nc]
         intemp = theta[pc+1+nc:]
@@ -210,12 +212,26 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
     logf = theta[ng+3]
-    
-    pc = ng + 4
+
+    npatches = do_clouds.size
+    if (npatches > 1):
+        prat = theta[ng+4]
+        pcover = np.array([prat,(1.-prat)])
+        pc = ng + 5
+    else:
+        pc = ng + 4 
+        pcover = 1.0
+        
     nc = 0
-    if (do_clouds == 1):
-        if (cloudnum == 99):
-            if (cloudtype == 1):
+    
+    # CURRENTLY CAN ONLY COPE WITH ONE CLOUDY PATCH
+    # WE WRITE THETA TO BOTH PATCHES THOUGH
+    # IN FUTURE WILL FIGURE OUT HOW TO DYNAMICALLY UNPACK THETA FOR SEVERAL
+    # CLOUDY PATCHES.
+
+    if (do_clouds[0] == 1):
+        if (cloudnum[0] == 99):
+            if (cloudtype[0] == 1):
                 nc = 5
                 cloud_tau0 = theta[pc]
                 cloud_top = theta[pc+1]
@@ -227,7 +243,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 rg = 1.0
                 rsig = 0.1
 
-            if (cloudtype == 2):
+            if (cloudtype[0] == 2):
                 nc = 4
                 cloud_tau0 = 1.0
                 cloud_bot = np.log10(press[press.size - 1])
@@ -239,7 +255,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 rg = 1.0
                 rsig = 0.1
         else:
-            if (cloudtype == 1):
+            if (cloudtype[0] == 1):
                 nc = 5
                 cloud_tau0 = 1.0
                 cloud_top = theta[pc+1]
@@ -251,7 +267,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 rg = theta[pc+3]
                 rsig = theta[pc+4]
 
-            if (cloudtype == 2):
+            if (cloudtype[0] == 2):
                 nc = 5
                 cloud_tau0 = 1.0
                 cloud_bot = np.log10(press[press.size-1])
@@ -290,7 +306,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0)
+            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -343,6 +360,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -389,6 +407,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
