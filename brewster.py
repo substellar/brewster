@@ -211,9 +211,9 @@ clock = np.empty(60000)
 k=0
 times = open("runtimes.dat","w")
 times.close()
-pos,prob,state = sampler.run_mcmc(p0,5000)
+pos,prob,state = sampler.run_mcmc(p0,10000)
 sampler.reset()
-for result in sampler.sample(pos, iterations=20000):
+for result in sampler.sample(pos, iterations=10000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]

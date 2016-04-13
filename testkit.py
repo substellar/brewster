@@ -307,7 +307,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0)
-            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
+            and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -360,7 +360,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
-            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
+            and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -407,7 +407,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
-            and (all(pcover) > 0.) and (np.sum(pcover) == 1.0)
+            and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
