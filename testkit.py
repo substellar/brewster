@@ -220,7 +220,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         pc = ng + 5
     else:
         pc = ng + 4 
-        pcover = 1.0
+        pcover = np.array([0.5,0.5])
         
     nc = 0
     
@@ -281,8 +281,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             
     else:
         cloud_tau0 = 1.0
-        cloud_bot = press[press.size-1]
-        cloud_top = press[0]
+        cloud_bot = np.log10(press[press.size-1])
+        cloud_top = np.log10(press[0])
         cloud_height = 0.1
         w0 =0.5
         gg =0.0
@@ -306,7 +306,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0)
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -359,7 +359,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -406,7 +406,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -2.5) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
