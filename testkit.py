@@ -11,6 +11,7 @@ import TPmod
 from scipy import interpolate
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
+from mikesconv import instrument_non_uniform
 #from pysynphot import observation
 #from pysynphot import spectrum
 
@@ -34,7 +35,7 @@ __status__ = "Development"
 
 
 
-def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype):
+def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge):
 
     # Hard code nlayers
     nlayers = press.shape[0]
@@ -104,24 +105,24 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     shiftspec[1,:] =  trimspec[1,:]
  
     # length and interval for later
-    wlen = shiftspec.shape[1]
-    wint =  shiftspec[0,0] - shiftspec[0,wlen-1]
+    #wlen = shiftspec.shape[1]
+    #wint =  shiftspec[0,0] - shiftspec[0,wlen-1]
 
     # convolve with instrumental profile
     # start by setting up kernel
     # First step is finding the array index length of the FWHM
-    disp = wint / wlen
-    gwidth = int((((fwhm / disp) // 2) * 2) +1)
+    #disp = wint / wlen
+    #gwidth = int((((fwhm / disp) // 2) * 2) +1)
 
     # needs to be odd
     # now get the kernel and convolve
-    gauss = Gaussian1DKernel(gwidth)
-    cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
-    spec = np.array([shiftspec[0,::-1],cspec[::-1]])
+    #gauss = Gaussian1DKernel(gwidth)
+    #cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
+    #spec = np.array([shiftspec[0,::-1],cspec[::-1]])
     
     # rebin to observed dispersion
-    wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
-    modspec = sp.interpolate.splev(obspec[0,:],wfit,der=0)
+    #wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
+    #modspec = sp.interpolate.splev(obspec[0,:],wfit,der=0)
     
     # Below is method for rebinning using conserve flux method
     #    oblen = obspec.shape[1]
@@ -130,7 +131,15 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     # get log-likelihood
     # We've lifted this from Mike's code, below is original from emcee docs
     # Just taking every 3rd point to keep independence
-    s2=obspec[2,::3]**2 + 10.**logf
+
+    # Use Mike's convolution
+    wno = 1e4 / shiftspec[0,:]
+    modspec = instrument_non_uniform(obspec[0,:],wno,shiftspec[1,:])
+
+    if (do_fudge == 1):
+        s2=obspec[2,::3]**2 + 10.**logf
+    else:
+        s2 = obspec[2,::3]**2
     lnLik=-0.5*np.sum((((obspec[1,::3] - modspec[::3])**2) / s2) + np.log(2.*np.pi*s2))
 
 
@@ -140,7 +149,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype):
+def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge):
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
@@ -151,15 +160,20 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
     logg = theta[ng]
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
-    logf = theta[ng+3]
-
+    if (do_fudge == 1):
+        logf = theta[ng+3]
+        nb = 4
+    else:
+        # This is a place holder value so the code doesn't break
+        logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+        nb = 3
     npatches = do_clouds.size
     if (npatches > 1):
-        prat = theta[ng+4]
+        prat = theta[ng+nb]
         pcover = np.array([prat,(1.-prat)])
-        pc = ng + 5
+        pc = ng + nb + 1
     else:
-        pc = ng + 4 
+        pc = ng + nb 
         pcover = 1.0
         
     nc = 0
@@ -167,12 +181,18 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
     # WE WRITE THETA TO BOTH PATCHES THOUGH
     # IN FUTURE WILL FIGURE OUT HOW TO DYNAMICALLY UNPACK THETA FOR SEVERAL
     # CLOUDY PATCHES.
+    # In grey cloud case we fix the GG at 0.0 since we can't retrieve it.
     if (sum(do_clouds) == 1):
         for i in range (0,npatches):
             if (do_clouds[i] == 1):
                 if ((cloudtype[i] == 2) and (cloudnum[i] == 99)):
+                    nc = 3
+                    cloudparams[1:4] = theta[pc:pc+nc]
+                    cloudparams[4] = 0.0
+                elif ((cloudtype[i] == 1) and (cloudnum[i] == 99)):
                     nc = 4
-                    cloudparams[1:5] = theta[pc:pc+nc]
+                    cloudparams[0:4] = theta[pc:pc+nc]
+                    cloudparams[4] = 0.0
                 else:
                     nc = 5
                     cloudparams[:] = theta[pc:pc+nc]
@@ -189,11 +209,11 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
         raise ValueError("not valid profile type %proftype" % (char, string))
 
     # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype)
+    lp = lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype)
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -201,7 +221,7 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
     return lnprb
 
 
-def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype):
+def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge):
     # set up the priors here
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
@@ -211,15 +231,18 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     logg = theta[ng]
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
-    logf = theta[ng+3]
-
+    if (do_fudge == 1):
+        logf = theta[ng+3]
+        pc = ng + 4
+    elif (do_fudge == 0):
+        logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+        pc = ng + 3
     npatches = do_clouds.size
     if (npatches > 1):
         prat = theta[ng+4]
         pcover = np.array([prat,(1.-prat)])
-        pc = ng + 5
+        pc = pc + 1
     else:
-        pc = ng + 4 
         pcover = np.array([0.5,0.5])
         
     nc = 0
@@ -232,25 +255,25 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     if (do_clouds[0] == 1):
         if (cloudnum[0] == 99):
             if (cloudtype[0] == 1):
-                nc = 5
+                nc = 4
                 cloud_tau0 = theta[pc]
                 cloud_top = theta[pc+1]
                 cloud_height = theta[pc+2]
                 cloud_bot = cloud_top + cloud_height
                 w0 = theta[pc+3]
-                gg = theta[pc+4]
+                gg = 0.0
                 cloud_dens0 = -100.0
                 rg = 1.0
                 rsig = 0.1
 
             if (cloudtype[0] == 2):
-                nc = 4
+                nc = 3
                 cloud_tau0 = 1.0
                 cloud_bot = np.log10(press[press.size - 1])
                 cloud_top = theta[pc]
                 cloud_height = theta[pc+1]
                 w0 = theta[pc+2]
-                gg = theta[pc+3]
+                gg = 0.0
                 cloud_dens0 = -100.0
                 rg = 1.0
                 rsig = 0.1
