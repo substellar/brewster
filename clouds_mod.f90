@@ -96,8 +96,8 @@ contains
           if (column(ilayer)%cloud(icloud)%density .gt. 0.) then
              
              ! radii supplied in um, convert to cm
-             rsig = column(ilayer)%cloud(icloud)%rsig * 1e-4
-             rg  = column(ilayer)%cloud(icloud)%rg * 1e-4
+             rsig =1e-4 * 10.**( column(ilayer)%cloud(icloud)%rsig)
+             rg  = 1e-4 * 10.**(column(ilayer)%cloud(icloud)%rg)
              
              r2 = rg**2 * exp( 2*log(rsig)**2 )
              

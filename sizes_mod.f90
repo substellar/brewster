@@ -29,13 +29,14 @@
 
   
   ! number of radius bins for mie coeff files
-  integer, parameter :: nrad = 40
+  integer, parameter :: nrad = 60
 
   ! number of wavelengths in mie coeff files
-  integer, parameter :: nmiewave = 180
+  integer, parameter :: nmiewave = 196
 
   ! minimum radius for mie coeffs
-  real, parameter :: rmin = 1e-5
+  ! currently set for ENSTATITE
+  real, parameter :: rmin = 1e-7
 
   ! Volume ratio for sets in particle sizes
   real, parameter :: vrat = 2.2 

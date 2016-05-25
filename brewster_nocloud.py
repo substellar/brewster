@@ -63,7 +63,7 @@ npatches = 1
 nclouds = 1
 
 
-do_clouds = np.array([1],dtype='i')
+do_clouds = np.array([0],dtype='i')
 
 
 # CURRENTLY ONLY COPE WITH ONE CLOUDY PATCH.
@@ -83,9 +83,9 @@ proftype = 2
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 9
-gasnum = np.asfortranarray(np.array([1,4,5,7,8,10,11,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
+ngas = 10
+gasnum = np.asfortranarray(np.array([1,2,4,5,7,8,10,11,20,21],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -138,50 +138,47 @@ runargs = dist, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coar
 
 # now set up the EMCEE stuff
 
-ndim  = 20 #((ngas-1) + 9 + 5)
+ndim  = 17 #((ngas-1) + 9 + 5)
 nwalkers = ndim * 16
 #int(((ndim * ndim) // 2) * 2)
 
 
 # If we want fresh guess set to 0, total inherit the previous set 1, inherit plus randomise the VMRs. 2.
-fresh = 0
+fresh = 1
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
-    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.0 # CO
-    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CO2
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
-    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
-    p0[:,5] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
-    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
-    p0[:,8] = np.random.rand(nwalkers).reshape(nwalkers) + 3.0
-    p0[:,9] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20
-    p0[:,10] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # ch4
+    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.0 # CO
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CO2
+    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
+    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
+    p0[:,6] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
+    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
+    p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 3.0
+    p0[:,10] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20
+    p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
 #    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, tau so need pressure of top where plus cloud height (in dex), SSA, don't need GG
-    p0[:,11] = 0.5* np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,12] = -4. + 6.*np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,13] = np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,14] = np.random.rand(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,15] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,16] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,17] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,18] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,19] = 4000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,12] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,13] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,14] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,15] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,16] = 4000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,15:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,12:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,15] = 0.6+ 0.1*np.random.rand()
-                p0[i,16] = 0.1+ 0.05*np.random.randn()
-                p0[i,17] = 0.2+ 0.05*np.random.randn()
-                p0[i,18] = 2. + 0.2*np.random.randn()
-                p0[i,19] = 4000. + (1000.*  np.random.rand())
+                p0[i,12] = 0.6+ 0.1*np.random.rand()
+                p0[i,13] = 0.1+ 0.05*np.random.randn()
+                p0[i,14] = 0.2+ 0.05*np.random.randn()
+                p0[i,15] = 2. + 0.2*np.random.randn()
+                p0[i,16] = 4000. + (1000.*  np.random.rand())
 
     
 if (fresh != 0):
@@ -194,7 +191,8 @@ if (fresh != 0):
 
 
     
-# Now we set up the MPI bits
+
+            # Now we set up the MPI bits
 pool=MPIPool(loadbalance=True)
 if not pool.is_master():
 	pool.wait()
@@ -209,21 +207,21 @@ print "running the sampler"
 #sampler.run_mcmc(p0, 100)
 clock = np.empty(60000)
 k=0
-times = open("runtimes.dat","w")
+times = open("runtimes_nc.dat","w")
 times.close()
-pos,prob,state = sampler.run_mcmc(p0,5000)
-sampler.reset()
-for result in sampler.sample(pos, iterations=30000):
+#pos,prob,state = sampler.run_mcmc(p0,5000)
+#sampler.reset()
+for result in sampler.sample(p0, iterations=20000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
-        times = open("runtimes.dat","a")
+        times = open("runtimes_nc.dat","a")
         times.write("*****TIME FOR CYCLE*****")
         times.write(str(tcycle))
         times.close()
     k=k+1
     position = result[0]
-    f = open("status_ball.txt", "w")
+    f = open("status_ball_nc.txt", "w")
     f.write("****Iteration*****")
     f.write(str(k))
     f.write("****Reduced Chi2*****")
@@ -258,7 +256,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/2M0355_grey_1.pk1')
+save_object(sampler,'/nobackup/bburning/2M0355_nocloud_ch4.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

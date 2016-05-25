@@ -181,7 +181,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     
         if (cloudtype[i] >  2):
             print "cloud layout not recognised. stopping" 
-
+            print cloudtype[i]
     
     return cloudprof,cloudrad,cloudsig
 
