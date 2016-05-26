@@ -11,7 +11,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: ngas
   !f2py integer, parameter :: nclouds
   !f2py integer, parameter :: npatch
-  !f2py intent(in) logg,R2D2
+  !f2py intent(in) logg,R2D2,pcover
   !f2py intent(in) temp,logVMR
   !f2py intent(in) use_disort
   !f2py intent(in) inlinetemps,inpress

@@ -136,12 +136,12 @@ contains
       ! zero all the opacities
     do ipatch = 1, npatch
        do ilayer = 1, nlayers
-          patch(ipatch)%atm(ilayer)%opd_scat = 0.0
-          patch(ipatch)%atm(ilayer)%opd_CIA = 0.0
-          patch(ipatch)%atm(ilayer)%opd_ext = 0.0
-          patch(ipatch)%atm(ilayer)%opd_lines = 0.0
-          patch(ipatch)%atm(ilayer)%opd_rayl = 0.0
-          
+          patch(ipatch)%atm(ilayer)%opd_scat = 0.d0
+          patch(ipatch)%atm(ilayer)%opd_CIA = 0.d0
+          patch(ipatch)%atm(ilayer)%opd_ext = 0.d0
+          patch(ipatch)%atm(ilayer)%opd_lines = 0.d0
+          patch(ipatch)%atm(ilayer)%opd_rayl = 0.d0
+          patch(ipatch)%atm(ilayer)%gg = 0.d0
        end do
     end do
     
@@ -230,12 +230,15 @@ contains
           end if
        else
           do ilayer = 1, nlayers
-             patch(ipatch)%atm(ilayer)%gg = 0.0
-             patch(ipatch)%atm(ilayer)%opd_scat = 0.0
-             patch(ipatch)%atm(ilayer)%opd_ext = 0.0
+             patch(ipatch)%atm(ilayer)%gg = 0.d0
+             patch(ipatch)%atm(ilayer)%opd_scat = 0.d0
+             patch(ipatch)%atm(ilayer)%opd_ext = 0.d0
           end do
        end if
-       
+       ! test line
+!       do ilayer = 1, nlayers
+!          write(*,*)  patch(ipatch)%atm(ilayer)%gg(4000)
+!       end do
     end do ! patch loop
     call cpu_time(cloudfinish)
     totcover = sum(patch%cover)
@@ -281,7 +284,9 @@ contains
                patch(ipatch)%atm(ilayer)%opd_scat,&
                patch(ipatch)%atm(ilayer)%opd_lines, &
                patch(ipatch)%atm(ilayer)%opd_cia, &
-               patch(ipatch)%atm(ilayer)%gg)
+               patch(ipatch)%atm(ilayer)%gg,&
+               patch(ipatch)%atm(ilayer)%gas,&
+               patch(ipatch)%atm(ilayer)%opd_rayl)
        end do
     end do
    

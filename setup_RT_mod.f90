@@ -146,8 +146,14 @@ contains
           
           
 
+          ! DIAGNOSTICS
+          !if (iwave .eq. 4000) then
+          !   do ilayer =1, nlayers
+                
+          !      write(*,*) DTAUC(ilayer), SSALB(ilayer), COSBAR(ilayer)
 
-
+          !   end do
+          !end if
           
           
          if (disorting) then 

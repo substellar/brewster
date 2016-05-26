@@ -18,7 +18,7 @@ contains
     double precision, dimension(nmiewave):: miewavelen,miewaven, wdiff
     double precision, dimension(nrad,nclouds) :: radius_in, radius, dr, rup
     double precision, dimension(nlayers,nmiewave,nclouds):: scat_cloud,ext_cloud,cqs_cloud
-    double precision, dimension(nlayers,nmiewave):: opd_ext,opd_scat, cos_qs
+    double precision, dimension(nlayers,nmiewave):: opd_ext,opd_scat, cos_qs,g0
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2
     double precision :: f1, f2, intfact,lintfact
 
@@ -29,7 +29,7 @@ contains
 
     ! first set up the grids and get the Mie coefficients, cloud by cloud
 
-    !call init_column(column)
+    call init_column(column)
     do icloud = 1, nclouds
        
        ! This bit is lifted from setup_clouds3.1.f in EGP
@@ -88,28 +88,29 @@ contains
     ext_cloud = 0.d0
     cqs_cloud = 0.d0
     opd_ext = 0.d0
-    opd_scat = 0.0
-    cos_qscat = 1.d-99
+    opd_scat = 0.d0
+    cos_qs = 0.d0
     
     do ilayer =1, nlayers
-       do icloud = 1, nclouds
-          if (column(ilayer)%cloud(icloud)%density .gt. 0.) then
+       if (sum(column(ilayer)%cloud%density) .gt. 1d-50) then
+!          write(*,*) 'column density cloud = ', sum(column(ilayer)%cloud%density)
+          do icloud = 1, nclouds
+             ! radii supplied in log-um, convert to cm
+             rsig =1d-4 * (10.**(column(ilayer)%cloud(icloud)%rsig))
+             rg  = 1d-4 * (10.**(column(ilayer)%cloud(icloud)%rg))
              
-             ! radii supplied in um, convert to cm
-             rsig =1e-4 * 10.**( column(ilayer)%cloud(icloud)%rsig)
-             rg  = 1e-4 * 10.**(column(ilayer)%cloud(icloud)%rg)
              
-             r2 = rg**2 * exp( 2*log(rsig)**2 )
              
              ! check the logic for this bit!!!
              ! Optical depth for conservative geometric scatterers 
+             !r2 = rg**2 * exp( 2*log(rsig)**2 )
              !opd_layer(ilayer,icloud) = 2.*pi*r2 * &
              !     column(ilayer)%cloud(icloud)%density * &
              !     column(ilayer)%dz
              
              !  Calculate normalization factor (forces lognormal sum = 1.0)
              
-             norm = 0.
+             norm = 0.d0
              
              do irad = 1,nrad
                 rr = radius(irad,icloud)
@@ -131,8 +132,8 @@ contains
                    arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*log(rsig) )
                    arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
                    pir2ndz = norm*PI*rr*arg1*exp( arg2 )
-                                      
-                                      
+                   
+                   
                    scat_cloud(ilayer,imiewave,icloud) =  &
                         scat_cloud(ilayer,imiewave,icloud) + & 
                         qscat(imiewave,irad,icloud)*pir2ndz
@@ -150,61 +151,61 @@ contains
                 opd_ext(ilayer,imiewave) = opd_ext(ilayer,imiewave) + &
                      ext_cloud(ilayer,imiewave,icloud)
                 cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
-                     (cqs_cloud(ilayer,imiewave,icloud) * &
-                     scat_cloud(ilayer,imiewave,icloud))
-      
+                     cqs_cloud(ilayer,imiewave,icloud)
+                !* &
+                     !scat_cloud(ilayer,imiewave,icloud))
+                
              end do ! miewave loop
-          end if
-       end do  ! cloud loop
+          end do  ! cloud loop
 
-       cos_qs(ilayer,:) = cos_qs(ilayer,:) / opd_scat(ilayer,:)
-
- 
-       ! rebin to working resolution (nwave) grid and write to
-       
-       do iwave= 1 , nwave
-          
-          wdiff = abs(miewaven - wavenum(iwave))
-          
-          oldw1 = minloc(wdiff,1)
-          
-          if (miewaven(oldw1) .lt. wavenum(iwave)) then
-             oldw2 = oldw1 + 1
-          else
-             oldw2 = oldw1
-             oldw1 = oldw2 - 1
-          end if
-          
-          intfact = (log10(wavenum(iwave)) - log10(miewaven(oldw1))) / &
-               (log10(miewaven(oldw2)) - log10(miewaven(oldw1)))
-
-          ! gg should be interpolated in linear space - it is always small
-          lintfact =  (wavenum(iwave) - miewaven(oldw1)) / &
-               (miewaven(oldw2) - miewaven(oldw1))
-          
-          column(ilayer)%opd_ext(iwave) = 10.**&
-               (((log10(opd_ext(ilayer,oldw2)) - log10(opd_ext(ilayer,oldw1))) *intfact) &
-               + log10(opd_ext(ilayer,oldw1)))
-          
-          column(ilayer)%opd_scat(iwave) = 10.**&
-               (((log10(opd_scat(ilayer,oldw2)) - log10(opd_scat(ilayer,oldw1))) *intfact) &
-               + log10(opd_scat(ilayer,oldw1)))
-          
-          column(ilayer)%gg(iwave) = &
-               ((cos_qs(ilayer,oldw2) - cos_qs(ilayer,oldw1)) *lintfact) &
-               + cos_qs(ilayer,oldw1) 
-          
-          if (column(ilayer)%opd_scat(iwave) .lt. 1d-50) then
-             column(ilayer)%opd_scat(iwave) = 0.
-             column(ilayer)%gg(iwave) = 0.
-          end if
-          if (column(ilayer)%opd_ext(iwave) .lt. 1d-50) then
-             column(ilayer)%opd_ext(iwave) = 0.
-          end if
+          g0(ilayer,:) = cos_qs(ilayer,:) / opd_scat(ilayer,:)
           
           
-       end do ! wave loop
-
+          ! rebin to working resolution (nwave) grid and write to
+          
+          do iwave= 1 , nwave
+             
+             wdiff = abs(miewaven - wavenum(iwave))
+             
+             oldw1 = minloc(wdiff,1)
+             
+             if (miewaven(oldw1) .lt. wavenum(iwave)) then
+                oldw2 = oldw1 + 1
+             else
+                oldw2 = oldw1
+                oldw1 = oldw2 - 1
+             end if
+             
+             intfact = (log10(wavenum(iwave)) - log10(miewaven(oldw1))) / &
+                  (log10(miewaven(oldw2)) - log10(miewaven(oldw1)))
+             
+             ! gg should be interpolated in linear space - it is always small
+             lintfact =  (wavenum(iwave) - miewaven(oldw1)) / &
+                  (miewaven(oldw2) - miewaven(oldw1))
+             
+             column(ilayer)%opd_ext(iwave) = 10.**&
+                  (((log10(opd_ext(ilayer,oldw2)) - log10(opd_ext(ilayer,oldw1))) *intfact) &
+                  + log10(opd_ext(ilayer,oldw1)))
+             
+             column(ilayer)%opd_scat(iwave) = 10.**&
+                  (((log10(opd_scat(ilayer,oldw2)) - log10(opd_scat(ilayer,oldw1))) *intfact) &
+                  + log10(opd_scat(ilayer,oldw1)))
+             
+             column(ilayer)%gg(iwave) = &
+                  ((g0(ilayer,oldw2) - g0(ilayer,oldw1)) *lintfact) &
+                  + g0(ilayer,oldw1) 
+             
+             if (column(ilayer)%opd_scat(iwave) .lt. 1d-50) then
+                column(ilayer)%opd_scat(iwave) = 0.d0
+                column(ilayer)%gg(iwave) = 0.d0
+             end if
+             if (column(ilayer)%opd_ext(iwave) .lt. 1d-50) then
+                column(ilayer)%opd_ext(iwave) = 0.d0
+             end if
+          
+             
+          end do ! wave loop
+       end if
     end do  ! layer loop
 
  ! TK test line see what we've got
