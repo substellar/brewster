@@ -98,7 +98,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     nwave = inwavenum.size
     trimspec = np.zeros((2,nwave),dtype='d')
     trimspec[:,:] = outspec[:,:nwave]
-    print trimspec
+    #print trimspec
     # now shift wavelen by delta_lambda
     shiftspec = np.empty_like(trimspec)
     shiftspec[0,:] =  trimspec[0,:] + dlam
@@ -136,14 +136,25 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     wno = 1e4 / shiftspec[0,:]
     modspec = instrument_non_uniform(obspec[0,:],wno,shiftspec[1,:])
 
+    # Do lnlik in sections to cut out water bands:
+    # sections: 0.7 - 1.8, 2.0 - 2.5
+    c1 = np.array((np.where(obspec[0] < 1.8)))[0,::3]
+    c2 = np.array((np.where(obspec[0] > 2.0)))[0,::3]
+
+
     if (do_fudge == 1):
-        s2=obspec[2,::3]**2 + 10.**logf
+        s2_1 = obspec[2,c1]**2 + 10.**logf
+        s2_2 = obspec[2,c2]**2 + 10.**logf
     else:
-        s2 = obspec[2,::3]**2
+        s2_1 = obspec[2,c1]**2
+        s2_1 = obspec[2,c2]**2
         
-    lnLik=-0.5*np.sum((((obspec[1,::3] - modspec[::3])**2) / s2) + np.log(2.*np.pi*s2))
+    
+    lnLik1=-0.5*np.sum((((obspec[1,c1] - modspec[c1])**2) / s2_1) + np.log(2.*np.pi*s2_1))
+    
+    lnLik2=-0.5*np.sum((((obspec[1,c2] - modspec[c2])**2) / s2_2) + np.log(2.*np.pi*s2_2))
 
-
+    lnLik = lnLik1 + lnLik2
     return lnLik
     #chi2 log likelihood--can modify this
     #invsigma2 = 1.0/((obspec[2,::3])**2 + modspec[1,::3]**2 * np.exp(2*lnf))
@@ -398,9 +409,9 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0. < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-1.0 < gg < +1.0)
-            and (-50.0 < cloud_dens0 < 0.0)
-            and ( -2.0 < rg < +3.0 )
-            and ( -3.0 < rsig < +2.0)
+            and (-30.0 < cloud_dens0 < -15.0)
+            and ( -2.5 < rg < +2.0 )
+            and ( -3.0 < rsig < +1.0)
             and  (min(T) > 1.0)
             and (max(T) < 5000.)):
             return 0.0

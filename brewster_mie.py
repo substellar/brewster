@@ -52,8 +52,8 @@ finePress = pow(10,logfinePress)
 press = finePress
 
 
-w1 = 0.8
-w2 = 2.4
+w1 = 0.7
+w2 = 2.5
 
 dist = 8.19
 # hardwired FWHM of data in microns
@@ -121,7 +121,7 @@ ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("2M0355_2massJcalib.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("2M0355_2massJcalib_full.dat",dtype='d',unpack='true'))
 
 
 
@@ -148,30 +148,30 @@ fresh = 0
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
-    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # ch4
-    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # CO
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # CO2
-    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
-    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
-    p0[:,6] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
-    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
-    p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 3.0
-    p0[:,10] =  5.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 1.e-19
-    p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,12] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 9.0 # ch4
+    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.6 # CO
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.3 # CO2
+    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 10.5 # TiO
+    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 9.5 # VO
+    p0[:,6] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.5 # CrH
+    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 10.0 # FeH
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 9.6 # Na+K
+    p0[:,9] = 0.5*np.random.rand(nwalkers).reshape(nwalkers) + 3.4
+    p0[:,10] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 1.1e-19
+    p0[:,11] = 0.002 + np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,12] = -31.7 + 0.5*np.random.rand(nwalkers).reshape(nwalkers) #np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, tau so need pressure of top where plus cloud height (in dex), SSA, don't need GG
-    p0[:,13] = -23. + np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,14] = -4. + 6.*np.random.rand(nwalkers).reshape(nwalkers) 
+    p0[:,13] = -20. + 0.5*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,14] = -1. + np.random.rand(nwalkers).reshape(nwalkers) 
     p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,16] = -1.5 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,16] = -2.0 + 1.0*np.random.randn(nwalkers).reshape(nwalkers)
     p0[:,17] = -2.0 + 0.5*np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,18] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,19] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,20] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,21] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,22] = 3000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,18] = 0.48+ 0.02*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,19] = 0.05 +0.001*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,20] = 0.0 - 0.03*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,21] = 0.98+ 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,22] = 3400. + (100.*  np.random.rand(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
@@ -213,7 +213,7 @@ clock = np.empty(60000)
 k=0
 times = open("runtimes_mie.dat","w")
 times.close()
-pos,prob,state = sampler.run_mcmc(p0,30000)
+pos,prob,state = sampler.run_mcmc(p0,10000)
 sampler.reset()
 for result in sampler.sample(pos, iterations=30000):
     clock[k] = time.clock()
@@ -239,14 +239,14 @@ for result in sampler.sample(pos, iterations=30000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
-	pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+	pickle.dump(output,open("/nobackup/bburning/MCMC_0355mie_trim.pic","wb"))
 	pickle.dump(chain[:,k-1,:], open('MCMC_last.pic','wb'))
 
 
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+pickle.dump(output,open("/nobackup/bburning/MCMC_0355mie_trim.pic","wb"))
 pickle.dump(chain[:,-1,:], open('MCMC_last.pic','wb'))
 
 
@@ -260,7 +260,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/2M0355_mie.pk1')
+save_object(sampler,'/nobackup/bburning/2M0355_mie_trim.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

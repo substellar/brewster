@@ -30,7 +30,7 @@ def teffRM(theta,runargs):
 
     pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,\
         inlinetemps,coarsePress,press,inwavenum,linelist,cia,\
-        ciatemps,use_disort,proftype = runargs
+        ciatemps,use_disort,proftype, do_fudge = runargs
 
     
     if (gasnum[gasnum.size-1] == 21):
@@ -42,18 +42,24 @@ def teffRM(theta,runargs):
     logg = theta[ng]
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
-    logf = theta[ng+3]
-    
-    pc = ng + 4
+    if (do_fudge == 1):
+        logf = theta[ng+3]
+        pc = ng + 4
+    else:
+        pc = ng + 3
     nc = 0
     if (do_clouds == 1):
         if ((cloudtype == 2) and (cloudnum == 99)):
+            nc = 3
+            cloudparams[1:4] = theta[pc:pc+nc]
+            cloudparams[4] = 0.0
+        elif ((cloudtype == 1) and (cloudnum == 99)):
             nc = 4
-            cloudparams[1:5] = theta[pc:pc+nc]
-        else:
+            cloudparams[0:4] = theta[pc:pc+nc]
+            cloudparams[4] = 0.0
+        elif(cloudnum != 99):
             nc = 5
-            cloudparams = theta[pc:pc+nc]
-
+            cloudparams == theta[pc:pc+nc]
         
     if (proftype == 1):
         gam = theta[pc+nc]
@@ -132,6 +138,14 @@ def teffRM(theta,runargs):
         cloudsig = np.ones_like(cloudrad)
         cloudprof = np.ones_like(cloudrad)
 
+    cloudprof = np.asfortranarray(cloudprof,dtype = 'float64')
+    cloudrad = np.asfortranarray(cloudrad,dtype = 'float64')
+    cloudsig = np.asfortranarray(cloudsig,dtype = 'float64')
+    pcover = np.asfortranarray(pcover,dtype = 'float32')
+    cloudnum = np.asfortranarray(cloudnum,dtype='i')
+    do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
+
+        
     # now we can call the forward model
     outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
 
@@ -150,8 +164,8 @@ def teffRM(theta,runargs):
     t_ff = ((fbol/(r2d2 * 5.670367e-8))**(1./4.))
 
     # and Radius
-    parallax = 11.35
-    sigpi = 0.14
+    parallax = 8.19
+    sigpi = 0.9
     sigphot = 0.03
     
     sigR2D2 = sigphot * r2d2 * (-1./2.5)* np.log(10.)
@@ -180,7 +194,7 @@ def teffRM(theta,runargs):
 
 # how many samples are we using?
 
-with open('/nobackup/bburning/2M2224_cloud_retrieval_result.pk1', 'rb') as input:
+with open('/nobackup/bburning/2M0355_grey_ch4.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
 nwalkers = sampler.chain.shape[0]
@@ -220,9 +234,12 @@ do_clouds[:] = 1
 cloudnum = np.zeros([npatches,nclouds],dtype='i')
 cloudnum[:,:] = 99
 cloudtype = np.array([npatches],dtype='i')
-cloudtype[:] = 2
+cloudtype[:] = 1
 
 use_disort = 0 
+
+# use the fudge factor?
+do_fudge = 0
 
 # Set the profile type
 proftype = 2
@@ -231,7 +248,7 @@ proftype = 2
 # Set up number of gases, and point at the lists. see gaslist.dat
 ngas = 10
 gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -276,7 +293,7 @@ cloudparams[4] = 1e-5
 
 runargs =  pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,\
         inlinetemps,coarsePress,press,inwavenum,linelist,cia,\
-        ciatemps,use_disort,proftype
+        ciatemps,use_disort,proftype,do_fudge
 
 # set up parallel bits
 
@@ -326,5 +343,5 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'2M2224_cloud_postproduct.pk1')
+save_object(samplus,'/nobackup/bburning/2M0355_cloud_postproduct.pk1')
 

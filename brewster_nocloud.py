@@ -76,7 +76,7 @@ cloudtype = np.asfortranarray(np.array([1]),dtype='i')
 use_disort = 0 
 
 # use the fudge factor?
-do_fudge = 0
+do_fudge = 1
 
 # Set the profile type
 proftype = 2
@@ -138,13 +138,13 @@ runargs = dist, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coar
 
 # now set up the EMCEE stuff
 
-ndim  = 17 #((ngas-1) + 9 + 5)
+ndim  = 18 #((ngas-1) + 9 + 5)
 nwalkers = ndim * 16
 #int(((ndim * ndim) // 2) * 2)
 
 
 # If we want fresh guess set to 0, total inherit the previous set 1, inherit plus randomise the VMRs. 2.
-fresh = 1
+fresh = 0
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
@@ -159,26 +159,26 @@ if (fresh == 0):
     p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 3.0
     p0[:,10] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20
     p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-#    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,12] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, tau so need pressure of top where plus cloud height (in dex), SSA, don't need GG
     # And now the T-P params
-    p0[:,12] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,13] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,14] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,15] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,16] = 4000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,13] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,14] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,15] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,16] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,17] = 4000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,12:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,13:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,12] = 0.6+ 0.1*np.random.rand()
-                p0[i,13] = 0.1+ 0.05*np.random.randn()
-                p0[i,14] = 0.2+ 0.05*np.random.randn()
-                p0[i,15] = 2. + 0.2*np.random.randn()
-                p0[i,16] = 4000. + (1000.*  np.random.rand())
+                p0[i,13] = 0.6+ 0.1*np.random.rand()
+                p0[i,14] = 0.1+ 0.05*np.random.randn()
+                p0[i,15] = 0.2+ 0.05*np.random.randn()
+                p0[i,16] = 2. + 0.2*np.random.randn()
+                p0[i,17] = 4000. + (1000.*  np.random.rand())
 
     
 if (fresh != 0):
@@ -209,9 +209,9 @@ clock = np.empty(60000)
 k=0
 times = open("runtimes_nc.dat","w")
 times.close()
-#pos,prob,state = sampler.run_mcmc(p0,5000)
-#sampler.reset()
-for result in sampler.sample(p0, iterations=20000):
+pos,prob,state = sampler.run_mcmc(p0,10000)
+sampler.reset()
+for result in sampler.sample(pos, iterations=30000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -235,14 +235,14 @@ for result in sampler.sample(p0, iterations=20000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
-	pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+	pickle.dump(output,open("/nobackup/bburning/2m0355_nc_MCMC.pic","wb"))
 	pickle.dump(chain[:,k-1,:], open('MCMC_last.pic','wb'))
 
 
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("/nobackup/bburning/MCMC.pic","wb"))
+pickle.dump(output,open("/nobackup/bburning/2m0355_nc_MCMC.pic","wb"))
 pickle.dump(chain[:,-1,:], open('MCMC_last.pic','wb'))
 
 
@@ -256,7 +256,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/2M0355_nocloud_ch4.pk1')
+save_object(sampler,'/nobackup/bburning/2M0355_nocloud_fudge.pk1')
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 
