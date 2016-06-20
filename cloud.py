@@ -27,12 +27,12 @@ __status__ = "Development"
     # 2) base ID (these are both in 64 layers)
     # 3) rg
     # 4) rsig
-    # in the case of a simple mixto cloud (i.e. cloudnum = 99) we have:
+    # in the case of a simple mixto cloud (i.e. cloudnum = 99 or 89) we have:
     # 0) ndens = dtau
     # 1) top layer ID
     # 2) bottom later ID
     # 3) rg = albedo
-    # 4) rsig = asymmetry
+    # 4) rsig = power for tau power law
 
 
 
@@ -42,7 +42,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
     # 1:  slab cloud
     # 2: deep thick cloud , we only see the top
     # In both cases the cloud properties are density, rg, rsig for real clouds
-    # and dtau, w0, and gg or cloudnum = 99
+    # and dtau, w0, and power law for cloudnum = 99 or 89
     nlayers = press.size
     npatch = do_clouds.size
     ncloud = 1 # cloudparams.shape[1]
@@ -77,7 +77,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                 pdiff = abs(np.log(press) - np.log(p2))
                 l2 = np.argmin(pdiff)
 
-                if (cloudnum[i] != 99):
+                if (cloudnum[i] < 50):
                     cloudprof[i,:,j] = -150.00
                     if (l1 == l2):
                         pl1, pl2 = atlev(l1,press)
@@ -141,7 +141,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
             for j in range(0, ncloud):
                 
-                if (cloudnum[i] != 99):
+                if (cloudnum[i] < 50):
                     cloudprof[i,:,j] = -150.00
                     pdiff = abs(np.log(press) - np.log(p0))
                     l0 = np.argmin(pdiff)
@@ -157,7 +157,8 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     for k in range(0, l0):
                         cloudprof[i,k,j] = np.log10((10.**ndens) * np.exp((press[k] - p0)/scale))
                 else:
-                    #  cloud 99 case!!
+                    #  cloud 99 and 89 case!!
+                    # rsig is the power law for tau ~ lambda^alpha 
                     # Here P0 is the pressure where tau = 1 for the cloud
                     # so dtau / dP = const * exp((P-P0) / scale)
                     # See notes for derivation of constant and integral

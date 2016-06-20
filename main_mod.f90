@@ -206,22 +206,24 @@ contains
           ! for the cloud
 
           !if (trim(patch(ipatch)%atm(1)%cloud(1)%name) .eq. 'mixto') then
-          if (cloudnum(ipatch,1) .eq. 99) then
+          if (cloudnum(ipatch,1) .gt. 50) then
              if (nclouds .ne. 1) then
                 write(*,*) "Error: mixto cloud case should have nclouds = 1"
                 stop
              else
                 ! FOR GREY SIMPLE CASE (MIXTO): put DTAU_cloud in cloudprofile
-                ! and albedo in rg, and asymmetry in rsig
+                ! and albedo in rg, and asymmetry = 0.0.
+                ! Power law option has power law in rsig
+                !
                 ! There must only be one cloud for this case
                 do ilayer= 1, nlayers
                    patch(ipatch)%atm(ilayer)%opd_ext = &
-                        cloudprof(ipatch,ilayer,1)
+                        cloudprof(ipatch,ilayer,1) * &
+                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(1)%rsig)
                    patch(ipatch)%atm(ilayer)%opd_scat = &
                         patch(ipatch)%atm(ilayer)%opd_ext * &
                         patch(ipatch)%atm(ilayer)%cloud(1)%rg
-                   patch(ipatch)%atm(ilayer)%gg = &
-                        patch(ipatch)%atm(ilayer)%cloud(1)%rsig
+                   patch(ipatch)%atm(ilayer)%gg = 0.d0 
                 end do ! layer loop
              end if
           else

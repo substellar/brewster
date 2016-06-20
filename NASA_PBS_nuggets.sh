@@ -1,11 +1,11 @@
 #PBS -S /bin/tcsh
-#PBS -N bb_nugget
+#PBS -N 2M2224_nugget
 #PBS -m abe
 #PBS -l select=5:ncpus=17:mpiprocs=17:model=has
-#PBS -l walltime=08:00:00
+#PBS -l walltime=10:00:00
 #PBS -k oe
 #PBS -r n
-#PBS -q normal
+#PBS -q long
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
