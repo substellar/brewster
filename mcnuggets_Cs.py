@@ -35,6 +35,8 @@ def teffRM(theta,runargs):
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
+    elif (gasnum[gasnum.size-1] == 23):
+        ng = gasnum.size - 2
     else:
         ng = gasnum.size
         
@@ -218,7 +220,7 @@ def teffRM(theta,runargs):
 
 # how many samples are we using?
 
-with open('/nobackup/bburning/2M2224_powcloud_RFalks_ext.pk1', 'rb') as input:
+with open('/nobackup/bburning/2M2224_powcloud_RFalks_Cs.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
 nwalkers = sampler.chain.shape[0]
@@ -270,9 +272,9 @@ proftype = 2
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 11
-gasnum = np.asfortranarray(np.array([1,4,5,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 12
+gasnum = np.asfortranarray(np.array([1,4,5,7,8,9,10,11,12,20,21,23],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic","/nobackup/bburning/Linelists/Cs_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -367,5 +369,5 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'/nobackup/bburning/2M2224_PowCloud_postprod.pk1')
+save_object(samplus,'/nobackup/bburning/2M2224_CsPowCloud_postprod.pk1')
 

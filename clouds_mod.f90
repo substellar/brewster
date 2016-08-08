@@ -20,7 +20,7 @@ contains
     double precision, dimension(nlayers,nmiewave,nclouds):: scat_cloud,ext_cloud,cqs_cloud
     double precision, dimension(nlayers,nmiewave):: opd_ext,opd_scat, cos_qs
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2
-    double precision :: f1, f2, intfact,lintfact
+    double precision :: f1, f2, intfact,lintfact,vrat,rmin
 
 
     ! this will take the clouds and in turn calculate their opacities the layers
@@ -36,6 +36,64 @@ contains
        ! it sets up the radius grid.
        
        ! constants/ parameters are in sizes
+       
+       ! set rmin and vrat here though:
+       
+       if (trim(column(1)%cloud(icloud)%name) .eq. 'CH4' ) then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'NH3' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'H2O' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'Fe' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'KCl' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'NaCl' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'Cr' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'MgSiO3' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'Mg2SiO4' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'ZnS' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'MnS' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'Na2S' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'NH4H2PO4' )then
+          vrat = 2.2
+          rmin = 1e-5
+       elseif( column(1)%cloud(icloud)%name .eq. 'tholins' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'soot' )then
+          vrat = 1.3
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'testgrid3' )then
+          vrat = 2.2
+          rmin = 1e-5
+       else
+          write(*,*), "init_optics(): bad igas = ", icloud," ",trim(column(1)%cloud(icloud)%name)
+          
+          stop 
+       endif
+
+
        
        pw = 1. / 3.
        f1 = ( 2*vrat / ( 1 + vrat) )**pw

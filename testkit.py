@@ -45,6 +45,8 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     # get the ngas for forward model (ngas, not ng
     if (gasnum[gasnum.size-1] == 21):
         ngas = invmr.shape[0] + 1
+    elif (gasnum[gasnum.size-1] == 23):
+        ngas = invmr.shape[0] + 2
     else:
         ngas = invmr.shape[0]
     # now loop through gases and get VMR for model
@@ -58,8 +60,16 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
         tmpvmr = np.empty((ngas,nlayers),dtype='d')
         if (gasnum[gasnum.size-1] == 21):
             tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
-            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
-            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
+            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.)) # K
+            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.))) # Na                                
+        elif (gasnum[gasnum.size-1] == 23):
+            #f values are ratios between Na and (K+Cs) and K and Cs respectively
+            f1 = 1.348
+            f2 = 8912.5
+            tmpvmr[0:(ngas-3),:] = invmr[0:(ngas-3),:]
+            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-3,:] / ((f1+1)*(f2+1))) # Cs
+            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-3,:] * (f1 /(f1+1)) ) # Na
+            tmpvmr[ngas-3,:] = np.log10(10.**invmr[ngas-3,:] - 10.**tmpvmr[ngas-2,:] - 10.**tmpvmr[ngas-1,:]) #K 
         else:
             tmpvmr[0:ngas,:] = invmr[0:ngas,:]
             
@@ -72,8 +82,16 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
         tmpvmr = np.empty(ngas,dtype='d')
         if (gasnum[gasnum.size-1] == 21):
             tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
-            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
-            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
+            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.)) # K
+            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.))) # Na
+        elif (gasnum[gasnum.size-1] == 23):
+            #f values are ratios between Na and (K+Cs) and K and Cs respectively
+            f1 = 1.348
+            f2 = 8912.5
+            tmpvmr[0:(ngas-3)] = invmr[0:(ngas-3)]
+            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-3] / ((f1+1)*(f2+1))) # Cs
+            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-3] * (f1 /(f1+1)) ) # Na
+            tmpvmr[ngas-3] = np.log10(10.**invmr[ngas-3] - 10.**tmpvmr[ngas-2] - 10.**tmpvmr[ngas-1]) #K   
         else:
             tmpvmr[0:ngas] = invmr[0:ngas]
             
@@ -153,6 +171,8 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
+    elif (gasnum[gasnum.size-1] == 23):
+        ng = gasnum.size -2
     else:
         ng = gasnum.size
         
@@ -229,6 +249,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     # set up the priors here
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
+    elif (gasnum[gasnum.size-1] == 23):
+        ng = gasnum.size - 2
     else:
         ng = gasnum.size
     invmr = theta[0:ng]
@@ -357,7 +379,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -410,7 +432,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -457,7 +479,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 

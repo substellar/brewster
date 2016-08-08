@@ -57,15 +57,9 @@ def teffRM(theta,runargs):
             nc = 4
             cloudparams[0:4] = theta[pc:pc+nc]
             cloudparams[4] = 0.0
-        elif ((cloudtype == 2) and (cloudnum == 89)):
-            nc  = 4
-            cloudparams[1:5] = theta[pc:pc+nc]
-        elif ((cloudtype == 1) and (cloudnum == 89)):
+        elif(cloudnum != 99):
             nc = 5
-            cloudparams = theta[pc:pc+nc]
-        elif(cloudnum < 50):
-            nc = 5
-            cloudparams = theta[pc:pc+nc]
+            cloudparams == theta[pc:pc+nc]
         
     if (proftype == 1):
         gam = theta[pc+nc]
@@ -80,12 +74,10 @@ def teffRM(theta,runargs):
     npatch = cloudparams.shape[0]
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
- 
+
     # get the ngas for forward model (ngas, not ng
     if (gasnum[gasnum.size-1] == 21):
         ngas = invmr.shape[0] + 1
-    elif (gasnum[gasnum.size-1] == 23):
-        ngas = invmr.shape[0] + 2
     else:
         ngas = invmr.shape[0]
     # now loop through gases and get VMR for model
@@ -99,16 +91,8 @@ def teffRM(theta,runargs):
         tmpvmr = np.empty((ngas,nlayers),dtype='d')
         if (gasnum[gasnum.size-1] == 21):
             tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
-            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.)) # K
-            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.))) # Na                                
-        elif (gasnum[gasnum.size-1] == 23):
-            #f values are ratios between Na and (K+Cs) and K and Cs respectively
-            f1 = 1.348
-            f2 = 8912.5
-            tmpvmr[0:(ngas-3),:] = invmr[0:(ngas-3),:]
-            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-3,:] / ((f1+1)*(f2+1))) # Cs
-            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-3,:] * (f1 /(f1+1)) ) # Na
-            tmpvmr[ngas-3,:] = np.log10(10.**invmr[ngas-3,:] - 10.**tmpvmr[ngas-2,:] - 10.**tmpvmr[ngas-1,:]) #K 
+            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.))
+            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.)))                                
         else:
             tmpvmr[0:ngas,:] = invmr[0:ngas,:]
             
@@ -121,16 +105,8 @@ def teffRM(theta,runargs):
         tmpvmr = np.empty(ngas,dtype='d')
         if (gasnum[gasnum.size-1] == 21):
             tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
-            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.)) # K
-            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.))) # Na
-        elif (gasnum[gasnum.size-1] == 23):
-            #f values are ratios between Na and (K+Cs) and K and Cs respectively
-            f1 = 1.348
-            f2 = 8912.5
-            tmpvmr[0:(ngas-3)] = invmr[0:(ngas-3)]
-            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-3] / ((f1+1)*(f2+1))) # Cs
-            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-3] * (f1 /(f1+1)) ) # Na
-            tmpvmr[ngas-3] = np.log10(10.**invmr[ngas-3] - 10.**tmpvmr[ngas-2] - 10.**tmpvmr[ngas-1]) #K   
+            tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.))
+            tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.)))
         else:
             tmpvmr[0:ngas] = invmr[0:ngas]
             
@@ -218,14 +194,14 @@ def teffRM(theta,runargs):
 
 # how many samples are we using?
 
-with open('/nobackup/bburning/2M2224_powcloud_RFalks_ext.pk1', 'rb') as input:
+with open('/nobackup/bburning/2M2224_mikeConv_nc_fudge.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
 nwalkers = sampler.chain.shape[0]
 niter = sampler.chain.shape[1]
 ndim = sampler.chain.shape[2]
 
-samples = sampler.chain[:,niter-3000:,:].reshape((-1, ndim))
+samples = sampler.chain[:,niter-5000:,:].reshape((-1, ndim))
 
 #samples = samples[1500:2500,:]
 slen = samples.shape[0]
@@ -254,9 +230,9 @@ nclouds = 1
 pcover = np.ones([npatches],dtype='f')
 pcover[:] = 1.0
 do_clouds = np.zeros([npatches],dtype='i')
-do_clouds[:] = 1
+do_clouds[:] = 0
 cloudnum = np.zeros([npatches,nclouds],dtype='i')
-cloudnum[:,:] = 89
+cloudnum[:,:] = 99
 cloudtype = np.array([npatches],dtype='i')
 cloudtype[:] = 1
 
@@ -270,9 +246,9 @@ proftype = 2
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 11
-gasnum = np.asfortranarray(np.array([1,4,5,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 10
+gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,12,20,21],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -367,5 +343,5 @@ def save_object(obj, filename):
     with open(filename, 'wb') as output:
         pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-save_object(samplus,'/nobackup/bburning/2M2224_PowCloud_postprod.pk1')
+save_object(samplus,'/nobackup/bburning/2M2224_nocloud_postproduct.pk1')
 
