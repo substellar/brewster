@@ -2,7 +2,7 @@
 
 contains
 
-  subroutine run_RT(spectrum,disorting)
+  subroutine run_RT(spectrum,photspec,tauspec,disorting,pspec,tspec)
 
     use sizes
     use common_arrays
@@ -29,9 +29,10 @@ contains
     double precision,dimension(MAXULV) :: utau
     
     double precision,allocatable,dimension(:), INTENT(OUT):: spectrum
+    double precision,allocatable,dimension(:,:), INTENT(OUT):: photspec,tauspec    
     double precision, dimension(nlayers) :: DTAUC, SSALB, COSBAR
     double precision, dimension(nlayers+1) :: temper
-    double precision :: WVNMLO, WVNMHI, wint
+    double precision :: WVNMLO, WVNMHI, wint, tau1, tau2, p1, p2,ptau,taup
     integer :: ipatch,ilayer, iwave
     double precision,dimension(0:MAXMOM,nlayers) :: PMOM
     double precision:: phi(maxphi),phi0, umu(maxumu), umu0
@@ -45,6 +46,7 @@ contains
     character(len=0):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL,disorting
+    logical :: pspec,tspec,tdone, pdone
     double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
     
 
@@ -83,6 +85,8 @@ contains
     call set_temp_levels(temper)
 
     allocate(upflux(nwave),spectrum(nwave))
+    allocate(photspec(npatch,nwave),tauspec(npatch,nwave))
+    
     spectrum = 0.0
     
     do ipatch = 1, npatch
@@ -118,7 +122,8 @@ contains
                 ! test lines
                 !SSALB(ilayer) = 0.5d0
                 !patch(ipatch)%atm(ilayer)%gg(iwave) = 0.0d0
-                call GETMOM(3,patch(ipatch)%atm(ilayer)%gg(iwave),&
+                if (disorting) call &
+                     GETMOM(6,patch(ipatch)%atm(ilayer)%gg(iwave),&
                      NMOM,0.0, PMOM(0,ilayer))
                 COSBAR(ilayer) = patch(ipatch)%atm(ilayer)%gg(iwave)
              else     
@@ -134,16 +139,54 @@ contains
           enddo ! layer loop
 
 !          write(*,*) sum(dtauc)
+          DTAUC = 0.d0
 
+          ! get the pressure level where tau = taup
+          ! set taup
+          taup = 2./3.
+          ! also  get tau at set pressure level
+          ptau = 1.0
+
+          pdone = .false.
+          tdone = .false.
           do ilayer = 1, nlayers
              
              DTAUC(ilayer) = patch(ipatch)%atm(ilayer)%opd_ext(iwave)
+
+             if (pspec .and. .not. (pdone)) then
+                if (sum(dtauc) .gt. taup) then
+                   pdone = .true.
+                   tau2 = sum(dtauc)
+                   tau1 = tau2 - dtauc(ilayer)
+
+                   if (ilayer .eq. nlayers) then
+                      p1 = exp((0.5)*(log(patch(ipatch)%atm(ilayer-1)%press * patch(ipatch)%atm(ilayer)%press)))
+                   else
+                      p1 = exp(((1.5)*log(patch(ipatch)%atm(ilayer)%press)) - &
+               ((0.5)*log(patch(ipatch)%atm(ilayer+1)%press)))
+                   end if
+
+                   photspec(ipatch,iwave) = p1 +((taup - tau1) * &
+                        patch(ipatch)%atm(ilayer)%dp / dtauc(ilayer))
+                   
+                end if
+             end if
+
+             if (tspec .and. .not. (tdone)) then
+                if (sum(patch(ipatch)%atm(1:ilayer)%dp) .gt. ptau) then
+                   tdone = .true.
+                   p2 = sum(patch(ipatch)%atm(1:ilayer)%dp)
+                   p1 = p2 - patch(ipatch)%atm(ilayer)%dp
+
+                   tau1 = sum(dtauc) - dtauc(ilayer)
+
+                   tauspec(ipatch,iwave) = tau1 +((ptau - p1) * &
+                        dtauc(ilayer) / patch(ipatch)%atm(ilayer)%dp)
+                end if
+             end if
+             
+                
           end do
-          
-          
-
-
-
           
           
          if (disorting) then 

@@ -13,6 +13,7 @@ contains
     implicit none
     type(a_layer), intent(inout):: column(nlayers)
     integer :: icloud, imiewave, irad,ilayer,oldw1, oldw2, idum1, idum2, iwave
+    integer :: sizdist
     character(len=50) :: miefile
     double precision, dimension(nmiewave,nrad,nclouds):: qscat,qext,cos_qscat
     double precision, dimension(nmiewave):: miewavelen,miewaven, wdiff
@@ -21,11 +22,15 @@ contains
     double precision, dimension(nlayers,nmiewave):: opd_ext,opd_scat, cos_qs
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2
     double precision :: f1, f2, intfact,lintfact,vrat,rmin
-
+    double precision :: a, b, ndz, drr, arg3, argscat, argext, argcosqs, logcon
 
     ! this will take the clouds and in turn calculate their opacities the layers
     ! based on name, density, mean radius and width of log normal distribution
+    ! or using Hansen distribution: effective radius, radius spread and density
 
+    ! set the distribution here. Hardcoded for now
+    ! 1 = log normal, 2= hansen
+    sizdist = 2
 
     ! first set up the grids and get the Mie coefficients, cloud by cloud
 
@@ -146,77 +151,138 @@ contains
     ext_cloud = 0.d0
     cqs_cloud = 0.d0
     opd_ext = 0.d0
-    opd_scat = 0.0
+    opd_scat = 0.d0
     cos_qscat = 1.d-99
     
     do ilayer =1, nlayers
        do icloud = 1, nclouds
           if (column(ilayer)%cloud(icloud)%density .gt. 0.) then
-             
-             ! radii supplied in um, convert to cm
-             rsig = column(ilayer)%cloud(icloud)%rsig * 1e-4
-             rg  = column(ilayer)%cloud(icloud)%rg * 1e-4
-             
-             r2 = rg**2 * exp( 2*log(rsig)**2 )
-             
-             ! check the logic for this bit!!!
-             ! Optical depth for conservative geometric scatterers 
-             !opd_layer(ilayer,icloud) = 2.*pi*r2 * &
-             !     column(ilayer)%cloud(icloud)%density * &
-             !     column(ilayer)%dz
-             
-             !  Calculate normalization factor (forces lognormal sum = 1.0)
-             
-             norm = 0.
-             
-             do irad = 1,nrad
-                rr = radius(irad,icloud)
-                arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
-                arg2 = -log( rr/ rg )**2 / ( 2*log(rsig)**2 )
-                norm = norm + arg1*exp( arg2 )
-             end do
-             
-             ! my lengths and densities are in metres, but radii are in cm
-             norm = (column(ilayer)%cloud(icloud)%density * column(ilayer)%dz  * 10.**(-4)) / norm
-             
-             
-             ! now loop over radius and fill up wavelength dependent opacity for
-             ! each cloud
-             do imiewave = 1, nmiewave
-                do irad = 1, nrad
-                   
-                   rr = radius(irad,icloud)
-                   arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*log(rsig) )
-                   arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
-                   pir2ndz = norm*PI*rr*arg1*exp( arg2 )
-                                      
-                                      
-                   scat_cloud(ilayer,imiewave,icloud) =  &
-                        scat_cloud(ilayer,imiewave,icloud) + & 
-                        qscat(imiewave,irad,icloud)*pir2ndz
-                   ext_cloud(ilayer,imiewave,icloud) = &
-                        ext_cloud(ilayer,imiewave,icloud) + &
-                        qext(imiewave,irad,icloud)*pir2ndz
-                   cqs_cloud(ilayer,imiewave,icloud) = &
-                        cqs_cloud(ilayer,imiewave,icloud) + &
-                        cos_qscat(imiewave,irad,icloud)*pir2ndz
-                enddo ! radius loop
+             if (sizdist .eq. 1) then
+                ! radii supplied in um, convert to cm
+                rsig = column(ilayer)%cloud(icloud)%rsig * 1e-4
+                rg  = column(ilayer)%cloud(icloud)%rg * 1e-4
                 
-                ! sum over clouds
-                opd_scat(ilayer,imiewave) = opd_scat(ilayer,imiewave) + &
-                     scat_cloud(ilayer,imiewave,icloud)
-                opd_ext(ilayer,imiewave) = opd_ext(ilayer,imiewave) + &
-                     ext_cloud(ilayer,imiewave,icloud)
-                cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
-                     (cqs_cloud(ilayer,imiewave,icloud) * &
-                     scat_cloud(ilayer,imiewave,icloud))
+                r2 = rg**2 * exp( 2*log(rsig)**2 )
+             
+                ! check the logic for this bit!!!
+                ! Optical depth for conservative geometric scatterers 
+                !opd_layer(ilayer,icloud) = 2.*pi*r2 * &
+                !     column(ilayer)%cloud(icloud)%density * &
+                !     column(ilayer)%dz
+                
+                !  Calculate normalization factor (forces lognormal sum = 1.0)
+                
+                norm = 0.
+                
+                do irad = 1,nrad
+                   rr = radius(irad,icloud)
+                   arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
+                   arg2 = -log( rr/ rg )**2 / ( 2*log(rsig)**2 )
+                   norm = norm + arg1*exp( arg2 )
+                end do
+                
+                ! my lengths and densities are in metres, but radii are in cm
+                norm = (column(ilayer)%cloud(icloud)%density * column(ilayer)%dz  * 10.**(-4)) / norm
+                
+                
+                ! now loop over radius and fill up wavelength dependent opacity for
+                ! each cloud
+                do imiewave = 1, nmiewave
+                   do irad = 1, nrad
+                      
+                      rr = radius(irad,icloud)
+                      arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*log(rsig) )
+                      arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
+                      pir2ndz = norm*PI*rr*arg1*exp( arg2 )
+                      
+                      
+                      scat_cloud(ilayer,imiewave,icloud) =  &
+                           scat_cloud(ilayer,imiewave,icloud) + & 
+                           qscat(imiewave,irad,icloud)*pir2ndz
+                      ext_cloud(ilayer,imiewave,icloud) = &
+                           ext_cloud(ilayer,imiewave,icloud) + &
+                           qext(imiewave,irad,icloud)*pir2ndz
+                      cqs_cloud(ilayer,imiewave,icloud) = &
+                           cqs_cloud(ilayer,imiewave,icloud) + &
+                           cos_qscat(imiewave,irad,icloud)*pir2ndz
+                   enddo ! radius loop
+                   
+                   ! sum over clouds
+                   opd_scat(ilayer,imiewave) = opd_scat(ilayer,imiewave) + &
+                        scat_cloud(ilayer,imiewave,icloud)
+                   opd_ext(ilayer,imiewave) = opd_ext(ilayer,imiewave) + &
+                        ext_cloud(ilayer,imiewave,icloud)
+                   cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
+                        (cqs_cloud(ilayer,imiewave,icloud) * &
+                        scat_cloud(ilayer,imiewave,icloud))
       
-             end do ! miewave loop
+                end do ! miewave loop
+             else if (sizdist .eq. 2) then
+
+                ! Hansen distribution
+                
+                ! radii supplied in um, convert to cm
+                a = column(ilayer)%cloud(icloud)%rsig * 1e-4
+                b  = column(ilayer)%cloud(icloud)%rg * 1e-4
+                
+                ndz = column(ilayer)%cloud(icloud)%density * column(ilayer)%dz  * 10.**(-4)
+                
+                arg1 = ((((2*b) - 1)/b) * log(a*b)) + log(ndz) 
+                arg2 = log_gamma((1-(2*b))/b)
+                
+                logcon =  (arg1 - arg2) 
+                
+                do imiewave = 1, nmiewave
+                   do irad = 1, nrad
+                      rr = radius(irad,icloud)
+                      drr = dr(irad,icloud)
+                      !write(*,*) (-rr/(a*b)), log(drr)
+                      arg1 = (-rr/(a*b)) + log(drr)
+                      !write(*,*) arg1
+                      arg2 = ((1-3*b)/b) * log(rr)
+                      argscat = log(qscat(imiewave,irad,icloud) * PI * rr**2)
+                      argext = log(qext(imiewave,irad,icloud) * PI * rr**2)
+                      argcosqs =  log(cos_qscat(imiewave,irad,icloud) * PI * rr**2)
+                      
+                      !write(*,*) logcon, arg1, arg2, arg3, arg4 
+                      scat_cloud(ilayer,imiewave,icloud) =  &
+                           scat_cloud(ilayer,imiewave,icloud) + &
+                           exp(logcon + arg1 + arg2 + argscat)
+                      
+                      ext_cloud(ilayer,imiewave,icloud) = &
+                           ext_cloud(ilayer,imiewave,icloud) + &
+                           exp(logcon + arg1 + arg2 + argext)
+                      
+                      cqs_cloud(ilayer,imiewave,icloud) = &
+                           cqs_cloud(ilayer,imiewave,icloud) + &
+                           exp(logcon + arg1 + arg2 + argcosqs)
+                      
+                   end do ! radius loop
+
+                   ! sum over clouds
+                   opd_scat(ilayer,imiewave) = opd_scat(ilayer,imiewave) + &
+                        scat_cloud(ilayer,imiewave,icloud)
+                   opd_ext(ilayer,imiewave) = opd_ext(ilayer,imiewave) + &
+                        ext_cloud(ilayer,imiewave,icloud)
+                   cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + &
+                        (cqs_cloud(ilayer,imiewave,icloud) * &
+                        scat_cloud(ilayer,imiewave,icloud))
+                end do ! miewave loop
+
+             end if
           end if
        end do  ! cloud loop
 
-       cos_qs(ilayer,:) = cos_qs(ilayer,:) / opd_scat(ilayer,:)
-
+       do imiewave = 1, nmiewave
+          if (opd_scat(ilayer,imiewave) .gt. 0.) then
+             cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) / &
+                  opd_scat(ilayer,imiewave)
+          else
+             opd_ext(ilayer,imiewave) = 0.d0
+             opd_scat(ilayer,imiewave) = 0.d0
+             cos_qs(ilayer,imiewave) = 0.d0
+          end if
+       end do
  
        ! rebin to working resolution (nwave) grid and write to
        

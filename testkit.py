@@ -109,9 +109,13 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     pcover = np.asfortranarray(pcover,dtype = 'float32')
     cloudnum = np.asfortranarray(cloudnum,dtype='i')
     do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
+
+    # Set pspec and tspec as we don't need these in the emcee run
+    tspec = 0
+    pspec = 0
     
     # now we can call the forward model
-    outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
+    outspec,photspec,tauspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec)
     # Trim to length where it is defined.
     nwave = inwavenum.size
     trimspec = np.zeros((2,nwave),dtype='d')
@@ -288,7 +292,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 cloud_bot = cloud_top + cloud_height
                 w0 = theta[pc+3]
                 taupow = 0.0
-                cloud_dens0 = -100.0
+                cloud_dens0 = -20.0
                 rg = 1.0
                 rsig = 0.1
 
@@ -300,7 +304,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 cloud_height = theta[pc+1]
                 w0 = theta[pc+2]
                 taupow = 0.0
-                cloud_dens0 = -100.0
+                cloud_dens0 = -20.0
                 rg = 1.0
                 rsig = 0.1
         elif (cloudnum[0] == 89):
@@ -312,7 +316,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 cloud_bot = cloud_top + cloud_height
                 w0 = theta[pc+3]
                 taupow = theta[pc+4]
-                cloud_dens0 = -100.0
+                cloud_dens0 = -20.0
                 rg = 1.0
                 rsig = 0.1
 
@@ -324,7 +328,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                 cloud_height = theta[pc+1]
                 w0 = theta[pc+2]
                 taupow = theta[pc+3]
-                cloud_dens0 = -100.0
+                cloud_dens0 = -20.0
                 rg = 1.0
                 rsig = 0.1
         else:
@@ -359,7 +363,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         cloud_height = 0.1
         w0 =0.5
         taupow =0.0
-        cloud_dens0 = -100.
+        cloud_dens0 = -20.
         rg =  1.0
         rsig = 0.1
                 
@@ -379,7 +383,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -396,9 +400,9 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0.0 < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-10.0 < taupow < +10.0)
-            and (cloud_dens0 < 0.0)
-            and (rg > 0.5)
-            and (rsig > 0.0)):
+            and (-25.0 < cloud_dens0 < -11.0)
+            and (rg > 0.01)
+            and (rsig > 0.001)):
                  
             logbeta = -5.0
     	    beta=10.**logbeta
@@ -432,7 +436,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -447,9 +451,9 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0. < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-10.0 < taupow < +10.0)
-            and (cloud_dens0 < 0.0)
-            and (rg > 0.5)
-            and (rsig > 0.0)
+            and (-25.0 < cloud_dens0 < -11.0)
+            and (rg > 0.01)
+            and (rsig > 0.001)
             and  (min(T) > 1.0)
             and (max(T) < 5000.)):
             return 0.0
@@ -479,7 +483,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < -3.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
@@ -494,9 +498,9 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (0. < cloud_height < 7.0)
             and (0.0 < w0 < 1.0)
             and (-10.0 < taupow < +10.0)
-            and (cloud_dens0 < 0.0)
-            and (rg > 0.5)
-            and (rsig > 0.0)
+            and  (-25.0 < cloud_dens0 < -11.0)
+            and (rg > 0.01)
+            and (rsig > 0.001)
             and  (min(T) > 1.0) and (max(T) < 5000.)):               
             return 0.0
         return -np.inf

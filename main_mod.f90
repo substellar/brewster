@@ -5,7 +5,7 @@ module main
 contains 
   subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,out_spec)
+       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,pspec,tspec,out_spec,photspec,tauspec)
     
     use sizes
     use common_arrays
@@ -41,6 +41,7 @@ contains
     real, intent(inout) :: cia(:,:,:)
     integer,intent(inout) :: ingasnum(:)
     double precision,allocatable, dimension(:,:),INTENT(OUT) :: out_spec
+    double precision,allocatable, dimension(:,:),INTENT(INOUT) :: photspec,tauspec
     double precision,allocatable, dimension(:)::specflux
     real:: metal,grav,test
     double precision,allocatable :: wdiff(:)
@@ -48,7 +49,7 @@ contains
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish,cloudstart,cloudfinish
-    logical :: disorting
+    logical :: disorting,pspec,tspec
 
     ! Are we using DISORT
     disorting = use_disort
@@ -258,7 +259,7 @@ contains
     call cpu_time(distart)
 
     
-    call run_RT(specflux,disorting)
+    call run_RT(specflux,photspec,tauspec,disorting,pspec,tspec)
 
     allocate(out_spec(2,nwave))
     out_spec(1,:) = wavelen

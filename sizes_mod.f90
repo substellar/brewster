@@ -36,6 +36,9 @@
 
   ! max wave number
   integer, parameter :: maxwave = 19501
+
+  ! max number of patches
+  integer, parameter :: maxpatch = 4
   
   ! number of wavelength/number bins in full range
   integer,protected :: nwave
@@ -56,7 +59,12 @@ contains
 
   subroutine initpatch(pval)
     integer :: pval
-    npatch =  pval
+    if (pval .le. maxpatch) then
+       npatch =  pval
+    else
+       write(*,*) "N patch > maxpatch (", maxpatch,")."
+       stop
+    end if
   end subroutine initpatch
 
   
