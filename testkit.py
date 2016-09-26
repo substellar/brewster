@@ -220,7 +220,7 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
                     cloudparams[4] = 0.0
                 elif ((cloudtype[i] == 2) and (cloudnum[i] == 89)):
                     nc = 4
-                    cloudparams[1:4] = theta[pc:pc+nc]
+                    cloudparams[1:5] = theta[pc:pc+nc]
                 else:
                     nc = 5
                     cloudparams[:] = theta[pc:pc+nc]
