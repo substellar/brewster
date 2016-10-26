@@ -47,7 +47,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
     npatch = do_clouds.size
     ncloud = 1
     if (cloudparams.size > 5):
-        ncloud = cloudparams.shape[1]
+        ncloud = cloudparams.shape[2]
     
     cloudrad = np.zeros((npatch,nlayers,ncloud),dtype='d')
     cloudsig = np.zeros_like(cloudrad)
@@ -68,11 +68,11 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
 
 
-                    ndens= cloudparams[0,j]
-                    p1 = 10.**cloudparams[1,j]
-                    p2 = p1 * 10.**cloudparams[2,j]
-                    rad = cloudparams[3,j]
-                    sig = cloudparams[4,j]
+                    ndens= cloudparams[0,i,j]
+                    p1 = 10.**cloudparams[1,i,j]
+                    p2 = p1 * 10.**cloudparams[2,i,j]
+                    rad = cloudparams[3,i,j]
+                    sig = cloudparams[4,i,j]
                     pdiff = np.empty(nlayers,dtype='f')
  
                     pdiff = abs(np.log(press) - np.log(p1))
@@ -137,11 +137,11 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # 3) rg
                     # 4) rsig
             
-                    ndens= cloudparams[0,j]
-                    p0 = 10.**cloudparams[1,j]
-                    scale = ((p0 * 10.**cloudparams[2,j]) - p0)  / 10.**cloudparams[2,j]
-                    rad = cloudparams[3,j]
-                    sig = cloudparams[4,j]
+                    ndens= cloudparams[0,i,j]
+                    p0 = 10.**cloudparams[1,i,j]
+                    scale = ((p0 * 10.**cloudparams[2,i,j]) - p0)  / 10.**cloudparams[2,i,j]
+                    rad = cloudparams[3,i,j]
+                    sig = cloudparams[4,i,j]
             
                     pdiff = np.empty(nlayers,dtype='f')
             

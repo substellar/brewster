@@ -199,38 +199,39 @@ contains
              patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
              patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              
-          end do ! cloud loop
+          !end do ! cloud loop
 
           
           ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
           ! we'll just use the density, rg, and rsig as dtau, w0 and gg
           ! for the cloud
-
-          !if (trim(patch(ipatch)%atm(1)%cloud(1)%name) .eq. 'mixto') then
-          if (cloudnum(ipatch,1) .gt. 50) then
-             if (nclouds .ne. 1) then
-                write(*,*) "Error: mixto cloud case should have nclouds = 1"
-                stop
-             else
+             if (cloudnum(ipatch,icloud) .gt. 50) then
+                !if (nclouds .ne. 1) then
+                !   write(*,*) "Error: mixto cloud case should have nclouds = 1"
+                !   stop
+                !else
                 ! FOR GREY SIMPLE CASE (MIXTO): put DTAU_cloud in cloudprofile
                 ! and albedo in rg, and asymmetry = 0.0.
                 ! Power law option has power law in rsig
                 !
-                ! There must only be one cloud for this case
                 do ilayer= 1, nlayers
                    patch(ipatch)%atm(ilayer)%opd_ext = &
-                        cloudprof(ipatch,ilayer,1) * &
-                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(1)%rsig)
+                        patch(ipatch)%atm(ilayer)%opd_ext + &
+                        (cloudprof(ipatch,ilayer,icloud) * &
+                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig))
                    patch(ipatch)%atm(ilayer)%opd_scat = &
-                        patch(ipatch)%atm(ilayer)%opd_ext * &
-                        patch(ipatch)%atm(ilayer)%cloud(1)%rg
+                        patch(ipatch)%atm(ilayer)%opd_scat + &
+                        (cloudprof(ipatch,ilayer,icloud) * &
+                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig)* &
+                        patch(ipatch)%atm(ilayer)%cloud(icloud)%rg)
                    patch(ipatch)%atm(ilayer)%gg = 0.d0 
                 end do ! layer loop
-             end if
-          else
-             !write(*,*) "calling cloud atlas"
+             end if !if cloud > 50
+          end do ! cloud loop
+          if (any(cloudnum(ipatch,:) .lt. 50)) then
              call cloudatlas(patch(ipatch)%atm)
           end if
+
        else
           do ilayer = 1, nlayers
              patch(ipatch)%atm(ilayer)%gg = 0.0
