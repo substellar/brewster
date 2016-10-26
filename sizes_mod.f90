@@ -15,7 +15,7 @@
   ! declares and values size parameters for arrays 
   
   ! number of pressure layers
-  integer, parameter :: nlayers = 64
+  integer, parameter :: nlayers = 70
 
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 27
