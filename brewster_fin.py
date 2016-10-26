@@ -52,10 +52,10 @@ finePress = pow(10,logfinePress)
 press = finePress
 
 
-w1 = 0.8
-w2 = 2.4
+w1 = 0.7
+w2 = 2.5
 
-dist = 11.35
+dist = 33.5
 # hardwired FWHM of data in microns
 fwhm = 0.005
 
@@ -83,9 +83,9 @@ proftype = 2
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 11
-gasnum = np.asfortranarray(np.array([1,4,5,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
+ngas = 10
+gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,12,20,21],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -138,8 +138,8 @@ runargs = dist, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coar
 
 # now set up the EMCEE stuff
 
-ndim  = 23 #((ngas-1) + 9 + 5)
-nwalkers = ndim * 16
+ndim  = 22 #((ngas-1) + 9 + 5)
+nwalkers = ndim * 8
 #int(((ndim * ndim) // 2) * 2)
 
 
@@ -150,41 +150,39 @@ if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
     p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.0 # CO
     p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CO2
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
-    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
-    p0[:,5] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CaH
-    p0[:,6] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
-    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    p0[:,8] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # MgH
-    p0[:,9] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
-    p0[:,10] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
-    p0[:,11] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20
-    p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
+    p0[:,4] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CaH
+    p0[:,5] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
+    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
+    p0[:,7] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # MgH
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
+    p0[:,9] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
+    p0[:,10] =  1.0e-20 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-20
+    p0[:,11] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,12] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, tau so need pressure of top where plus cloud height (in dex), SSA, don't need GG
-    p0[:,14] = 0.5* np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,15] = -4. + 6.*np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,16] = np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,13] = 0.5* np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,14] = -4. + 6.*np.random.rand(nwalkers).reshape(nwalkers) 
+    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers) 
+    p0[:,16] = np.random.rand(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,18] = 0.6+ 0.1*np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,19] = 0.1 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,20] = 0.2+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,21] = 2.+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,22] = 4000. + (1000.*  np.random.rand(nwalkers).reshape(nwalkers))
+    p0[:,17] = 0.39 + 0.01*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,18] = 0.14 +0.01*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,19] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,20] = 2.25+ 0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,21] = 4200. + (200.*  np.random.randn(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,18:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,17:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,18] = 0.6+ 0.1*np.random.rand()
-                p0[i,19] = 0.1+ 0.05*np.random.randn()
-                p0[i,20] = 0.2+ 0.05*np.random.randn()
-                p0[i,21] = 2. + 0.2*np.random.randn()
-                p0[i,22] = 4000. + (1000.*  np.random.rand())
-
+                p0[i,17] = 0.39 + 0.01*np.random.randn()
+                p0[i,18] = 0.14 + 0.01*np.random.randn()
+                p0[i,19] = -1.2 + 0.2*np.random.randn()
+                p0[i,20] = 2. + 0.2*np.random.randn()
+                p0[i,21] = 4200. + (200.*  np.random.randn())
     
 if (fresh != 0):
     fname='MCMC_last.pic'

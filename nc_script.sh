@@ -1,5 +1,5 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_nc_fin
+#PBS -N 2M1626_nc
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
 #PBS -l walltime=30:00:00
@@ -12,8 +12,8 @@ module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
 source /usr/local/lib/global.cshrc
 
 
-setenv PATH ${PATH}:/home1/bburning/retrievals/2M2224spex:/u/scicon/tools/bin
-setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/2M2224spex
+setenv PATH ${PATH}:/home1/bburning/retrievals/2M1626_sdL4:/u/scicon/tools/bin
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/2M1626_sdL4
 #setenv MPI_BUFS_PER_PROC 512
 #setenv OMP_NUM_THREADS 20
 
@@ -40,11 +40,11 @@ echo ------------------------------------------------------
 
 
 
-cd /home1/bburning/retrievals/2M2224spex
+cd /home1/bburning/retrievals/2M1626_sdL4
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster_nc_fin.py > /nobackup/bburning/brew_2M2224spex_nc_fin.log
+mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster_nc.py > /nobackup/bburning/brew_2M1626_nc.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
