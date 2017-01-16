@@ -190,21 +190,11 @@ contains
        if (patch(ipatch)%cloudy) then
           do icloud = 1, nclouds
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
-             patch(ipatch)%atm%cloud(icloud)%name = &
-                  patch(ipatch)%atm(1)%cloud(icloud)%name
-             ! cloud profile given in units of log(n_cond/n_gas)
-             ! now convert to density
-             patch(ipatch)%atm%cloud(icloud)%density = &
-                  patch(1)%atm%ndens * (10.**cloudprof(ipatch,:,icloud))
-             patch(ipatch)%atm%cloud(icloud)%rg = cloudrad(ipatch,:,icloud) 
-             patch(ipatch)%atm%cloud(icloud)%rsig = cloudsig(ipatch,:,icloud)
              
-          !end do ! cloud loop
-
-          
-          ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
-          ! we'll just use the density, rg, and rsig as dtau, w0 and gg
-          ! for the cloud
+             
+             ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
+             ! we'll just use the density, rg, and rsig as dtau, w0 and gg
+             ! for the cloud
              if (cloudnum(ipatch,icloud) .gt. 50) then
                 !if (nclouds .ne. 1) then
                 !   write(*,*) "Error: mixto cloud case should have nclouds = 1"
@@ -217,21 +207,32 @@ contains
                 do ilayer= 1, nlayers
                    patch(ipatch)%atm(ilayer)%opd_ext = &
                         patch(ipatch)%atm(ilayer)%opd_ext + &
-                        (cloudprof(ipatch,ilayer,icloud) * &
-                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig))
+                        ((cloudprof(ipatch,ilayer,icloud) * &
+                        (wavelen**cloudsig(ipatch,ilayer,icloud))))
                    patch(ipatch)%atm(ilayer)%opd_scat = &
                         patch(ipatch)%atm(ilayer)%opd_scat + &
-                        (cloudprof(ipatch,ilayer,icloud) * &
-                        (wavelen**patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig)* &
-                        patch(ipatch)%atm(ilayer)%cloud(icloud)%rg)
+                        ((cloudprof(ipatch,ilayer,icloud) * &
+                        (wavelen**cloudsig(ipatch,ilayer,icloud))* &
+                         cloudrad(ipatch,ilayer,icloud)))
                    patch(ipatch)%atm(ilayer)%gg = 0.d0 
                 end do ! layer loop
-             end if !if cloud > 50
+             else !if cloud > 50
+                do ilayer = 1, nlayers
+                   patch(ipatch)%atm(ilayer)%cloud(icloud)%name = &
+                        patch(ipatch)%atm(1)%cloud(icloud)%name
+                   ! cloud profile given in units of log(n_cond/n_gas)
+                   ! now convert to density
+                   patch(ipatch)%atm(ilayer)%cloud(icloud)%density = &
+                        patch(1)%atm(ilayer)%ndens * (10.**cloudprof(ipatch,ilayer,icloud))
+                   patch(ipatch)%atm(ilayer)%cloud(icloud)%rg = cloudrad(ipatch,ilayer,icloud) 
+                   patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig = cloudsig(ipatch,ilayer,icloud)
+                end do
+             endif
           end do ! cloud loop
           if (any(cloudnum(ipatch,:) .lt. 50)) then
              call cloudatlas(patch(ipatch)%atm)
           end if
-
+          
        else
           do ilayer = 1, nlayers
              patch(ipatch)%atm(ilayer)%gg = 0.0

@@ -1,10 +1,10 @@
-  module sizes
+module sizes
 
   implicit none
 
 
   ! number of condensate species
-  integer, parameter :: nclouds = 1
+  integer, protected :: nclouds
 
   ! number of gases for mixing
   integer, protected :: ngas
@@ -15,7 +15,7 @@
   ! declares and values size parameters for arrays 
   
   ! number of pressure layers
-  integer, parameter :: nlayers = 70
+  integer, parameter :: nlayers = 64
 
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 27
@@ -66,6 +66,12 @@ contains
        stop
     end if
   end subroutine initpatch
+
+  subroutine initcloud(pval)
+    integer :: pval
+    nclouds =  pval
+  end subroutine initcloud
+
 
   
 end module sizes

@@ -143,7 +143,7 @@ contains
 
           ! get the pressure level where tau = taup
           ! set taup
-          taup = 3.0
+          taup = 1.0
           ! also  get tau at set pressure level
           ptau = 1.0
 

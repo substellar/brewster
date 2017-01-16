@@ -41,6 +41,8 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
     # Cloud types
     # 1:  slab cloud
     # 2: deep thick cloud , we only see the top
+    # 3: slab with fixed thickness log dP = 0.005 (~1% height)
+    # 4: deep thick cloud with fixed height log dP = 0.005
     # In both cases the cloud properties are density, rg, rsig for real clouds
     # and dtau, w0, and power law for cloudnum = 99 or 89
     nlayers = press.size
@@ -58,7 +60,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
         if (do_clouds[i] == 1):
             for j in range(0,ncloud):
 
-                if (cloudtype[i,j] == 1):
+                if (cloudtype[i,j] == 1 or cloudtype[i,j] == 3):
                     # 5 entries for cloudparams are:
                     # 0) density
                     # 1) log top pressure
@@ -70,7 +72,11 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
                     ndens= cloudparams[0,i,j]
                     p1 = 10.**cloudparams[1,i,j]
-                    p2 = p1 * 10.**cloudparams[2,i,j]
+                    if (cloudtype[i,j] == 1):
+                        dP = cloudparams[2,i,j]
+                    else:
+                        dP = 0.005
+                    p2 = p1 * 10.**dP
                     rad = cloudparams[3,i,j]
                     sig = cloudparams[4,i,j]
                     pdiff = np.empty(nlayers,dtype='f')
@@ -128,7 +134,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     cloudrad[i,:,j] = rad
                     cloudsig[i,:,j] = sig        
 
-                if (cloudtype[i,j] == 2):
+                if (cloudtype[i,j] == 2 or cloudtype[i,j] == 4):
 
                     # 5 entries for cloudparams are:
                     # 0) reference density 
@@ -139,7 +145,11 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
                     ndens= cloudparams[0,i,j]
                     p0 = 10.**cloudparams[1,i,j]
-                    scale = ((p0 * 10.**cloudparams[2,i,j]) - p0)  / 10.**cloudparams[2,i,j]
+                    if (cloudtype[i,j] == 2):
+                        dP = cloudparams[2,i,j]
+                    else:
+                        dP = 0.005
+                    scale = ((p0 * 10.**dP) - p0)  / 10.**dP
                     rad = cloudparams[3,i,j]
                     sig = cloudparams[4,i,j]
             
@@ -183,7 +193,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     cloudsig[i,:,j] = sig       
 
 
-                if (cloudtype[i,j] >  2):
+                if (cloudtype[i,j] >  4):
                     print "cloud layout not recognised. stopping" 
 
     

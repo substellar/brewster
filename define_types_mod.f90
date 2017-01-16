@@ -27,7 +27,7 @@ module define_types
      double precision, allocatable,dimension(:) ::opd_ext,opd_scat,gg
      double precision, allocatable,dimension(:) :: opd_lines,opd_CIA,opd_rayl
      type(a_gas),allocatable,dimension(:) :: gas
-     type(a_cloud) :: cloud(nclouds)
+     type(a_cloud),allocatable,dimension(:) :: cloud
   end type a_layer
 
   type a_patch
@@ -48,6 +48,8 @@ contains
 
        if ( .NOT. allocated (col(ilayer)%gas)) &
             allocate (col(ilayer)%gas(ngas))
+       if ( .NOT. allocated (col(ilayer)%cloud)) &
+            allocate (col(ilayer)%cloud(nclouds))
        if ( .NOT. allocated (col(ilayer)%opd_ext)) &
             allocate (col(ilayer)%opd_ext(nwave))
        if ( .NOT. allocated (col(ilayer)%opd_scat)) &

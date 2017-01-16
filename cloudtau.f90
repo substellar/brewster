@@ -60,6 +60,9 @@ subroutine cloudtau(theta,cloudname,sizdist,miewavelen,tau)
   elseif( trim(cloudname) .eq. 'Mg2SiO4' )then
      vrat = 2.2
      rmin = 1e-7
+  elseif( trim(cloudname) .eq. 'Al2O3' )then
+     vrat = 2.2
+     rmin = 1e-7
   elseif( trim(cloudname) .eq. 'ZnS' )then
      vrat = 2.2
      rmin = 1e-5

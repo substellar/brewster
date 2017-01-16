@@ -53,11 +53,12 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   call initwave(size(inwavenum))
   call initgas(size(ingasnum))
   call initpatch(size(do_clouds))
-
+  call initcloud(size(cloudprof(1,1,:)))
+  
   allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
 
-  
+  write(*,*) nclouds
   allocate(out_spec(2,nwave))
 
   pspec = make_pspec
@@ -84,7 +85,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      read(10,"(I3,A10)") idum2,cloudlist(icloud)
   end do
   close(10)
-
+  
    do ipatch = 1, npatch
      do icloud = 1, nclouds
         ! check if we're doing a specific cloud or a generic/mixed cloud
