@@ -11,7 +11,7 @@ module common_arrays
 
    double precision, allocatable,dimension(:) :: wavenum, wavelen
    real,dimension(nlinetemps) :: linetemps
-   real,dimension(nlayers) :: press
+   real,allocatable,dimension(:) :: press
    integer, allocatable,dimension(:) :: gasnum
    integer,allocatable,dimension(:,:) :: cloudnum
 
@@ -27,6 +27,7 @@ module common_arrays
      if ( .NOT. allocated (gasnum)) allocate(gasnum(ngas))
      if ( .NOT. allocated (cloudnum)) allocate(cloudnum(npatch,nclouds))
      if ( .NOT. allocated (patch)) allocate(patch(npatch))     
+     if ( .NOT. allocated (press)) allocate(press(nlayers))     
      
    end subroutine init_all
 

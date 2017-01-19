@@ -9,6 +9,7 @@ import forwardmodel
 import cloud
 import TPmod
 from scipy import interpolate
+from scipy.interpolate import InterpolatedUnivariateSpline
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
 from mikesconv import instrument_non_uniform
@@ -35,7 +36,7 @@ __status__ = "Development"
 
 
 
-def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge):
+def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,bfTgrid):
 
     # Hard code nlayers
     nlayers = press.shape[0]
@@ -110,12 +111,24 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     cloudnum = np.asfortranarray(cloudnum,dtype='i')
     do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
 
+    # Now get the BFF stuff sorted
+    bff = np.zeros([3,nlayers],dtype="float64") 
+    if (do_bff == 1):
+        for gas in range(0,3):
+            for i in range(0,nlayers):
+                tfit = InterpolatedUnivariateSpline(bfTgrid,bff_raw[:,i,gas],k=1) 
+                bff[gas,i] = 10.**tfit(temp[i])
+
+    bff = np.asfortranarray(bff, dtype='float64')
+    press = np.asfortranarray(press,dtype='float32')
+    temp = np.asfortranarray(temp,dtype='float64')
+    logVMR = np.asfortranarray(logVMR,dtype='float64')
     # Set pspec and tspec as we don't need these in the emcee run
     tspec = 0
     pspec = 0
     
     # now we can call the forward model
-    outspec,photspec,tauspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec)
+    outspec,photspec,tauspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,do_bff,bff)
     # Trim to length where it is defined.
     nwave = inwavenum.size
     trimspec = np.zeros((2,nwave),dtype='d')
@@ -171,7 +184,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof):
+def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,bfTgrid):
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
@@ -257,12 +270,14 @@ def lnprob(theta,dist,cloudtype, cloudparams, do_clouds,gasnum,cloudnum,inlinete
     else:
         raise ValueError("not valid profile type %proftype" % (char, string))
 
+
+    
     # now check against the priors, if not beyond them, run the likelihood
     lp = lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge)
     if not np.isfinite(lp):
         return -np.inf
     # else run the likelihood
-    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge)
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,bfTgrid)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -490,11 +505,11 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and 1.0 < M < 100. 
             and  0. < r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
-            and (min(T) > 1.0) and (max(T) < 5000.) 
+            and (min(T) > 1.0) and (max(T) < 6000.) 
             and (gam > 0.)
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
@@ -549,7 +564,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and 1.0 < M < 100. 
             and  0. <= r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
@@ -571,7 +586,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and (np.all(rg > 0.01))
             and (np.all(rsig > 0.001))
             and  (min(T) > 1.0)
-            and (max(T) < 5000.)):
+            and (max(T) < 6000.)):
             return 0.0
         return -np.inf
         
@@ -603,7 +618,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and 1.0 < M < 100. 
             and  0. < r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
@@ -618,7 +633,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and  all(-25.0 < cloud_dens0 < -11.0)
             and all(rg > 0.01)
             and all(rsig > 0.001)
-            and  (min(T) > 1.0) and (max(T) < 5000.)):               
+            and  (min(T) > 1.0) and (max(T) < 6000.)):               
             return 0.0
         return -np.inf
     
@@ -635,7 +650,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and 1.0 < M < 100. 
             and  0. <= r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 

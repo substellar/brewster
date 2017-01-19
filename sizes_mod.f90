@@ -15,7 +15,7 @@ module sizes
   ! declares and values size parameters for arrays 
   
   ! number of pressure layers
-  integer, parameter :: nlayers = 64
+  integer, protected :: nlayers
 
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 27
@@ -65,6 +65,7 @@ contains
        write(*,*) "N patch > maxpatch (", maxpatch,")."
        stop
     end if
+
   end subroutine initpatch
 
   subroutine initcloud(pval)
@@ -72,6 +73,10 @@ contains
     nclouds =  pval
   end subroutine initcloud
 
+  subroutine initlayers(pval)
+    integer :: pval
+    nlayers =  pval
+  end subroutine initlayers
 
   
 end module sizes

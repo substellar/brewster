@@ -5,7 +5,7 @@ module main
 contains 
   subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,pspec,tspec,out_spec,photspec,tauspec)
+       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,pspec,tspec,out_spec,photspec,tauspec,do_bff,bff)
     
     use sizes
     use common_arrays
@@ -20,7 +20,7 @@ contains
     
     
     ! input variables
-    double precision,dimension(nlayers), INTENT(IN):: temp
+    double precision,INTENT(IN):: temp(:)
     real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
@@ -35,8 +35,9 @@ contains
     integer,intent(inout):: incloudnum(:,:)
     double precision,intent(inout) :: inwavenum(:)
     real,dimension(nlinetemps) :: inlinetemps
-    real,dimension(nlayers) :: inpress
+    real,intent(in) :: inpress(:)
     double precision,intent(inout):: linelist(:,:,:,:)
+    double precision,intent(inout):: bff(:,:)
     real, dimension(nciatemps), intent(in):: ciatemp
     real, intent(inout) :: cia(:,:,:)
     integer,intent(inout) :: ingasnum(:)
@@ -47,12 +48,15 @@ contains
     double precision,allocatable :: wdiff(:)
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
+    integer :: do_bff
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
     real:: linstart, linfinish,distart, difinish,cloudstart,cloudfinish
-    logical :: disorting,pspec,tspec
+    real:: bfstart,bffinish
+    logical :: disorting,pspec,tspec,bfing
 
     ! Are we using DISORT
     disorting = use_disort
+    bfing  = do_bff
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
@@ -89,14 +93,17 @@ contains
           patch(1)%atm(ilayer)%gas(igas)%num = gasnum(igas)       
           patch(1)%atm(ilayer)%gas(igas)%VMR = 10.**(logVMR(igas,ilayer))
           patch(1)%atm(ilayer)%gas(igas)%molmass = molmass(igas)
-       
        end do
        if (trim(patch(1)%atm(1)%gas(igas)%name) .eq. "ch4") then
           ch4index = igas
        end if
 
     end do
-    
+
+    patch(1)%atm%fe = bff(1,:)
+    patch(1)%atm%fH = bff(2,:)
+    patch(1)%atm%fHmin = bff(3,:)
+
     
     grav = 10**(logg) / 100.
     
@@ -142,7 +149,7 @@ contains
           patch(ipatch)%atm(ilayer)%opd_ext = 0.0
           patch(ipatch)%atm(ilayer)%opd_lines = 0.0
           patch(ipatch)%atm(ilayer)%opd_rayl = 0.0
-          
+          patch(ipatch)%atm(ilayer)%opd_hmbff = 0.0          
        end do
     end do
     
@@ -153,14 +160,15 @@ contains
     ! now mix the gases in each layer to get optical depth from lines
     do ilayer = 1, nlayers
        call line_mixer(patch(1)%atm(ilayer),patch(1)%atm(ilayer)%opd_lines,ilayer,linelist)
-       
     end do
     
-
+    ! get the bff opacities
+    if (bfing) then
+       call get_hmbff
+    end if
     
     ! now the Rayleigh scattering
     call get_ray(ch4index)
- 
 
     ! now let's get the CIA.  
     call get_cia(cia,ciatemp,grav,ch4index)
@@ -276,6 +284,7 @@ contains
     write(*,*) "Time elapsed :", (tfinish - tstart), " seconds"
     
     write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
+
     write(*,*) "Cloud bits took: ", (cloudfinish - cloudstart), " seconds"
     write(*,*) "RT took : ", (difinish - distart), " seconds"
 
@@ -286,8 +295,10 @@ contains
                patch(ipatch)%atm(ilayer)%opd_scat,&
                patch(ipatch)%atm(ilayer)%opd_lines, &
                patch(ipatch)%atm(ilayer)%opd_cia, &
+               patch(ipatch)%atm(ilayer)%opd_hmbff,&
                patch(ipatch)%atm(ilayer)%gg)
        end do
+       deallocate(patch(ipatch)%atm)
     end do
    
   end subroutine forward

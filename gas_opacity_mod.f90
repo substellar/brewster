@@ -227,6 +227,16 @@ contains
           tcia2 = tcia1
           tcia1 = tcia2 - 1
        end if
+
+
+       if (patch(1)%atm(ilayer)%temp .lt. ciatemp(1)) then
+          tcia1 = 1
+          tcia2 = 2
+       else if (patch(1)%atm(ilayer)%temp .gt. ciatemp(nciatemps)) then
+          tcia1 = nciatemps - 1
+          tcia2 = nciatemps
+       endif
+
        
        
        if (tcia1 .eq. 0) then
@@ -269,6 +279,58 @@ contains
        
     end do ! layer do
   end subroutine get_cia
-  
+
+
+  subroutine get_hmbff
+    
+    use sizes
+    use common_arrays
+    use phys_const
+    use define_types
+
+    implicit none
+
+    double precision:: tauhmbf,tauhmff,tauh2m,colden,sbf,sff_hm,h2min
+    integer:: iwave, ilayer
+
+    tauhmbf = 0.d0
+    tauhmff = 0.d0
+    tauh2m = 0.d0
+
+    do ilayer = 1, nlayers
+       
+       colden = patch(1)%atm(ilayer)%ndens * patch(1)%atm(ilayer)%dz * 1.e-4
+        
+       
+       if (patch(1)%atm(ilayer)%temp .gt. 600.) then
+          !It is hot enough to have electrons 
+          do iwave = 1, nwave
+             
+             if (wavelen(iwave) .lt. 1.642) then
+                !and we are < 1.642 um photodetachemnt threshold
+                !we get the the bf H- continuum
+                call opa_hmbf(wavenum(iwave),sbf)
+             
+                !this needs abundance of H- ions
+                tauhmbf = sbf * patch(1)%atm(ilayer)%fHmin * colden                     
+             endif
+             !Then we get the H- continuum ff opacity
+             call opa_hmff(wavenum(iwave),patch(1)%atm(ilayer)%temp,sff_hm)
+             tauhmff = patch(1)%atm(ilayer)%press * 1.e6 * &
+                  patch(1)%atm(ilayer)%fH * patch(1)%atm(ilayer)%fe * &
+                  sff_hm * colden / (patch(1)%atm(ilayer)%temp * kbolt_cgs)
+             !Then we get the H2- ff continuum
+             call opa_tab_h2mff(patch(1)%atm(ilayer)%temp,wavenum(iwave),h2min)
+             !h2min = 0.d0
+             tauh2m =  patch(1)%atm(ilayer)%press * 1.e6 * &
+                  patch(1)%atm(ilayer)%fH2 * patch(1)%atm(ilayer)%fe * &
+                  h2min * colden
+
+             
+             patch(1)%atm(ilayer)%opd_hmbff(iwave) =  tauh2m + tauhmbf + tauhmff
+          end do
+       end if
+    end do
+  end subroutine get_hmbff
   
 end module gas_opacity

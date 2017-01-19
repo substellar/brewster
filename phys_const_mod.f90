@@ -22,6 +22,8 @@ module phys_const
   !   Boltzmann constant (J/K)
   double precision, parameter :: K_BOLTZ = R_GAS / AVOGADRO 
 
+  ! Boltzmann constant (cgs)
+  double precision, parameter :: Kbolt_cgs = 1.38064853d-16
 
   ! Atomic mass unit (kg)
   double precision, parameter :: amu = 1.6605402d-27

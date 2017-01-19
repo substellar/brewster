@@ -1,6 +1,6 @@
 subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      do_clouds,incloudnum,cloudrad,cloudsig,cloudprof,&
-     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,make_pspec,make_tspec,outspec,phot_press,tau_spec)
+     inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,make_pspec,make_tspec,outspec,phot_press,tau_spec,do_bff,bff)
 
   use sizes
   use main
@@ -11,22 +11,22 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: ngas
   !f2py integer, parameter :: nclouds
   !f2py integer, parameter :: npatch
-  !f2py intent(in) logg,R2D2
-  !f2py intent(in) temp,logVMR
+  !f2py intent(in) logg,R2D2,do_bff
+  !f2py intent(inout) temp,logVMR,inpress
   !f2py intent(in) use_disort,pspec,tspec
-  !f2py intent(in) inlinetemps,inpress
+  !f2py intent(in) inlinetemps
   !f2py intent(inout) cloudrad,cloudsig,cloudprof
   !f2py intent(inout) cia, ciatemps
-  !f2py intent(inout) inlinelist, inwavenum
+  !f2py intent(inout) inlinelist, inwavenum,bff
   !f2py intent(inout) do_clouds,pcover,ingasnum,incloudnum
   !f2py intent(out) out_spec, phot_press
 
   real,intent(inout) :: cia(:,:,:)
   real,dimension(nciatemps) :: ciatemps
   double precision,intent(inout) :: inlinelist(:,:,:,:)
-  double precision,dimension(nlayers):: temp
+  double precision,intent(inout):: temp(:)
   real :: R2D2,logg
-!  double precision :: w1,w2
+  double precision,intent(inout):: bff(:,:)
   real,intent(inout) :: pcover(:)
   integer,intent(inout) ::do_clouds(:)
   character(len=10),dimension(:),allocatable :: gasname
@@ -45,15 +45,17 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,dimension(:,:),allocatable :: out_spec, photspec,tauspec
   double precision,intent(inout) :: inwavenum(:)
   real,dimension(nlinetemps) :: inlinetemps
-  real,dimension(nlayers) :: inpress
+  real,intent(inout) :: inpress(:)
   integer :: maxgas,maxcloud,igas,icloud, idum1, idum2
-  integer :: use_disort,make_pspec,make_tspec
+  integer :: use_disort,make_pspec,make_tspec,do_bff
   logical :: pspec,tspec
   
+  call initlayers(size(inpress))
   call initwave(size(inwavenum))
   call initgas(size(ingasnum))
   call initpatch(size(do_clouds))
   call initcloud(size(cloudprof(1,1,:)))
+
   
   allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
@@ -101,7 +103,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   deallocate(cloudlist,gaslist,masslist)  
   call forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,pspec,tspec,out_spec,photspec,tauspec)
+       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,pspec,tspec,out_spec,photspec,tauspec,do_bff,bff)
 
   outspec = 0.d0
   outspec(1,1:nwave)  = out_spec(1,1:nwave)

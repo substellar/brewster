@@ -23,9 +23,9 @@ module define_types
      ! layer 1 is top of atmosphere!!
      integer:: index
      double precision:: temp
-     double precision :: press,logP,dz,dp,ndens,fH2,fHe,mu
+     double precision :: press,logP,dz,dp,ndens,fH2,fHe,fHmin,fH,fe,mu
      double precision, allocatable,dimension(:) ::opd_ext,opd_scat,gg
-     double precision, allocatable,dimension(:) :: opd_lines,opd_CIA,opd_rayl
+     double precision, allocatable,dimension(:) :: opd_lines,opd_CIA,opd_rayl,opd_hmbff
      type(a_gas),allocatable,dimension(:) :: gas
      type(a_cloud),allocatable,dimension(:) :: cloud
   end type a_layer
@@ -34,7 +34,7 @@ module define_types
      integer:: index
      logical :: cloudy
      real:: cover
-     type(a_layer)::atm(nlayers)
+     type(a_layer),allocatable,dimension(:):: atm
   end type a_patch
 
   
@@ -42,10 +42,11 @@ module define_types
 
 contains
   subroutine init_column(col)
-    type(a_layer) :: col(nlayers)
+    type(a_layer),allocatable,dimension(:) :: col
     integer:: ipatch,ilayer
+    if ( .NOT. allocated (col)) &
+         allocate (col(nlayers))
     do ilayer = 1, nlayers
-
        if ( .NOT. allocated (col(ilayer)%gas)) &
             allocate (col(ilayer)%gas(ngas))
        if ( .NOT. allocated (col(ilayer)%cloud)) &
@@ -62,6 +63,8 @@ contains
             allocate (col(ilayer)%opd_rayl(nwave))
        if ( .NOT. allocated (col(ilayer)%gg)) &
             allocate (col(ilayer)%gg(nwave))
+       if ( .NOT. allocated (col(ilayer)%opd_hmbff)) &
+            allocate (col(ilayer)%opd_hmbff(nwave))
 
        
     end do

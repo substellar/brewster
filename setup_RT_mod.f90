@@ -13,12 +13,12 @@ contains
     
     implicit none
 
-    integer, parameter :: nlevel = nlayers+1
-    integer, parameter :: MAXCLY = nlayers
     integer, parameter :: MAXMOM = 16
     integer, parameter :: MAXPHI = 3
     integer, parameter :: MAXULV = 1
     integer, parameter :: MAXUMU = 16
+    integer :: nlevel
+    integer :: MAXCLY
 
 
     ! now set up where we want the fluxes.
@@ -50,7 +50,8 @@ contains
     double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
     
 
-
+    nlevel = nlayers+1
+    MAXCLY = nlayers
 !    integer :: nw1, nw2
     
     HEADER = ""
@@ -97,7 +98,8 @@ contains
                patch(ipatch)%atm(ilayer)%opd_ext + &
                patch(ipatch)%atm(ilayer)%opd_lines + &
                patch(ipatch)%atm(ilayer)%opd_CIA + &
-               patch(ipatch)%atm(ilayer)%opd_rayl
+               patch(ipatch)%atm(ilayer)%opd_rayl + &
+               patch(ipatch)%atm(ilayer)%opd_hmbff
 
           patch(ipatch)%atm(ilayer)%opd_scat = &
                patch(ipatch)%atm(ilayer)%opd_scat + &
