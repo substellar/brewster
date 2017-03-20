@@ -224,7 +224,7 @@ contains
                          cloudrad(ipatch,ilayer,icloud)))
                    patch(ipatch)%atm(ilayer)%gg = 0.d0 
                 end do ! layer loop
-             else !if cloud > 50
+             else !if cloud < 50
                 do ilayer = 1, nlayers
                    patch(ipatch)%atm(ilayer)%cloud(icloud)%name = &
                         patch(ipatch)%atm(1)%cloud(icloud)%name
@@ -238,6 +238,7 @@ contains
              endif
           end do ! cloud loop
           if (any(cloudnum(ipatch,:) .lt. 50)) then
+             write(*,*) "calling cloud atlas"
              call cloudatlas(patch(ipatch)%atm)
           end if
           

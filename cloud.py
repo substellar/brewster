@@ -192,9 +192,16 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     cloudrad[i,:,j] = rad
                     cloudsig[i,:,j] = sig       
 
+                if (cloudtype[i,j] == 0):
+                    if (cloudnum[i,j] > 50):
+                        cloudprof[i,:,j] = 0.0
+                    else:
+                        cloudprof[i,:,j] = -150.0
+                    cloudrad[i,:,j] = 0.0
+                    cloudsig[i,:,j] = 0.0
 
                 if (cloudtype[i,j] >  4):
-                    print "cloud layout not recognised. stopping" 
+                    print ("cloud layout not recognised. stopping") 
 
     
     return cloudprof,cloudrad,cloudsig
@@ -209,3 +216,120 @@ def atlev(l0,press):
         pl2 = press[l0]**2 / pl1
 
     return pl1, pl2
+
+
+def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
+    nc =0
+    if (cloudtype.size > cloudtype.shape[0]):
+        nclouds = cloudtype.shape[1]
+    else:
+        nclouds = cloudtype.size
+        
+    npatches = do_clouds.size
+
+    cloudparams = np.ones([5,npatches,nclouds],dtype='d')
+    cloudparams[0,:,:] = 0.
+    cloudparams[1,:,:] = 0.0
+    cloudparams[2,:,:] = 0.1
+    cloudparams[3,:,:] = 0.0
+    cloudparams[4,:] = 0.0
+
+    for i in range (0,npatches):
+        if (do_clouds[i] == 1):
+            for j in range (0, nclouds):
+                if ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 99)):
+                    cloudparams[1:4,i,j] = theta[pc+nc:pc+3+nc]
+                    cloudparams[4,i,j] = 0.0
+                    nc = nc + 3
+                elif ((cloudtype[i,j] == 1) and (cloudnum[i,j] == 99)):
+                    cloudparams[0:4,i,j] = theta[pc+nc:pc+4+nc]
+                    cloudparams[4,i,j] = 0.0
+                    nc = nc + 4
+                elif ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 89)):
+                    cloudparams[1:5,i,j] = theta[pc+nc:pc+4+nc]
+                    nc = nc +4
+                elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] == 99)):
+                    cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
+                    cloudparams[3,i,j] =  theta[pc+nc+2]
+                    nc = nc +3
+                elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] == 89)):
+                    cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
+                    cloudparams[3:5,i,j] =  theta[pc+nc+2:pc+nc+4]
+                    nc = nc + 4
+                elif ((cloudtype[i,j] == 4) and (cloudnum[i,j] == 99)):
+                    cloudparams[1,i,j] = theta[pc+nc]
+                    cloudparams[3,i,j] = theta[pc+nc+1]
+                    nc = nc +2
+                elif ((cloudtype[i,j] == 4) and (cloudnum[i,j] == 89)):
+                    cloudparams[1,i,j] = theta[pc+nc]
+                    cloudparams[3:5,i,j] = theta[pc+nc+1:pc+nc+3]
+                    nc = nc +3
+                elif (cloudtype[i,j] == 0):
+                    cloudparams[:,i,j] = 0.0
+                else:
+                    cloudparams[:,i,j] = theta[pc+nc:pc+5+nc]
+                    nc = nc + 5
+
+    return(cloudparams,nc)
+
+
+def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
+    # This unpacks a patchy cloud
+    # This is achieved by equated patch 2 to patch 1, but one cloud in patch 2
+    # is set to cloudtype = 0 (empty)
+    nc =0 
+    if (cloudtype.size > cloudtype.shape[0]):
+        nclouds = cloudtype.shape[1]
+    else:
+        nclouds = cloudtype.size
+        
+
+
+    npatches = 2
+
+    cloudparams = np.ones([5,npatches,nclouds],dtype='d')
+    cloudparams[0,:,:] = 0.
+    cloudparams[1,:,:] = 0.0
+    cloudparams[2,:,:] = 0.1
+    cloudparams[3,:,:] = 0.0
+    cloudparams[4,:] = 0.0
+
+    # First patch
+    if (do_clouds[0] == 1):
+        for j in range (0, nclouds):
+            if ((cloudtype[0,j] == 2) and (cloudnum[0,j] == 99)):
+                cloudparams[1:4,0,j] = theta[pc+nc:pc+3+nc]
+                cloudparams[4,0,j] = 0.0
+                nc = nc + 3
+            elif ((cloudtype[0,j] == 1) and (cloudnum[0,j] == 99)):
+                cloudparams[0:4,0,j] = theta[pc+nc:pc+4+nc]
+                cloudparams[4,0,j] = 0.0
+                nc = nc + 4
+            elif ((cloudtype[0,j] == 2) and (cloudnum[0,j] == 89)):
+                cloudparams[1:5,0,j] = theta[pc+nc:pc+4+nc]
+                nc = nc +4
+            elif ((cloudtype[0,j] == 3) and (cloudnum[0,j] == 99)):
+                cloudparams[0:2,0,j] = theta[pc+nc:pc+nc+2]
+                cloudparams[3,0,j] =  theta[pc+nc+2]
+                nc = nc +3
+            elif ((cloudtype[0,j] == 3) and (cloudnum[0,j] == 89)):
+                cloudparams[0:2,0,j] = theta[pc+nc:pc+nc+2]
+                cloudparams[3:5,0,j] =  theta[pc+nc+2:pc+nc+4]
+                nc = nc + 4
+            elif ((cloudtype[0,j] == 4) and (cloudnum[0,j] == 99)):
+                cloudparams[1,0,j] = theta[pc+nc]
+                cloudparams[3,0,j] = theta[pc+nc+1]
+                nc = nc +2
+            elif ((cloudtype[0,j] == 4) and (cloudnum[0,j] == 89)):
+                cloudparams[1,0,j] = theta[pc+nc]
+                cloudparams[3:5,0,j] = theta[pc+nc+1:pc+nc+3]
+                nc = nc +3                    
+            else:
+                cloudparams[:,0,j] = theta[pc+nc:pc+5+nc]
+                nc = nc + 5
+                    
+    # 2nd patch
+    if (do_clouds[1] == 1):
+        cloudparams[:,1,:] = cloudparams[:,0,:]
+        
+    return(cloudparams,nc)

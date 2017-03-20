@@ -60,7 +60,6 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
 
-  write(*,*) nclouds
   allocate(out_spec(2,nwave))
 
   pspec = make_pspec

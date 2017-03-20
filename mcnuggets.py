@@ -13,6 +13,7 @@ import pickle
 from scipy.io.idl import readsav
 from scipy import interpolate
 from scipy.interpolate import interp1d
+from scipy.interpolate import InterpolatedUnivariateSpline
 from mpi4py import MPI
 
 __author__ = "Ben Burningham"
@@ -28,15 +29,18 @@ __status__ = "Development"
 
 def teffRM(theta,runargs):
 
-    pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,\
+    cloudtype,do_clouds,gasnum,cloudnum,\
         inlinetemps,coarsePress,press,inwavenum,linelist,cia,\
-        ciatemps,use_disort,proftype, do_fudge = runargs
+        ciatemps,use_disort,proftype,do_fudge,do_bff,bff,bfTgrid = runargs
 
     
     if (gasnum[gasnum.size-1] == 21):
         ng = gasnum.size - 1
+    elif (gasnum[gasnum.size-1] == 23):
+        ng = gasnum.size -2
     else:
         ng = gasnum.size
+
         
     invmr = theta[0:ng]
     logg = theta[ng]
@@ -44,28 +48,27 @@ def teffRM(theta,runargs):
     dlam = theta[ng+2]
     if (do_fudge == 1):
         logf = theta[ng+3]
-        pc = ng + 4
+        nb = 4
     else:
-        pc = ng + 3
-    nc = 0
-    if (do_clouds == 1):
-        if ((cloudtype == 2) and (cloudnum == 99)):
-            nc = 3
-            cloudparams[1:4] = theta[pc:pc+nc]
-            cloudparams[4] = 0.0
-        elif ((cloudtype == 1) and (cloudnum == 99)):
-            nc = 4
-            cloudparams[0:4] = theta[pc:pc+nc]
-            cloudparams[4] = 0.0
-        elif ((cloudtype == 2) and (cloudnum == 89)):
-            nc  = 4
-            cloudparams[1:5] = theta[pc:pc+nc]
-        elif ((cloudtype == 1) and (cloudnum == 89)):
-            nc = 5
-            cloudparams = theta[pc:pc+nc]
-        elif(cloudnum < 50):
-            nc = 5
-            cloudparams = theta[pc:pc+nc]
+        # This is a place holder value so the code doesn't break
+        logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+        nb = 3
+    npatches = do_clouds.size
+    if (npatches > 1):
+        prat = theta[ng+nb]
+        pcover = np.array([prat,(1.-prat)])
+        pc = ng + nb + 1
+    else:
+        pc = ng + nb 
+        pcover = 1.0
+
+
+    # use correct unpack method depending on situation
+    
+    if ((npatches > 1) and np.all(do_clouds > 0)):
+        cloudparams, nc = cloud.unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds)
+    else:
+        cloudparams, nc = cloud.unpack_default(theta,pc,cloudtype,cloudnum,do_clouds)
         
     if (proftype == 1):
         gam = theta[pc+nc]
@@ -77,7 +80,6 @@ def teffRM(theta,runargs):
 
     # Hard code nlayers
     nlayers = press.shape[0]
-    npatch = cloudparams.shape[0]
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
  
@@ -138,30 +140,9 @@ def teffRM(theta,runargs):
             logVMR[i,:] = tmpvmr[i]
 
     # now need to translate cloudparams in to cloud profile even
-    # if do_clouds is zero..
-    # 5 entries for cloudparams for simple slab model are:
-    # 0) log10(number density / gas number density)
-    # 1) top layer id (or pressure)
-    # 2) base ID (these are both in 64 layers)
-    # 3) rg
-    # 4) rsig
-    # in the case of a simple mixto cloud (i.e. cloudnum = 99) we have:
-    # 0) ndens = dtau
-    # 1) top layer ID
-    # 2) bottom later ID
-    # 3) rg = albedo
-    # 4) rsig = asymmetry
-    if (npatch > 1 or do_clouds == 1):
-        cloudprof,cloudrad,cloudsig = cloud.atlas(do_clouds,cloudnum,cloudtype,cloudparams,press)
-        npatch = cloudprof.shape[0]
-        ncloud = cloudprof.shape[1]
-    else:
-        npatch = 1
-        ncloud = 1
-        cloudrad = np.ones((npatch,nlayers,ncloud),dtype='d')
-        cloudsig = np.ones_like(cloudrad)
-        cloudprof = np.ones_like(cloudrad)
 
+    cloudprof,cloudrad,cloudsig = cloud.atlas(do_clouds,cloudnum,cloudtype,cloudparams,press)
+ 
     cloudprof = np.asfortranarray(cloudprof,dtype = 'float64')
     cloudrad = np.asfortranarray(cloudrad,dtype = 'float64')
     cloudsig = np.asfortranarray(cloudsig,dtype = 'float64')
@@ -169,9 +150,29 @@ def teffRM(theta,runargs):
     cloudnum = np.asfortranarray(cloudnum,dtype='i')
     do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
 
-        
+
+    # Now get the BFF stuff sorted
+    bff = np.zeros([3,nlayers],dtype="float64") 
+    if (do_bff == 1):
+        for gas in range(0,3):
+            for i in range(0,nlayers):
+                tfit = InterpolatedUnivariateSpline(bfTgrid,bff_raw[:,i,gas],k=1) 
+                bff[gas,i] = 10.**tfit(temp[i])
+
+    bff = np.asfortranarray(bff, dtype='float64')
+    press = np.asfortranarray(press,dtype='float32')
+    temp = np.asfortranarray(temp,dtype='float64')
+    logVMR = np.asfortranarray(logVMR,dtype='float64')
+    # Set pspec and tspec as we don't need these in the emcee run
+    tspec = 0
+    pspec = 0
+
+
+    
     # now we can call the forward model
-    outspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort)
+    outspec,photspec,tauspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,do_bff,bff) 
+
+   
 
     wave = np.array(outspec[0,::-1])
     flux = np.array(outspec[1,::-1])
@@ -188,9 +189,10 @@ def teffRM(theta,runargs):
     t_ff = ((fbol/(r2d2 * 5.670367e-8))**(1./4.))
 
     # and Radius
-    parallax = 11.35
-    sigpi = 0.14
-    sigphot = 0.03
+    parallax = 5.84
+    sigpi = 0.03
+    sigphot = 0.02
+
     
     sigR2D2 = sigphot * r2d2 * (-1./2.5)* np.log(10.)
 
@@ -218,20 +220,22 @@ def teffRM(theta,runargs):
 
 # how many samples are we using?
 
-with open('/nobackup/bburning/2M2224_powcloud_RFalks_ext.pk1', 'rb') as input:
+with open('/nobackup/bburning/G570D_prof2.pk1', 'rb') as input:
     sampler = pickle.load(input) 
 
 nwalkers = sampler.chain.shape[0]
 niter = sampler.chain.shape[1]
 ndim = sampler.chain.shape[2]
 
+print(nwalkers,' walkers')
+print(ndim,' dimensions')
+    
 samples = sampler.chain[:,niter-3000:,:].reshape((-1, ndim))
 
 #samples = samples[1500:2500,:]
 slen = samples.shape[0]
-#samplus = np.zeros([slen,ndim+3])
 
-#samplus[:,0:ndim] = samples
+print(slen, ' samples for post production')
 
 
 # set up run arguments
@@ -254,25 +258,30 @@ nclouds = 1
 pcover = np.ones([npatches],dtype='f')
 pcover[:] = 1.0
 do_clouds = np.zeros([npatches],dtype='i')
-do_clouds[:] = 1
+do_clouds[:] = 0
 cloudnum = np.zeros([npatches,nclouds],dtype='i')
 cloudnum[:,:] = 89
-cloudtype = np.array([npatches],dtype='i')
-cloudtype[:] = 1
+cloudtype = np.asfortranarray(np.ones([npatches,nclouds]),dtype='i')
+cloudtype[:,:] = 2
+
 
 use_disort = 0 
 
 # use the fudge factor?
 do_fudge = 1
 
+# bound-free, free-free opacities matter?
+do_bff = 0
+
 # Set the profile type
 proftype = 2
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 11
-gasnum = np.asfortranarray(np.array([1,4,5,7,8,9,10,11,12,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 8
+gasnum = np.asfortranarray(np.array([1,2,4,5,6,3,20,21],dtype='i'))
+lists = lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/ch4_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/co2_xsecs.pic" ,"/nobackup/bburning/Linelists/nh3_xsecs.pic","/nobackup/bburning/Linelists/h2s_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic"]
+
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
 
@@ -305,19 +314,36 @@ cia = np.asfortranarray(np.empty((4,ciatemps.size,nwave)),dtype='float32')
 cia[:,:,:] = tmpcia[:,:,:nwave] 
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
+# Sort out the BFF opacity stuff:
 
-# place holder values for cloudparams
-cloudparams = np.ones([5],dtype='d')
-cloudparams[0] = -20.
-cloudparams[1] = 10
-cloudparams[2] = 12
-cloudparams[3] = 1e-4
-cloudparams[4] = 1e-5
+intab = np.loadtxt("2015_06_1060grid_feh_00_co_10.txt",skiprows=1)
+test = np.array(intab)
+test2 = test.reshape(60,18,36)
+Pgrid = test2[20:21,:,1].reshape(18)
+Tgrid =  test2[:,10:11,0].reshape(60)
+abunds= test2[:,:,2:]
+nlayers = finePress.shape[0]
+nabpress = 18
+nabtemp = 60
+nabgas = 34
+ab_myP = np.empty([nabtemp,nlayers,nabgas])
+for gas in range (0,nabgas):
+    for i in range (0,nabtemp):
+            pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i,:,gas]),k=1)
+            ab_myP[i,:,gas] = pfit(np.log10(finePress))
+            
+bff_raw = np.empty([nabtemp,nlayers,3])
+bff_raw[:,:,0] = ab_myP[:,:,0]
+bff_raw[:,:,1] = ab_myP[:,:,2]
+bff_raw[:,:,2] = ab_myP[:,:,4]
+
+bfTgrid = Tgrid
 
 
-runargs =  pcover, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,\
+
+runargs =  cloudtype,do_clouds,gasnum,cloudnum,\
         inlinetemps,coarsePress,press,inwavenum,linelist,cia,\
-        ciatemps,use_disort,proftype,do_fudge
+        ciatemps,use_disort,proftype,do_fudge,do_bff,bff_raw,bfTgrid
 
 # set up parallel bits
 
@@ -358,14 +384,14 @@ if COMM.rank == 0:
     # Flatten list of lists.
     results = [_i for tmp in results for _i in tmp]
 
-samplus = np.array(results)
+    print "writing results to samplus"
 
+    samplus = np.array(results)
 
+    
+    def save_object(obj, filename):
+        with open(filename, 'wb') as output:
+            pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
 
-
-def save_object(obj, filename):
-    with open(filename, 'wb') as output:
-        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
-
-save_object(samplus,'/nobackup/bburning/2M2224_PowCloud_postprod.pk1')
+    save_object(samplus,'/nobackup/bburning/G570D_prof2_postprod.pk1')
 

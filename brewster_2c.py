@@ -153,7 +153,7 @@ nwalkers = ndim * 16
 
 
 # If we want fresh guess set to 0, total inherit the previous set 1, inherit plus randomise the VMRs. 2.
-fresh = 0
+fresh = 1
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
     p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
@@ -201,7 +201,7 @@ if (fresh == 0):
 
     
 if (fresh != 0):
-    fname='MCMC_last_pow.pic'
+    fname='MCMC_last_2c.pic'
     pic=pickle.load(open(fname,'rb'))
     p0=pic
     if (fresh == 2):
@@ -227,9 +227,9 @@ clock = np.empty(60000)
 k=0
 times = open("runtimes_2c.dat","w")
 times.close()
-pos,prob,state = sampler.run_mcmc(p0,10000)
-sampler.reset()
-for result in sampler.sample(pos,iterations=30000):
+#pos,prob,state = sampler.run_mcmc(p0,10000)
+#sampler.reset()
+for result in sampler.sample(p0,iterations=10000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -260,7 +260,7 @@ for result in sampler.sample(pos,iterations=30000):
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("/nobackup/bburning/2m2224_pow_thick_2c.pic","wb"))
+pickle.dump(output,open("/nobackup/bburning/2m2224_pow_thick_2c_ext.pic","wb"))
 pickle.dump(chain[:,-1,:], open('MCMC_last_2c.pic','wb'))
 
 
@@ -274,7 +274,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,"/nobackup/bburning/2M2224_pow_thick_2c.pk1")
+save_object(sampler,"/nobackup/bburning/2M2224_pow_thick_2c_ext.pk1")
 #save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

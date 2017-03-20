@@ -23,7 +23,7 @@ FC = gfortran
 
 
 # Run version
-FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check
+FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check 
 F77FLAGS = -O3 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
 
 # Intel compiler version
@@ -87,15 +87,15 @@ marv.o: sizes_mod.o  define_types_mod.o common_arrays_mod.o phys_const_mod.o atm
 %.o: %.f
 	$(FC) $(F77FLAGS) -c $<
 
-f90mods:
-	$(FC) $(FCFLAGS) -c f90wrap_*.f90
+#f90mods:
+#	$(FC) $(FCFLAGS) -c f90wrap_*.f90
 
 f77mods:
 	$(FC) $(F77FLAGS) -c *.f
 
 # now for python wrap
-f90wrap:
-	f90wrap -m forwardmodel *.f90
+#f90wrap:
+#	f90wrap -m forwardmodel *.f90
 
 
 libfile:
