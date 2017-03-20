@@ -16,6 +16,7 @@ import sys
 import pickle
 from scipy import interpolate
 from scipy.interpolate import interp1d
+from scipy.interpolate import InterpolatedUnivariateSpline
 from emcee.utils import MPIPool
 
 
@@ -46,7 +47,7 @@ __status__ = "Development"
 logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
 coarsePress = pow(10,logcoarsePress)
-logfinePress = np.arange(-4.0, 2.4, 0.1)
+logfinePress = np.arange(-4.0, 2.5, 0.1)
 finePress = pow(10,logfinePress)
 # forward model wants pressure in bar
 press = finePress
@@ -55,7 +56,7 @@ press = finePress
 w1 = 0.8
 w2 = 2.4
 
-dist = 11.35
+dist = 33.5
 # hardwired FWHM of data in microns
 fwhm = 0.005
 
@@ -92,9 +93,9 @@ if (proftype == 9):
 
 # now the linelist
 # Set up number of gases, and point at the lists. see gaslist.dat
-ngas = 9
-gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,20,21],dtype='i'))
-lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/K_xsecs.pic","/nobackup/bburning/Linelists/Na_xsecs.pic"]
+ngas = 10
+gasnum = np.asfortranarray(np.array([1,4,7,8,9,10,11,12,21,20],dtype='i'))
+lists = ["/nobackup/bburning/Linelists/H2O_xsecs.pic","/nobackup/bburning/Linelists/co_xsecs.pic","/nobackup/bburning/Linelists/tio_xsecs.pic","/nobackup/bburning/Linelists/vo_xsecs.pic","/nobackup/bburning/Linelists/cah_xsecs.pic","/nobackup/bburning/Linelists/crh_xsecs.pic" ,"/nobackup/bburning/Linelists/feh_xsecs.pic","/nobackup/bburning/Linelists/mgh_xsecs.pic","/nobackup/bburning/Linelists/Na_Mike_xsecs.pic","/nobackup/bburning/Linelists/K_Mike_xsecs.pic"]
 
 # get the basic framework from water list
 rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open('/nobackup/bburning/Linelists/H2O_xsecs.pic', "rb" ) )
@@ -158,7 +159,7 @@ bfTgrid = Tgrid
 
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("2M2224_mkoJcalib_trim.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("2M1626_2MassJcalib_trim.dat",dtype='d',unpack='true'))
 
 
 
@@ -175,7 +176,7 @@ runargs = dist, cloudtype,cloudparams,do_clouds,gasnum,cloudnum,inlinetemps,coar
 
 # now set up the EMCEE stuff
 
-ndim  = 17 #((ngas-1) + 9 + 5)
+ndim  = 19 #((ngas-1) + 9 + 5)
 nwalkers = ndim * 16
 #int(((ndim * ndim) // 2) * 2)
 
@@ -192,32 +193,33 @@ if (fresh == 0):
     p0[:,4] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CaH
     p0[:,5] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
     p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    #p0[:,7] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # MgH
-    p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
-    p0[:,8] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
-    p0[:,9] =  5.0e-22 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-21
-    p0[:,10] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,7] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # MgH
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 6.0 # Na+K
+    p0[:,9] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 6.5 # K
+    p0[:,10] = np.random.rand(nwalkers).reshape(nwalkers) + 4.2
+    p0[:,11] =  5.0e-22 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-21
+    p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. We're just doing grey cloud, tau so need pressure of top where plus cloud height (in dex), SSA, don't need GG
     # And now the T-P params
-    p0[:,12] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,13] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,14] = -1.2 + 0.5*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,15] = 2.25+ 0.5*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,16] = 4000. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,14] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,15] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,16] = -1.2 + 0.5*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,17] = 2.25+ 0.5*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,18] = 4000. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
 
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,12:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,14:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,12] = 0.39 + 0.01*np.random.randn()
-                p0[i,13] = 0.14 + 0.01*np.random.randn()
-                p0[i,14] = -1.2 + 0.2*np.random.randn()
-                p0[i,15] = 2. + 0.2*np.random.randn()
-                p0[i,16] = 4200. + (200.*  np.random.randn())
+                p0[i,14] = 0.39 + 0.01*np.random.randn()
+                p0[i,15] = 0.14 + 0.01*np.random.randn()
+                p0[i,16] = -1.2 + 0.2*np.random.randn()
+                p0[i,17] = 2. + 0.2*np.random.randn()
+                p0[i,18] = 4200. + (200.*  np.random.randn())
 
     
 if (fresh != 0):
@@ -249,7 +251,7 @@ times = open("runtimes_nc.dat","w")
 times.close()
 pos,prob,state = sampler.run_mcmc(p0,10000)
 sampler.reset()
-for result in sampler.sample(pos, iterations=30000):
+for result in sampler.sample(pos, iterations=40000):
     clock[k] = time.clock()
     if (k > 1):
         tcycle = clock[k] - clock[k-1]
@@ -273,14 +275,14 @@ for result in sampler.sample(pos, iterations=30000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
 	output=[chain,lnprob]
-	pickle.dump(output,open("/nobackup/bburning/2M2224_MCMC_nc_fudge.pic","wb"))
+	pickle.dump(output,open("/nobackup/bburning/2M1616_MCMC_nc.pic","wb"))
 	pickle.dump(chain[:,k-1,:], open('MCMC_last_nc.pic','wb'))
 
 
 chain=sampler.chain
 lnprob=sampler.lnprobability
 output=[chain,lnprob]
-pickle.dump(output,open("/nobackup/bburning/2M2224_nc_RFalks.pic","wb"))
+pickle.dump(output,open("/nobackup/bburning/2M1626_nc_mike.pic","wb"))
 pickle.dump(chain[:,-1,:], open('MCMC_last_nc.pic','wb'))
 
 
@@ -294,7 +296,7 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,'/nobackup/bburning/2M2224_nc_RFalks.pk1')
-
+save_object(sampler,'/nobackup/bburning/2M1626_nc_mike.pk1')
+#save_object(sampler,'570D_BTretrieval_result.pk1')
 
 

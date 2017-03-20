@@ -17,6 +17,9 @@ module sizes
   ! number of pressure layers
   integer, protected :: nlayers
 
+  ! max number of layers
+  integer,parameter :: maxlayers = 100
+  
   ! number of temperatures in line list grid
   integer, parameter :: nlinetemps = 27
  

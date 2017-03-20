@@ -123,12 +123,12 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     press = np.asfortranarray(press,dtype='float32')
     temp = np.asfortranarray(temp,dtype='float64')
     logVMR = np.asfortranarray(logVMR,dtype='float64')
-    # Set pspec and tspec as we don't need these in the emcee run
+    # Set pspec,tspec and cfunc as we don't need these in the emcee run
     tspec = 0
     pspec = 0
-    
+    make_cf = 0
     # now we can call the forward model
-    outspec,photspec,tauspec = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,do_bff,bff)
+    outspec,photspec,tauspec,cfunc = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,make_cf,do_bff,bff)
     # Trim to length where it is defined.
     nwave = inwavenum.size
     trimspec = np.zeros((2,nwave),dtype='d')

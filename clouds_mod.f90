@@ -93,7 +93,7 @@ contains
           vrat = 2.2
           rmin = 1e-5
        else
-          write(*,*), "init_optics(): bad igas = ", icloud," ",trim(column(1)%cloud(icloud)%name)
+          write(*,*) "init_optics(): bad igas = ", icloud," ",trim(column(1)%cloud(icloud)%name)
           
           stop 
        endif

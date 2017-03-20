@@ -2,7 +2,7 @@
 
 contains
 
-  subroutine run_RT(spectrum,photspec,tauspec,disorting,pspec,tspec)
+  subroutine run_RT(spectrum,photspec,tauspec,cf,disorting,pspec,tspec,do_cf)
 
     use sizes
     use common_arrays
@@ -30,9 +30,10 @@ contains
     
     double precision,allocatable,dimension(:), INTENT(OUT):: spectrum
     double precision,allocatable,dimension(:,:), INTENT(OUT):: photspec,tauspec    
+    double precision,allocatable,dimension(:,:,:), INTENT(OUT):: cf
     double precision, dimension(nlayers) :: DTAUC, SSALB, COSBAR
     double precision, dimension(nlayers+1) :: temper
-    double precision :: WVNMLO, WVNMHI, wint, tau1, tau2, p1, p2,ptau,taup
+    double precision :: WVNMLO, WVNMHI, wint, tau1, tau2, p1, p2,ptau,taup,tau
     integer :: ipatch,ilayer, iwave
     double precision,dimension(0:MAXMOM,nlayers) :: PMOM
     double precision:: phi(maxphi),phi0, umu(maxumu), umu0
@@ -46,9 +47,10 @@ contains
     character(len=0):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL,disorting
-    logical :: pspec,tspec,tdone, pdone
+    logical :: pspec,tspec,tdone, pdone,do_cf
     double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
-    
+    double precision :: bbplk
+    external :: bbplk
 
     nlevel = nlayers+1
     MAXCLY = nlayers
@@ -87,6 +89,7 @@ contains
 
     allocate(upflux(nwave),spectrum(nwave))
     allocate(photspec(npatch,nwave),tauspec(npatch,nwave))
+    allocate(cf(npatch,nwave,nlayers))
     
     spectrum = 0.0
     
@@ -231,7 +234,6 @@ contains
                  fdi)
             upflux(iwave) = gflup(1) !/ wint
          endif
-
           
        end do ! wave loop
        
@@ -241,7 +243,21 @@ contains
 
        
     deallocate(upflux)
-
+    ! Get the contribution function for them that want it...
+    if (do_CF) then
+       do ipatch = 1, npatch
+          do iwave = 1, nwave
+             tau = 0.d0
+             do ilayer = 1, nlayers
+                tau = tau + patch(ipatch)%atm(ilayer)%opd_ext(iwave)
+                cf(ipatch,iwave,ilayer)  = &
+                     bbplk(wavenum(iwave),patch(ipatch)%atm(ilayer)%temp) * &
+                     patch(ipatch)%atm(ilayer)%opd_ext(iwave) &
+                     / exp(tau)
+             end do
+          end do
+       end do
+    end if
 
     
   end subroutine run_RT
