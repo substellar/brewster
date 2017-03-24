@@ -624,27 +624,10 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        print "Rj = ", Rj
-        print "M = ", M
-        print "logg = ", logg
-        print "R2D2 = ", r2d2
-        print "dlam = ", dlam
-        print "VMRs = ", invmr
-        print "ng = ", ng
-        print "sum VMRs = ", np.sum(10.**(invmr[0:ng]))
-        print "clouddens = ", cloud_dens0
-        print "cloud_top = ", cloud_top
-        print "cloud_bot = ", cloud_bot
-        print "rg = ", rg
-        print "rsig = ", rsig
-        print "cloud_tau0 = ", cloud_tau0
-        print "w0 = ", w0
-        print "pcover = ", pcover
-        print "sum(pcover) = ", np.sum(pcover)
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
-            and 1.0 < M < 100. 
+            and 1.0 < M < 80. 
             and  0. <= r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
