@@ -1,5 +1,5 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_thick
+#PBS -N 2M0355_thick
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
 #PBS -l walltime=35:00:00
@@ -11,10 +11,10 @@ source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
 source /usr/local/lib/global.cshrc
 
-setenv WDIR /home1/bburning/retrievals/2M2224spex
+setenv WDIR /home1/bburning/retrievals/2M0355spex
 
 setenv PATH ${PATH}:${WDIR}:/u/scicon/tools/bin
-setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH:}:${WDIR}
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
 #setenv MPI_BUFS_PER_PROC 512
 #setenv OMP_NUM_THREADS 20
 
@@ -45,7 +45,7 @@ cd ${WDIR}
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster_thickPow.py > /nobackup/bburning/brew_2M2224spex_thick.log
+mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster_thickPow.py > /nobackup/bburning/brew_2M0355spex_thick.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

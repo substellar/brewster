@@ -1,8 +1,8 @@
 #PBS -S /bin/tcsh
-#PBS -N G570D_nc
+#PBS -N 2M0355_nc
 #PBS -m abe
-#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=20:mpiprocs=20:model=has
-#PBS -l walltime=15:00:00
+#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
+#PBS -l walltime=40:00:00
 #PBS -k oe
 #PBS -r n
 #PBS -q long
@@ -11,7 +11,7 @@ source /usr/share/modules/init/csh
 module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
 source /usr/local/lib/global.cshrc
 
-setenv WDIR /home1/bburning/retrievals/G570test_prof2
+setenv WDIR /home1/bburning/retrievals/2M0355spex
 
 setenv PATH ${PATH}:${WDIR}:/u/scicon/tools/bin
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
@@ -41,13 +41,11 @@ echo ------------------------------------------------------
 
 
 
-
 cd ${WDIR}
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 101 python brewster_nc.py > /nobackup/bburning/brew_G570D_nc.log
-
+mpiexec -machinefile $PBS_NODEFILE -np 86 python brewster_nc.py > /nobackup/bburning/brew_2M0355spex_nc.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

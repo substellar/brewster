@@ -138,38 +138,41 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     shiftspec = np.empty_like(trimspec)
     shiftspec[0,:] =  trimspec[0,:] + dlam
     shiftspec[1,:] =  trimspec[1,:]
- 
-    # length and interval for later
-    #wlen = shiftspec.shape[1]
-    #wint =  shiftspec[0,0] - shiftspec[0,wlen-1]
 
-    # convolve with instrumental profile
-    # start by setting up kernel
-    # First step is finding the array index length of the FWHM
-    #disp = wint / wlen
-    #gwidth = int((((fwhm / disp) // 2) * 2) +1)
+    # If we've set a value for FWHM that we're using... 
+    if (fwhm != 0.00):
+        # length and interval for later
+        wlen = shiftspec.shape[1]
+        wint =  shiftspec[0,0] - shiftspec[0,wlen-1]
 
-    # needs to be odd
-    # now get the kernel and convolve
-    #gauss = Gaussian1DKernel(gwidth)
-    #cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
-    #spec = np.array([shiftspec[0,::-1],cspec[::-1]])
+        # convolve with instrumental profile
+        # start by setting up kernel
+        # First step is finding the array index length of the FWHM
+        disp = wint / wlen
+        # needs to be odd        
+        gwidth = int((((fwhm / disp) // 2) * 2) +1)
+
+        # now get the kernel and convolve
+        gauss = Gaussian1DKernel(gwidth)
+        cspec = convolve(shiftspec[1,:],gauss,boundary='extend')
+        spec = np.array([shiftspec[0,::-1],cspec[::-1]])
     
-    # rebin to observed dispersion
-    #wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
-    #modspec = sp.interpolate.splev(obspec[0,:],wfit,der=0)
+        # rebin to observed dispersion
+        wfit = sp.interpolate.splrep(spec[0,:],spec[1,:],s=0)
+        modspec = sp.interpolate.splev(obspec[0,:],wfit,der=0)
     
-    # Below is method for rebinning using conserve flux method
-    #    oblen = obspec.shape[1]
-    #    modspec = np.empty((2,oblen),dtype='d')
-    #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
-    # get log-likelihood
-    # We've lifted this from Mike's code, below is original from emcee docs
-    # Just taking every 3rd point to keep independence
+        # Below is method for rebinning using conserve flux method
+        #    oblen = obspec.shape[1]
+        #    modspec = np.empty((2,oblen),dtype='d')
+        #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
+        # get log-likelihood
+        # We've lifted this from Mike's code, below is original from emcee docs
+        # Just taking every 3rd point to keep independence
 
-    # Use Mike's convolution
-    wno = 1e4 / shiftspec[0,:]
-    modspec = instrument_non_uniform(obspec[0,:],wno,shiftspec[1,:])
+    else:
+        # Use Mike's convolution
+        wno = 1e4 / shiftspec[0,:]
+        modspec = instrument_non_uniform(obspec[0,:],wno,shiftspec[1,:])
 
     if (do_fudge == 1):
         s2=obspec[2,::3]**2 + 10.**logf
