@@ -545,7 +545,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
-            and  0. <= r2d2 < 1.
+            and  0. < r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
@@ -631,7 +631,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
-            and  0. <= r2d2 < 1.
+            and  0. < r2d2 < 1.
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01 
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf

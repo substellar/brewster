@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""This is Brewster: the golden retriever of smelly atmospheres"""
+"""This is Brewster: the golden retriever of substellar atmospheres"""
 
 import multiprocessing
 import time
@@ -27,10 +27,10 @@ __author__ = "Ben Burningham"
 __copyright__ = "Copyright 2015 - Ben Burningham"
 __credits__ = ["Ben Burningham"]
 __license__ = "GPL"
-__version__ = "0.1"
+__version__ = "1.0"
 __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
-__status__ = "Development"
+__status__ = "beta"
 
 
 # This module set up the model arguments the drop these into
@@ -38,18 +38,23 @@ __status__ = "Development"
 
 # First get data and parameters for object
 
+# Give the run name
+runname = "D1425_pow"
+
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("2M0355_2massJcalib.dat",dtype='d',unpack='true'))
+# this spectrum should be trimmed to the w1 w2 coverage you want to use 
+obspec = np.asfortranarray(np.loadtxt("D1425_2MassJcalib.dat",dtype='d',unpack='true'))
 
 # Now the wavelength range
+# set this here. Make sure you're doing what you think you're doing...
 w1 = 0.8
-w2 = 2.4
+w2 = 2.5
 
 # FWHM of data in microns(WE DON'T USE THIS FOR SPEX DATA. SET TO 0.0)
 fwhm = 0.00
 
 # DISTANCE (in parsecs)
-dist = 9.03
+dist = 11.58
 
 # How many patches & clouds do we want??
 # Must be at least 1 of each, but can turn off cloud below
@@ -70,14 +75,14 @@ cloudtype =np.zeros([npatches,nclouds],dtype='i')
 # Cloud types
 # 1:  slab cloud
 # 2: deep thick cloud , we only see the top
-# 3: slab with fixed thickness log dP = 0.005 (~1% height)
-# 4: deep thick cloud with fixed height log dP = 0.005
+# 3: slab with fixed thickness log dP = 0.005 (i.e. fits within a single layer)
+# 4: deep thick cloud with fixed height (i.e. appears in a single layer)
 # In both cases the cloud properties are density, rg, rsig for real clouds
 # and dtau, w0, and power law for cloudnum = 89 or 99 for grey
 cloudnum[:,0] = 89
 cloudtype[:,0] = 3
 
-#cloudnum[:,1] = 89
+#cloudnum[:,1] = 99
 #cloudtype[:,1] = 4
 
 
@@ -105,37 +110,37 @@ press = pow(10,logfinePress)
 xpath = "/nobackup/bburning/Linelists/"
 
 # now the cross sections
-# Set up number of gases
-ngas = 10
 
-# Now list them.
+# Now list the gases.
 # If Na is after K, at the end of the list, alkalis will be tied
 # together at Asplund solar ratio. See Line at al (2015)
 # Else if K is after Na, they'll be separate
 
-gaslist = ['h2o','co','tio','vo','cah','crh','feh','mgh','na','k']
+gaslist = ['h2o','co','tio','vo','crh','feh','na','k']
+
+ngas = len(gaslist)
 
 # some switches for alternative cross sections
 # Use Mike's Alkalis?
-malk = 1
+malk = 0
 # Use Mike's CH4?
 mch4 = 0
 
 # now set up the EMCEE stuff
 # How many dimensions???  Count them up in the p0 declaration. Carefully
-ndim  = 23
+ndim  = 21
 
 # How many walkers we running?
-nwalkers = ndim * 8
+nwalkers = ndim * 16
 
 # How many burn runs do we want before reset?
-nburn = 30000
+nburn = 10000
 
 # How many iterations are we running?
-niter = 70000
+niter = 30000
 
 # Is this a test?
-runtest = 1
+runtest = 0
 
 
 # Where is the output going?
@@ -144,18 +149,18 @@ outdir = "/nobackup/bburning/"
 # Names for the final output files:
 
 # full final sampler with likelihoods, chain, bells and whistles
-finalout = "2m0355_pow.pk1"
+finalout = runname+".pk1"
 
 
 # periodic dumps/snapshots
 # just the chain
-chaindump = "2m0355_last_pow.pic"
+chaindump = runname+"_last_nc.pic"
 # The whole thing w/ probs
-picdump = "2m0355_snapshot_pow.pic"
+picdump = runname+"_snapshot.pic"
 
 # Names for status file runtimes
-statfile = "status_ball_pow.txt"
-rfile = "runtimes_pow.dat"
+statfile = "status_ball"+runname+".txt"
+rfile = "runtimes_"+runname+".dat"
 
 # Are we using DISORT for radiative transfer?
 # (HINT: Not in this century)
@@ -164,6 +169,8 @@ use_disort = 0
 # use the fudge factor?
 do_fudge = 1
 
+# get first guess at scale factor
+r2d2 = (7e7 / (dist*3.086e+16))**2.
 
 # If we want fresh guess set to 0, total inherit the previous set 1
 # inherit plus randomise the VMRs. 2. See below to enter this filename
@@ -174,49 +181,44 @@ if (fresh == 0):
     p0[:,1] = (np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # CO
     p0[:,2] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # tio
     p0[:,3] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
-    p0[:,4] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # cah
-    p0[:,5] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # crh
-    p0[:,6] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    p0[:,7] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # mgh
-    p0[:,8] = (np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na
-    p0[:,9] = (np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # K   
-    p0[:,10] = np.random.rand(nwalkers).reshape(nwalkers) + 3.0
-    p0[:,11] =  1.0e-19 + np.random.rand(nwalkers).reshape(nwalkers) * 5.e-21
-    p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
-    # some cloud bits now.
-    # slab power Cloud 
-    p0[:,14] = np.random.rand(nwalkers).reshape(nwalkers) 
-    p0[:,15] = 2*np.random.randn(nwalkers).reshape(nwalkers) 
-    p0[:,16] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,17] = np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,4] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # crh
+    p0[:,5] = (np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
+    p0[:,6] = (np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na
+    p0[:,7] = (np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # K   
+    p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) + 4.5
+    p0[:,9] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2
+    p0[:,10] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    #Cloud bits
+    p0[:,12] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,13] = -2. + 1.5*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,14] = np.random.randn(nwalkers).reshape(nwalkers)    
+    p0[:,15] = np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,18] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,19] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,20] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,21] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,22] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,16] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,17] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,18] = -1.5 + np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,19] = 3.0 + np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,20] = 4500. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,18:])
+            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,16:])
             if (min(Tcheck) > 1.0):
                 break
             else:
-                p0[i,18] = 0.39 + 0.01*np.random.randn()
-                p0[i,19] = 0.14 + 0.01*np.random.randn()
-                p0[i,20] = -1.2 + 0.2*np.random.randn()
-                p0[i,21] = 2. + 0.2*np.random.randn()
-                p0[i,22] = 4200. + (200.*  np.random.randn())
-
+                p0[i,16] = 0.39 + 0.01*np.random.randn()
+                p0[i,17] = 0.14 + 0.01*np.random.randn()
+                p0[i,18] = -1.2 + 0.2*np.random.randn()
+                p0[i,19] = 2. + 0.2*np.random.randn()
+                p0[i,20] = 4000. + (200.*  np.random.randn())
+                
     
 if (fresh != 0):
-    fname='MCMC_last_pow.pic'
+    fname=runname+"_snapshot.pic"
     pic=pickle.load(open(fname,'rb'))
     p0=pic
-    if (fresh == 2):
-        for i in range(0,9):
-            p0[:,i] = (np.random.rand(nwalkers).reshape(nwalkers)*0.5) + p0[:,i]
+
 
 
 
