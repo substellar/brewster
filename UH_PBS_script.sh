@@ -1,13 +1,20 @@
 #PBS -S /bin/tcsh
-#PBS -N bb_5gas_test
+#PBS -N D1425_nc
 #PBS -m abe
-#PBS -l nodes=12
-#PBS -l pmem=4gb
-#PBS -l walltime=02:00:00
+#PBS -l nodes=16:ppn=6
+#PBS -l walltime=00:30:00
 #PBS -k oe
 #PBS -q car
-setenv OMP_NUM_THREADS  12
-setenv PYTHONPATH /soft/python/lib/python2.7/site-packages/
+
+module unload mpich2-x86_64
+module load mpich2-intel
+#module load mvapich2
+
+#setenv OMP_NUM_THREADS  12
+
+setenv WDIR /home/bb/retrievals/ABDor
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
+setenv PATH ${WDIR}:${PATH}    
 
 set time_start=`date '+%T%t%d_%h_06'`
   
@@ -26,15 +33,15 @@ echo PBS: current home directory is $PBS_O_HOME
 echo PBS: PATH = $PBS_O_PATH
 echo ------------------------------------------------------
 
-module unload mpich2-x86_64
-module load mvapich2
 
 set NPROCS = `wc -l < $PBS_NODEFILE`
 
-cd /home/bb/retrievals/marks_RT_version
-setenv PATH /home/bb/retrievals/marks_RT_version:${PATH}    
+echo PBS: NProcs = $NPROCS
 
-/usr/local/bin/mpiexec -np $NPROCS python brewster_5g.py > brew_5gtest.log 
+cd ${WDIR}
+
+
+mpiexec -np $NPROCS python D1425_nc_UH.py > /beegfs/car/bb/brew_D1425_nc.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

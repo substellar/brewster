@@ -11,7 +11,7 @@
 # ======================================================================
 # Let's start with the declarations
 # ======================================================================
-export LD_LIBRARY_PATH /nasa/intel/impi/4.1.1.036/intel64/lib:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/compiler/lib/intel64:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/ipp/../compiler/lib/intel64:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/ipp/lib/intel64:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/compiler/lib/intel64:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/mkl/lib/intel64:/nasa/intel/Compiler/2015.0.090/composer_xe_2015.0.090/tbb/lib/intel64/gcc4.1:./
+export LD_LIBRARY_PATH /nasa/sgi/mpt/2.15r20/lib/:/nasa/intel/Compiler/2016.2.181/compilers_and_libraries/linux/lib/intel64:/nasa/intel/Compiler/2016.2.181/compilers_and_libraries/linux/ipp/lib/intel64:/nasa/intel/Compiler/2016.2.181/mkl/lib/intel64:/nasa/intel/Compiler/2016.2.181/tbb/lib/intel64/gcc4.1:./
 
 # The compiler
 #FC = gfortran
