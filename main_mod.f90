@@ -47,7 +47,6 @@ contains
     double precision,allocatable, dimension(:,:,:),INTENT(INOUT) :: cf
     double precision,allocatable, dimension(:)::specflux
     real:: metal,grav,test
-    double precision,allocatable :: wdiff(:)
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     integer :: do_bff
@@ -62,7 +61,6 @@ contains
     ! HARD CODED to do line and CIA opacity calcs and everything
     ! apart from dust for first patch
     ! and copy to rest of patches before disort
-    allocate(wdiff(nwave))
 
     call init_all
     !wavenum[nwave],wavelen[nwave])
@@ -203,7 +201,7 @@ contains
              
              
              ! in case of simple/generic/mixed cloud we won't be doing Mie coeffs
-             ! we'll just use the density, rg, and rsig as dtau, w0 and gg
+             ! we'll just use  rg, and rsig as w0 and gg
              ! for the cloud
              if (cloudnum(ipatch,icloud) .gt. 50) then
                 !if (nclouds .ne. 1) then
@@ -230,17 +228,15 @@ contains
                 do ilayer = 1, nlayers
                    patch(ipatch)%atm(ilayer)%cloud(icloud)%name = &
                         patch(ipatch)%atm(1)%cloud(icloud)%name
-                   ! cloud profile given in units of log(n_cond/n_gas)
-                   ! now convert to density
-                   patch(ipatch)%atm(ilayer)%cloud(icloud)%density = &
-                        patch(1)%atm(ilayer)%ndens * (10.**cloudprof(ipatch,ilayer,icloud))
+                   patch(ipatch)%atm(ilayer)%cloud(icloud)%dtau1 = &
+                        cloudprof(ipatch,ilayer,icloud)
                    patch(ipatch)%atm(ilayer)%cloud(icloud)%rg = cloudrad(ipatch,ilayer,icloud) 
                    patch(ipatch)%atm(ilayer)%cloud(icloud)%rsig = cloudsig(ipatch,ilayer,icloud)
                 end do
              endif
           end do ! cloud loop
           if (any(cloudnum(ipatch,:) .lt. 50)) then
-             write(*,*) "calling cloud atlas"
+             !write(*,*) "calling cloud atlas"
              call cloudatlas(patch(ipatch)%atm)
           end if
           
@@ -299,7 +295,9 @@ contains
                patch(ipatch)%atm(ilayer)%opd_lines, &
                patch(ipatch)%atm(ilayer)%opd_cia, &
                patch(ipatch)%atm(ilayer)%opd_hmbff,&
-               patch(ipatch)%atm(ilayer)%gg)
+               patch(ipatch)%atm(ilayer)%gg,&
+               patch(ipatch)%atm(ilayer)%cloud,&
+               patch(ipatch)%atm(ilayer)%gas)
        end do
        deallocate(patch(ipatch)%atm)
     end do

@@ -1,21 +1,25 @@
 #PBS -S /bin/tcsh
-#PBS -N D1425_pow
+#PBS -N 2M2224_MieSlab_nf
 #PBS -m abe
 #PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
-#PBS -l walltime=30:00:00
+#PBS -l walltime=55:00:00
 #PBS -k oe
 #PBS -r n
 #PBS -q long
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
-module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
+module load mpi-sgi/mpt.2.15r20 comp-intel/2016.2.181 python/2.7.12
 source /usr/local/lib/global.cshrc
 
-setenv WDIR /home1/bburning/retrievals/ABDor
+setenv MPI_REQUEST_MAX 512
+setenv MPI_SHEPHERD true
+setenv MPI_BUFS_PER_PROC 512
+
+setenv WDIR /home1/bburning/retrievals/longWaveMie
 
 setenv PATH ${PATH}:${WDIR}:/u/scicon/tools/bin
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
-#setenv MPI_BUFS_PER_PROC 512
+
 #setenv OMP_NUM_THREADS 20
 
 unlimit stacksize
@@ -43,9 +47,8 @@ echo ------------------------------------------------------
 
 cd ${WDIR}
 
-mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 86 python D1425_pow.py > /nobackup/bburning/brew_D1425_pow.log
+mpiexec -np 86 python 2m2224_MieSlab_nf.py > /nobackup/bburning/brew_2M2224_mieslab.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
@@ -53,6 +56,3 @@ echo Ended at: $time_end
 echo ------------------------------------------------------
 echo Job ends
 
-# terminate the MPD daemon
-
-mpdallexit

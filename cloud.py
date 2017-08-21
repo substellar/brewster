@@ -22,13 +22,13 @@ __status__ = "Development"
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
     # 5 entries for cloudparams for simple slab model are:
-    # 0) log10(number density / gas number density)
+    # 0) dtau at 1um
     # 1) top layer id (or pressure)
     # 2) base ID (these are both in 64 layers)
     # 3) rg
     # 4) rsig
     # in the case of a simple mixto cloud (i.e. cloudnum = 99 or 89) we have:
-    # 0) ndens = dtau
+    # 0) dtau (at 1um for non-grey) 
     # 1) top layer ID
     # 2) bottom later ID
     # 3) rg = albedo
@@ -62,7 +62,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
                 if (cloudtype[i,j] == 1 or cloudtype[i,j] == 3):
                     # 5 entries for cloudparams are:
-                    # 0) density
+                    # 0) dtau
                     # 1) log top pressure
                     # 2) pressure thickness in dex
                     # 3) rg
@@ -70,7 +70,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
 
 
-                    ndens= cloudparams[0,i,j]
+                    tau = cloudparams[0,i,j]
                     p1 = 10.**cloudparams[1,i,j]
                     if (cloudtype[i,j] == 1):
                         dP = cloudparams[2,i,j]
@@ -89,49 +89,25 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     pdiff = abs(np.log(press) - np.log(p2))
                     l2 = np.argmin(pdiff)
 
-                    if (cloudnum[i,j] < 50):
-                        cloudprof[i,:,j] = -150.00
-                        if (l1 == l2):
-                            pl1, pl2 = atlev(l1,press)
-                            cloudprof[i,l1,j] = np.log10((10.**ndens) * 
-                                                         ((np.log10(p2) - np.log10(p1))
-                                                          /
-                                                          (np.log10(pl2) - np.log10(pl1))))
-                        else:
-                            cloudprof[i,l1+1:l2,j] = ndens
-                            # now account for partial fill of bottom and top layers
-                            # need levels for this
-                            pl1, pl2 = atlev(l1,press)
-                            # This is done in logP for now
-                            cloudprof[i,l1,j] = np.log10((10.**ndens) * \
-                                                         ((np.log10(pl2) - np.log10(p1))
-                                                          /
-                                                          (np.log10(pl2) - np.log10(pl1))))
-                            # same for bottom
-                            pl1, pl2 = atlev(l2,press)
-                            cloudprof[i,l2,j] = np.log10(10.**ndens * \
-                                                ((np.log10(p2) - np.log10(pl1))
-                                                 /
-                                                 (np.log10(pl2) - np.log10(pl1))))
+                    # This is a slab cloud
+                    # dtau/dP propto P
+                    if (l1 == l2):
+                        cloudprof[i,l1,j] = tau
                     else:
-                        # This is a slab cloud
-                        # dtau/dP propto P
-                        tau = ndens
-                        if (l1 == l2):
-                            cloudprof[i,l1,j] = tau
-                        else:
-                            const = tau / (p2**2 - p1**2)
-                            # partial top fill
-                            pl1, pl2 = atlev(l1,press)
-                            cloudprof[i,l1,j] = const * (pl2**2 - p1**2)
-                            # partial bottom fill
-                            pl1, pl2 = atlev(l2,press)
-                            cloudprof[i,l2,j] = const *  (p2**2 - pl1**2) 
-                            for k in range (l1+1,l2):
-                                l1,l2 = atlev(k,press)
-                                cloudprof[j,k,j] = const * (l2**2 - l1**2)
- 
-                    cloudrad[i,:,j] = rad
+                        const = tau / (p2**2 - p1**2)
+                        # partial top fill
+                        pl1, pl2 = atlev(l1,press)
+                        cloudprof[i,l1,j] = const * (pl2**2 - p1**2)
+                        # partial bottom fill
+                        pl1, pl2 = atlev(l2,press)
+                        cloudprof[i,l2,j] = const *  (p2**2 - pl1**2) 
+                        for k in range (l1+1,l2):
+                            l1,l2 = atlev(k,press)
+                            cloudprof[j,k,j] = const * (l2**2 - l1**2)
+
+                    # We're sampling particle radius in log space        
+                    if (cloudnum[i,j] < 50.):
+                        cloudrad[i,:,j] = 10.**rad
                     cloudsig[i,:,j] = sig        
 
                 if (cloudtype[i,j] == 2 or cloudtype[i,j] == 4):
@@ -143,7 +119,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # 3) rg
                     # 4) rsig
             
-                    ndens= cloudparams[0,i,j]
+                    tau = cloudparams[0,i,j]
                     p0 = 10.**cloudparams[1,i,j]
                     if (cloudtype[i,j] == 2):
                         dP = cloudparams[2,i,j]
@@ -156,47 +132,29 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     pdiff = np.empty(nlayers,dtype='f')
             
                 
-                    if (cloudnum[i,j] < 50):
-                        cloudprof[i,:,j] = -150.00
-                        pdiff = abs(np.log(press) - np.log(p0))
-                        l0 = np.argmin(pdiff)
-                        if (l0 <= nlayers-2):
-                            cloudprof[i,l0+1:,j] = ndens
-                        # now for top layer of cloud
-                        # need levels for this
-                        pl1, pl2 = atlev(l0,press)
-                        # want geometric weighted mean of level above p0 and ndens
-                        dl1 = (10.**ndens) * np.exp((pl1 - p0)/scale)
-                        cloudprof[i,l0,j] = np.log10(np.sqrt(dl1 *  10.**ndens))
-                        # now the rest of the layers
-                        for k in range(0, l0):
-                            cloudprof[i,k,j] = np.log10((10.**ndens) * np.exp((press[k] - p0)/scale))
-                    else:
-                        #  cloud 99 and 89 case!!
-                        # rsig is the power law for tau ~ lambda^alpha 
-                        # Here P0 is the pressure where tau = 1 for the cloud
-                        # so dtau / dP = const * exp((P-P0) / scale)
-                        # See notes for derivation of constant and integral
-                        const = 1. / (1 - np.exp(-p0 / scale))
-                        for k in range (0,nlayers):
-                            pl1, pl2 = atlev(k,press)
-                            # now get dtau for each layer, where tau = 1 at P0
-                            term1 = (pl2 - p0) / scale
-                            term2 = (pl1 - p0) / scale
-                            if (term1 > 10 or term2 > 10):
-                                cloudprof[i,k,j] = 100.00
-                            else:
-                                cloudprof[i,k,j] = const * (np.exp(term1) -
+                    # In cloud 99/89 case rsig is power law for tau~lambda^alpha 
+                    # Here P0 is the pressure where tau = 1 for the cloud
+                    # so dtau / dP = const * exp((P-P0) / scale)
+                    # See notes for derivation of constant and integral
+                    const = 1. / (1 - np.exp(-p0 / scale))
+                    for k in range (0,nlayers):
+                        pl1, pl2 = atlev(k,press)
+                        # now get dtau for each layer, where tau = 1 at P0
+                        term1 = (pl2 - p0) / scale
+                        term2 = (pl1 - p0) / scale
+                        if (term1 > 10 or term2 > 10):
+                            cloudprof[i,k,j] = 100.00
+                        else:
+                            cloudprof[i,k,j] = const * (np.exp(term1) -
                                                         np.exp(term2))
-                                                     
-                    cloudrad[i,:,j] = rad
+
+                    # We're sampling particle radius in log space        
+                    if (cloudnum[i,j] < 50.):
+                        cloudrad[i,:,j] = 10.**rad
                     cloudsig[i,:,j] = sig       
 
                 if (cloudtype[i,j] == 0):
-                    if (cloudnum[i,j] > 50):
-                        cloudprof[i,:,j] = 0.0
-                    else:
-                        cloudprof[i,:,j] = -150.0
+                    cloudprof[i,:,j] = 0.0
                     cloudrad[i,:,j] = 0.0
                     cloudsig[i,:,j] = 0.0
 
@@ -232,7 +190,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[1,:,:] = 0.0
     cloudparams[2,:,:] = 0.1
     cloudparams[3,:,:] = 0.0
-    cloudparams[4,:] = 0.0
+    cloudparams[4,:] = 0.5
 
     for i in range (0,npatches):
         if (do_clouds[i] == 1):
@@ -245,14 +203,14 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
                     cloudparams[0:4,i,j] = theta[pc+nc:pc+4+nc]
                     cloudparams[4,i,j] = 0.0
                     nc = nc + 4
-                elif ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 89)):
+                elif ((cloudtype[i,j] == 2) and (cloudnum[i,j] < 90)):
                     cloudparams[1:5,i,j] = theta[pc+nc:pc+4+nc]
                     nc = nc +4
                 elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] == 99)):
                     cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
                     cloudparams[3,i,j] =  theta[pc+nc+2]
                     nc = nc +3
-                elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] == 89)):
+                elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] < 90)):
                     cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
                     cloudparams[3:5,i,j] =  theta[pc+nc+2:pc+nc+4]
                     nc = nc + 4
@@ -260,7 +218,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
                     cloudparams[1,i,j] = theta[pc+nc]
                     cloudparams[3,i,j] = theta[pc+nc+1]
                     nc = nc +2
-                elif ((cloudtype[i,j] == 4) and (cloudnum[i,j] == 89)):
+                elif ((cloudtype[i,j] == 4) and (cloudnum[i,j] < 90)):
                     cloudparams[1,i,j] = theta[pc+nc]
                     cloudparams[3:5,i,j] = theta[pc+nc+1:pc+nc+3]
                     nc = nc +3

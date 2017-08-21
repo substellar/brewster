@@ -56,7 +56,6 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   call initpatch(size(do_clouds))
   call initcloud(size(cloudprof(1,1,:)))
 
-  
   allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
 
