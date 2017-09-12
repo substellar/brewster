@@ -40,20 +40,20 @@ __status__ = "Development"
 # First get data and parameters for object
 
 # Give the run name
-runname = "2M2224_MieSlab"
+runname = "2M0500_CE_Pdeck"
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("2m2224_multi.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("2M0500_2MassJcalib_trim.dat",dtype='d',unpack='true'))
 
 # Now the wavelength range
 w1 = 0.8
-w2 = 15.
+w2 = 2.4
 
 # FWHM of data in microns(WE DON'T USE THIS FOR SPEX DATA. SET TO 0.0)
-fwhm = 0.005
+fwhm = 0.00
 
 # DISTANCE (in parsecs)
-dist = 11.35
+dist = 13.54
 
 # How many patches & clouds do we want??
 # Must be at least 1 of each, but can turn off cloud below
@@ -78,13 +78,16 @@ cloudtype =np.zeros([npatches,nclouds],dtype='i')
 # 4: deep thick cloud with fixed height log dP = 0.005
 # In both cases the cloud properties are density, rg, rsig for real clouds
 # and dtau, w0, and power law for cloudnum = 89 or 99 for grey
-cloudnum[:,0] = 5
-cloudtype[:,0] = 1
+cloudnum[:,0] = 89
+cloudtype[:,0] = 2
 
 #cloudnum[:,1] = 1
 #cloudtype[:,1] = 4
 
 
+# Are we assuming chemical equilibrium, or similarly precomputed gas abundances?
+# Or are we retrieving VMRs (0)
+chemeq = 1
 
 # Are we doing H- bound-free, free-free continuum opacities?
 # (Is the profile going above 3000K in the photosphere?)
@@ -119,6 +122,7 @@ gaslist = ['h2o','co','tio','vo','crh','feh','k','na']
 
 ngas = len(gaslist)
 
+
 # some switches for alternative cross sections
 # Use Mike's Alkalis?
 malk = 0
@@ -127,7 +131,7 @@ mch4 = 0
 
 # now set up the EMCEE stuff
 # How many dimensions???  Count them up in the p0 declaration. Carefully
-ndim  = 21
+ndim  = 15
 
 # How many walkers we running?
 nwalkers = ndim * 16
@@ -139,7 +143,7 @@ nburn = 10000
 niter = 30000
 
 # Is this a test or restart?
-runtest = 1
+runtest = 0
 
 
 # Where is the output going?
@@ -168,35 +172,31 @@ use_disort = 0
 # use the fudge factor?
 do_fudge = 1
 
+# get first guess at scale factor
+r2d2 = (7e7 / (dist*3.086e+16))**2.
 
 # If we want fresh guess set to 0, total inherit the previous set 1
 # inherit plus randomise the VMRs. 2. See below to enter this filename
-fresh = 1
+fresh = 0
 p0 = np.empty([nwalkers,ndim])
 if (fresh == 0):
-    p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
-    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.0 # CO
-    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # TiO
-    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # VO
-    p0[:,4] = (1.0*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # CrH
-    p0[:,5] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
-    p0[:,6] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
-    p0[:,7] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
-    p0[:,8] =  1.0e-19 + (np.random.rand(nwalkers).reshape(nwalkers) * 5.e-21)
-    p0[:,9] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,10] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
-    # some cloud bits now. two clouds, thin first, then deck, both power
-    p0[:,11] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,13] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,14] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,15] = 0.1*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,0] = 0.2 * np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,1] = 1.0 + 0.1 * np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,2] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
+    p0[:,3] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2
+    p0[:,4] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    #Cloud bits
+    p0[:,6] = 0.5 + (0.1 * np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,7] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,8] = np.random.rand(nwalkers).reshape(nwalkers)    
+    p0[:,9] = np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,16] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,17] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,18] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,19] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,20] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,10] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,11] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,12] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,13] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,14] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
 
     for i in range (0,nwalkers):
         while True:
@@ -291,32 +291,65 @@ cia = np.asfortranarray(np.empty((4,ciatemps.size,nwave)),dtype='float32')
 cia[:,:,:] = tmpcia[:,:,:nwave] 
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
-# Sort out the BFF opacity stuff:
-
-intab = np.loadtxt("2015_06_1060grid_feh_00_co_10.txt",skiprows=1)
-test = np.array(intab)
-test2 = test.reshape(60,18,36)
-Pgrid = test2[20:21,:,1].reshape(18)
-Tgrid =  test2[:,10:11,0].reshape(60)
-abunds= test2[:,:,2:]
+# Sort out the BFF opacity stuff and chemical equilibrium tables:
+metscale,coscale,Tgrid,Pgrid,gasnames,abunds = pickle.load( open( "chem_eq_tables.pic", "rb" ) )
 nlayers = press.shape[0]
-nabpress = 18
-nabtemp = 60
-nabgas = 34
-ab_myP = np.empty([nabtemp,nlayers,nabgas])
-for gas in range (0,nabgas):
-    for i in range (0,nabtemp):
-            pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i,:,gas]),k=1)
+nabpress = Pgrid.size
+nabtemp = Tgrid.size
+nabgas = abunds.shape[4]
+nmet = metscale.size
+nco = coscale.size
+
+
+
+bff_raw = np.zeros([nabtemp,nlayers,3])
+gases_myP = np.zeros([nmet,nco,nabtemp,nlayers,ngas+3])
+gases = np.zeros([nmet,nco,nabtemp,nabpress,ngas+3])
+
+if (chemeq == 0):
+    # Just want the ion fractions for solar metallicity in this case
+    ab_myP = np.empty([nabtemp,nlayers,nabgas])
+    i1 = np.where(metscale = 0.0)
+    i2 = np.where(coscale = 1.0)
+    for gas in range (0,nabgas):
+        for i in range (0,nabtemp):
+            pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i1[0],i2[0],i,:,gas]),k=1)
             ab_myP[i,:,gas] = pfit(np.log10(press))
             
-bff_raw = np.empty([nabtemp,nlayers,3])
-bff_raw[:,:,0] = ab_myP[:,:,0]
-bff_raw[:,:,1] = ab_myP[:,:,2]
-bff_raw[:,:,2] = ab_myP[:,:,4]
+            bff_raw = np.zeros([nabtemp,nlayers,3])
+            bff_raw[:,:,0] = ab_myP[:,:,0]
+            bff_raw[:,:,1] = ab_myP[:,:,2]
+            bff_raw[:,:,2] = ab_myP[:,:,4]
 
-bfTgrid = Tgrid
+else:
+    # In this case we need the rows for the gases we're doing and ion fractions
+    gases[:,:,:,:,0] = abunds[:,:,:,:,0]
+    gases[:,:,:,:,1] = abunds[:,:,:,:,2]
+    gases[:,:,:,:,2] = abunds[:,:,:,:,4]
+    nmatch = 0 
+    for i in range(0,ngas):
+        for j in range(0,nabgas):
+            if (gasnames[j].lower() == gaslist[i].lower()):
+                gases[:,:,:,:,i+3] = abunds[:,:,:,:,j]
+                nmatch = nmatch + 1
+    if (nmatch != ngas):
+        print "you've requested a gas that isn't in the Vischer table. Please chaeck and try again."
+        exit
+    
+    for i in range(0,nmet):
+        for j in range(0,nco):
+            for k in range(0,ngas+3):
+                for l in range(0,nabtemp):
+                    pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(gases[i,j,l,:,k]),k=1)
+                    gases_myP[i,j,l,:,k] = pfit(np.log10(press))
+    
 
-runargs = dist, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge, prof,do_bff,bff_raw,bfTgrid
+    
+            
+ceTgrid = Tgrid
+
+
+runargs = gases_myP,chemeq,dist, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge, prof,do_bff,bff_raw,ceTgrid,metscale,coscale
 
     
 # Now we set up the MPI bits
