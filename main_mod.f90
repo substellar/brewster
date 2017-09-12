@@ -100,9 +100,9 @@ contains
 
     end do
 
-    patch(1)%atm%fe = bff(1,:)
-    patch(1)%atm%fH = bff(2,:)
-    patch(1)%atm%fHmin = bff(3,:)
+    patch(1)%atm%fe = 10.**bff(1,:)
+    patch(1)%atm%fH = 10.**bff(2,:)
+    patch(1)%atm%fHmin = 10.**bff(3,:)
 
     
     grav = 10**(logg) / 100.

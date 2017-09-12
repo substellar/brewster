@@ -2,6 +2,7 @@
 
 """ Module of bits to plug into Brewster """
 import math
+import time
 import gc
 import numpy as np
 import scipy as sp
@@ -10,6 +11,8 @@ import cloud
 import TPmod
 from scipy import interpolate
 from scipy.interpolate import InterpolatedUnivariateSpline
+from scipy.interpolate import interp1d
+
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
 from mikesconv import instrument_non_uniform
@@ -36,50 +39,46 @@ __status__ = "Development"
 
 
 
-def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,bfTgrid):
+def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,ceTgrid):
 
     # Hard code nlayers
     nlayers = press.shape[0]
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
-    # get the ngas for forward model (ngas, not ng
-    if (gasnum[gasnum.size-1] == 21):
-        ngas = invmr.shape[0] + 1
-    elif (gasnum[gasnum.size-1] == 23):
-        ngas = invmr.shape[0] + 2
-    else:
-        ngas = invmr.shape[0]
-    # now loop through gases and get VMR for model
-    # check if its a fixed VMR or a profile
+
+
+    # check if its a fixed VMR or a profile from chem equilibrium 
     # VMR is log10(VMR) !!!
-    logVMR = np.empty((ngas,nlayers),dtype='d')
-    alkratio = 16.2 #  from Asplund et al (2009)
     if invmr.size > invmr.shape[0]:
+        chemeq = 1
         # this case is a profile
-        # now sort Na and K
-        tmpvmr = np.empty((ngas,nlayers),dtype='d')
-        if (gasnum[gasnum.size-1] == 21):
-            tmpvmr[0:(ngas-2),:] = invmr[0:(ngas-2),:]
-            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-2,:] / (alkratio+1.)) # K
-            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-2,:] * (alkratio / (alkratio+1.))) # Na                                
-        elif (gasnum[gasnum.size-1] == 23):
-            #f values are ratios between Na and (K+Cs) and K and Cs respectively
-            f1 = 1.348
-            f2 = 8912.5
-            tmpvmr[0:(ngas-3),:] = invmr[0:(ngas-3),:]
-            tmpvmr[ngas-1,:] = np.log10(10.**invmr[ngas-3,:] / ((f1+1)*(f2+1))) # Cs
-            tmpvmr[ngas-2,:] = np.log10(10.**invmr[ngas-3,:] * (f1 /(f1+1)) ) # Na
-            tmpvmr[ngas-3,:] = np.log10(10.**invmr[ngas-3,:] - 10.**tmpvmr[ngas-2,:] - 10.**tmpvmr[ngas-1,:]) #K 
-        else:
-            tmpvmr[0:ngas,:] = invmr[0:ngas,:]
-            
-        for i in range(0,ngas):
-            vfit = sp.interpolate.splrep(np.log10(coarsepress),tmpvmr[i,:],s=0)
-            logVMR[i,:] = sp.interpolate.splev(np.log10(press),vfit,der=0)
+        bff = np.zeros([3,nlayers],dtype="float64")
+        ng = invmr.shape[2]
+        ngas = ng - 3
+        logVMR = np.zeros([ngas,nlayers],dtype='d')
+        for p in range(0,nlayers):
+            for g in range(0,ng):
+                tfit = InterpolatedUnivariateSpline(ceTgrid,invmr[:,p,g])
+                if (g < 3):
+                    bff[g,p] = tfit(temp[p])
+                else:
+                    logVMR[g-3,p]= tfit(temp[p])
     else:
-        # This caseis fixed VMR
+        # This case is fixed VMR
+        cheqeq = 0
+        logVMR = np.empty((ngas,nlayers),dtype='d')
+        alkratio = 16.2 #  from Asplund et al (2009)
+
         # now sort Na and K
+        # get the ngas for forward model (ngas, not ng
+        if (gasnum[gasnum.size-1] == 21):
+            ngas = invmr.shape[0] + 1
+        elif (gasnum[gasnum.size-1] == 23):
+            ngas = invmr.shape[0] + 2
+        else:
+            ngas = invmr.shape[0]
+
         tmpvmr = np.empty(ngas,dtype='d')
         if (gasnum[gasnum.size-1] == 21):
             tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
@@ -99,6 +98,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
         for i in range(0,ngas):                              
             logVMR[i,:] = tmpvmr[i]
 
+    #print logVMR
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
 
@@ -113,11 +113,11 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
 
     # Now get the BFF stuff sorted
     bff = np.zeros([3,nlayers],dtype="float64") 
-    if (do_bff == 1):
+    if (chemeq == 0 and do_bff == 1):
         for gas in range(0,3):
             for i in range(0,nlayers):
-                tfit = InterpolatedUnivariateSpline(bfTgrid,bff_raw[:,i,gas],k=1) 
-                bff[gas,i] = 10.**tfit(temp[i])
+                tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1) 
+                bff[gas,i] = tfit(temp[i])
 
     bff = np.asfortranarray(bff, dtype='float64')
     press = np.asfortranarray(press,dtype='float32')
@@ -131,7 +131,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     outspec,photspec,tauspec,cfunc = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,make_cf,do_bff,bff)
     # Trim to length where it is defined.
     nwave = inwavenum.size
-    trimspec = np.zeros((2,nwave),dtype='d')
+    trimspec = np.zeros([2,nwave],dtype='d')
     trimspec[:,:] = outspec[:,:nwave]
     # now shift wavelen by delta_lambda
     shiftspec = np.empty_like(trimspec)
@@ -187,16 +187,30 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     #return -0.5*(np.sum((obspec[1,::3] - modspec[1,::3])**2 * invsigma2 - np.log(invsigma2)))
     
     
-def lnprob(theta,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,bfTgrid):
-    
-    if (gasnum[gasnum.size-1] == 21):
-        ng = gasnum.size - 1
-    elif (gasnum[gasnum.size-1] == 23):
-        ng = gasnum.size -2
+def lnprob(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale):
+
+    # now check against the priors, if not beyond them, run the likelihood
+    lp = lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge,chemeq,metscale,coscale)
+    if not np.isfinite(lp):
+        return -np.inf
+    nlayers = press.size
+    if chemeq == 0:
+        if (gasnum[gasnum.size-1] == 21):
+            ng = gasnum.size - 1
+        elif (gasnum[gasnum.size-1] == 23):
+            ng = gasnum.size -2
+        else:
+            ng = gasnum.size
+        invmr = theta[0:ng]
+
     else:
-        ng = gasnum.size
-        
-    invmr = theta[0:ng]
+        mh  = theta[0]
+        co = theta[1]
+        ng = 2
+        mfit = interp1d(metscale,gases_myP,axis=0)
+        gases_myM = mfit(mh)
+        cfit = interp1d(coscale,gases_myM,axis=0)
+        invmr = cfit(co)
     logg = theta[ng]
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
@@ -234,13 +248,8 @@ def lnprob(theta,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePre
         raise ValueError("not valid profile type %proftype" % (char, string))
 
 
-    
-    # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge)
-    if not np.isfinite(lp):
-        return -np.inf
-    # else run the likelihood
-    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,bfTgrid)
+    # run the likelihood
+    lnlike_value = lnlike(intemp, invmr,pcover, cloudtype,cloudparams,r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,ceTgrid)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -248,15 +257,28 @@ def lnprob(theta,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePre
     return lnprb
 
 
-def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge):
+def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype,do_fudge,chemeq,metscale,coscale):
     # set up the priors here
-    if (gasnum[gasnum.size-1] == 21):
-        ng = gasnum.size - 1
-    elif (gasnum[gasnum.size-1] == 23):
-        ng = gasnum.size - 2
+    if (chemeq != 0):
+        invmr = np.array([-3.,-3.])
+        mh = theta[0]
+        co = theta[1]
+        ng = 2
     else:
-        ng = gasnum.size
-    invmr = theta[0:ng]
+        if (gasnum[gasnum.size-1] == 21):
+            ng = gasnum.size - 1
+            mh = 0.0
+            co = 1.0
+        elif (gasnum[gasnum.size-1] == 23):
+            mh = 0.0
+            co = 1.0
+            ng = gasnum.size - 2
+        else:
+            ng = gasnum.size
+            invmr = theta[0:ng]
+            mh = 0.0
+            co = 1.0
+            
     logg = theta[ng]
     r2d2 = theta[ng+1]
     dlam = theta[ng+2]
@@ -312,7 +334,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = 0.5
                         elif (cloudtype[i,j] == 2):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size - 1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = cloudparams[1,i,j]
                             cloud_height[i,j] = cloudparams[2,i,j]
                             w0[i,j] = cloudparams[3,i,j]
@@ -330,7 +352,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = 0.5
                         elif (cloudtype[i,j] == 4):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size - 1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = cloudparams[1,i,j]
                             cloud_height[i,j] = 0.005
                             w0[i,j] = cloudparams[3,i,j]
@@ -358,7 +380,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = 0.5
                         elif (cloudtype[i,j] == 2):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size - 1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = cloudparams[1,i,j]
                             cloud_height[i,j] = cloudparams[2,i,j]
                             w0[i,j] = cloudparams[3,i,j]
@@ -376,7 +398,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = 0.5
                         elif (cloudtype[i,j] == 4):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size - 1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = cloudparams[1,i,j]
                             cloud_height[i,j] = 0.005
                             w0[i,j] = cloudparams[3,i,j]
@@ -422,7 +444,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = cloudparams[4,i,j]
                         elif (cloudtype[i,j] == 4):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size-1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = cloudparams[1,i,j]
                             cloud_height[i,j] = 0.005
                             w0[i,j] = +0.5
@@ -431,7 +453,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] =  cloudparams[4,i,j]
                         elif (cloudtype[i,j] == 0):
                             cloud_tau0[i,j] = 1.0
-                            cloud_bot[i,j] = np.log10(press[press.size-1])
+                            cloud_bot[i,j] = np.log10(press[-1])
                             cloud_top[i,j] = np.log10(press[0])
                             cloud_height[i,j] = 0.1
                             w0[i,j] = +0.5
@@ -440,7 +462,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                             b[i,j] = 0.5
     else:
         cloud_tau0[:,:] = 1.0
-        cloud_bot[:,:] = np.log10(press[press.size-1])
+        cloud_bot[:,:] = np.log10(press[-1])
         cloud_top[:,:] = np.log10(press[0])
         cloud_height[:,:] = 0.1
         w0[:,:] = +0.5
@@ -466,6 +488,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and  metscale[0] <= mh <= metscale[-1]
+            and  coscale[0] <= co <= coscale[-1]
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80
             and  0. < r2d2 < 1.
@@ -477,7 +501,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                  < (100.*np.max(obspec[2,:]**2)))
             and (np.all(cloud_tau0 >= 0.0))
             and np.all(cloud_top < cloud_bot)
-            and np.all(cloud_bot <= np.log10(press[press.size-1]))
+            and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
             and np.all(cloud_top < cloud_bot)
             and np.all(0. < cloud_height)
@@ -525,6 +549,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and  metscale[0] <= mh <= metscale[-1]
+            and  coscale[0] <= co <= coscale[-1]
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -534,7 +560,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                  < (100.*np.max(obspec[2,:]**2)))
             and (np.all(cloud_tau0 >= 0.0))
             and np.all(cloud_top < cloud_bot)
-            and np.all(cloud_bot <= np.log10(press[press.size-1]))
+            and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
             and np.all(cloud_top < cloud_bot)
             and np.all(0. < cloud_height)
@@ -579,6 +605,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and  metscale[0] <=  mh <= metscale[-1]
+            and  coscale[0] <= co <= coscale[-1]
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
@@ -588,7 +616,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
                  < (100.*np.max(obspec[2,:]**2)))
             and (np.all(cloud_tau0 >= 0.0))
             and np.all(cloud_top < cloud_bot)
-            and np.all(cloud_bot <= np.log10(press[press.size-1]))
+            and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
             and np.all(cloud_top < cloud_bot)
             and np.all(0. < cloud_height)
@@ -617,6 +645,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         #         and  and (-5. < logbeta < 0))
         print "Rj = ", Rj
         print "M = ", M
+        print "[M/H] = ",mh
+        print "[C/O] = ", co
         print "logg = ", logg
         print "R2D2 = ", r2d2
         print "dlam = ", dlam
@@ -633,6 +663,8 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         print "sum(pcover) = ", np.sum(pcover)
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and  metscale[0] <= mh <= metscale[-1]
+            and  coscale[0] <= co <= coscale[-1]
             and  0.0 < logg < 6.0 
             and 1.0 < M < 80. 
             and  0. < r2d2 < 1.
