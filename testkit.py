@@ -448,7 +448,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         loga[:,:] =  0.0
         b[:,:] = 0.5
                 
-
+    junkP = np.ones([13])
     if (proftype == 1):
         gam = theta[pc+nc]
         T = theta[pc+nc:]
@@ -509,7 +509,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
         T3 = theta[pc+4+nc]
         T = np.empty([press.size])
         T[:] = -100.
-        junkP = np.ones([13])
+
         if (0. < a1 < 1. and 0. < a2 < 1.0
             and T3 > 0.0 and P3 >= P1 and P1 >= np.log10(press[0])
             and P3 < 5.):
