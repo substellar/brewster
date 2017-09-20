@@ -27,14 +27,14 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,intent(inout):: bff(:,:)
   real,intent(inout) :: pcover(:)
   integer,intent(inout) ::do_clouds(:)
-  character(len=10),dimension(:),allocatable :: gasname
+  character(len=15),dimension(:),allocatable :: gasname
   double precision,dimension(:),allocatable :: molmass
   integer,intent(inout) :: ingasnum(:)
-  character(len=10),dimension(:),allocatable::gaslist,cloudlist
+  character(len=15),dimension(:),allocatable::gaslist,cloudlist
   double precision,dimension(:),allocatable:: masslist
   double precision,intent(inout) :: logVMR(:,:)
   integer,intent(inout) :: incloudnum(:,:)
-  character(len=10),dimension(:,:),allocatable :: cloudname
+  character(len=15),dimension(:,:),allocatable :: cloudname
   double precision,intent(inout) :: cloudrad(:,:,:)
   double precision,intent(inout) :: cloudsig(:,:,:)
   double precision,intent(inout) :: cloudprof(:,:,:)
@@ -83,7 +83,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
   do icloud = 1, maxcloud
-     read(10,"(I3,A10)") idum2,cloudlist(icloud)
+     read(10,"(I3,A15)") idum2,cloudlist(icloud)
   end do
   close(10)
   

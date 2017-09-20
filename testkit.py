@@ -46,7 +46,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
-
+    ngas = gasnum.size
 
     # check if its a fixed VMR or a profile from chem equilibrium 
     # VMR is log10(VMR) !!!
@@ -66,7 +66,7 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
                     logVMR[g-3,p]= tfit(temp[p])
     else:
         # This case is fixed VMR
-        cheqeq = 0
+        chemeq = 0
         logVMR = np.empty((ngas,nlayers),dtype='d')
         alkratio = 16.2 #  from Asplund et al (2009)
 
@@ -269,10 +269,12 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
             ng = gasnum.size - 1
             mh = 0.0
             co = 1.0
+            invmr = theta[0:ng]
         elif (gasnum[gasnum.size-1] == 23):
             mh = 0.0
             co = 1.0
             ng = gasnum.size - 2
+            invmr = theta[0:ng]
         else:
             ng = gasnum.size
             invmr = theta[0:ng]

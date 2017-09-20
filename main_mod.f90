@@ -25,10 +25,10 @@ contains
     real, INTENT(IN) :: R2D2, logg
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
-    character(len=10),intent(inout) :: gasname(:)
+    character(len=15),intent(inout) :: gasname(:)
     double precision, intent(inout) :: molmass(:)
     double precision, intent(inout) :: logVMR(:,:)
-    character(len=10),INTENT(INOUT) :: cloudname(:,:)
+    character(len=15),INTENT(INOUT) :: cloudname(:,:)
 
     double precision,INTENT(INOUT) :: cloudrad(:,:,:)
     double precision,INTENT(INOUT) :: cloudsig(:,:,:)

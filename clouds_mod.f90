@@ -82,7 +82,13 @@ contains
        elseif( column(1)%cloud(icloud)%name .eq. 'MgSiO3' )then
           vrat = 2.2
           rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'MgSiO3Cry' )then
+          vrat = 2.2
+          rmin = 1e-7
        elseif( column(1)%cloud(icloud)%name .eq. 'Mg2SiO4' )then
+          vrat = 2.2
+          rmin = 1e-7
+       elseif( column(1)%cloud(icloud)%name .eq. 'Mg2SiO4rich' )then
           vrat = 2.2
           rmin = 1e-7
        elseif( column(1)%cloud(icloud)%name .eq. 'Al2O3' )then
