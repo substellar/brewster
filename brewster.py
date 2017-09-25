@@ -61,7 +61,7 @@ npatches = 1
 nclouds = 1
 
 # set up array for setting patchy cloud answers
-do_clouds = np.zeros([npatches],dtype='i')
+do_clouds = np.zeros([npatches], dtype='i')
 
 # Which patches are cloudy
 do_clouds[:] = 1
@@ -81,8 +81,8 @@ cloudtype = np.zeros([npatches, nclouds], dtype='i')
 cloudnum[:, 0] = 89
 cloudtype[:, 0] = 2
 
-#cloudnum[:,1] = 1
-#cloudtype[:,1] = 4
+# cloudnum[:,1] = 1
+# cloudtype[:,1] = 4
 
 
 # Are we assuming chemical equilibrium, or similarly precomputed gas abundances?
@@ -178,7 +178,7 @@ r2d2 = (7e7 / (dist*3.086e+16))**2.
 # If we want fresh guess set to 0, total inherit the previous set 1
 # inherit plus randomise the VMRs. 2. See below to enter this filename
 fresh = 0
-p0 = np.empty([nwalkers,ndim])
+p0 = np.empty([nwalkers, ndim])
 if (fresh == 0):
     p0[:, 0] = 0.5*np.random.randn(nwalkers).reshape(nwalkers)  # [Fe/H]
     p0[:, 1] = 1.0 + (0.1*np.random.randn(nwalkers).reshape(nwalkers))  # C/O
@@ -193,15 +193,15 @@ if (fresh == 0):
     p0[:, 8] = np.random.rand(nwalkers).reshape(nwalkers)
     p0[:, 9] = np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,10] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,11] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,12] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,13] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,14] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:, 10] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 11] = 0.14 + 0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 12] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 13] = 2.25 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 14] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))
 
-    for i in range (0,nwalkers):
+    for i in range(0, nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,ndim-5:])
+            Tcheck = TPmod.set_prof(proftype, coarsePress, press, p0[i, ndim-5:])
             if (min(Tcheck) > 1.0):
                 break
             else:
@@ -214,18 +214,18 @@ if (fresh == 0):
     
 if (fresh != 0):
     fname = chaindump
-    pic = pickle.load(open(fname,'rb'))
+    pic = pickle.load(open(fname, 'rb'))
     p0 = pic
     if (fresh == 2):
-        for i in range(0,9):
+        for i in range(0, 9):
             p0[:, i] = (np.random.rand(nwalkers).reshape(nwalkers)*0.5) + p0[:, i]
 
 
 
 
-prof = np.full(13,100.)
+prof = np.full(13, 100.)
 if (proftype == 9):
-    modP, modT = np.loadtxt(pfile, skiprows=1, usecols=(1,2), unpack=True)
+    modP, modT = np.loadtxt(pfile, skiprows=1, usecols=(1, 2), unpack=True)
     tfit = InterpolatedUnivariateSpline(np.log10(modP), modT, k=1)
     prof = tfit(logcoarsePress)
 
@@ -241,33 +241,33 @@ with open('gaslist.dat') as fa:
     
     
 list1 = []    
-for i in range(0,ngas):
-    for j in range(0,totgas):
+for i in range(0, ngas):
+    for j in range(0, totgas):
             if (gasdata[j][1].lower() == gaslist[i].lower()):
                 list1.append(gasdata[j])
 
 if (malk == 1):
-    for i in range (0,ngas):    
+    for i in range(0, ngas):
         list1[i] = [w.replace('K_xsecs.pic', 'K_Mike_xsecs.pic') for w in list1[i]]
         list1[i] = [w.replace('Na_xsecs.pic', 'Na_Mike_xsecs.pic') for w in list1[i]]
 
-if (mch4 ==1):
-    for i in range (0,ngas):    
+if (mch4 == 1):
+    for i in range(0, ngas):
         list1[i] = [w.replace('CH4_xsecs.pic', 'CH4_Mike_xsecs.pic') for w in list1[i]]
     
 
 lists = [xpath+i[3] for i in list1[0:ngas]]
-gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
+gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]], dtype='i'))
 
 
 # get the basic framework from water list
-rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(xpath+'/H2O_xsecs.pic', "rb" ))
+rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(xpath+'/H2O_xsecs.pic', "rb"))
 
 wn1 = 10000./w2
 wn2 = 10000. / w1
 inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))], dtype='float64')
 ntemps = inlinetemps.size
-npress= press.size
+npress = press.size
 nwave = inwavenum.size
 r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
@@ -275,11 +275,11 @@ r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwaven
 # Here we are interpolating the linelist onto our fine pressure scale.
 # pickles have linelist as 4th entry....
 linelist = (np.ones([ngas, npress, ntemps, nwave], order='F')).astype('float64', order='F')
-for gas in range (0,ngas):
-    inlinelist= pickle.load(open(lists[gas], "rb"))[3]
-    for i in range (0, ntemps):
-        for j in range (r1, r2+1):
-            pfit = interp1d(np.log10(inpress), np.log10(inlinelist[:,i,j]))
+for gas in range(0, ngas):
+    inlinelist = pickle.load(open(lists[gas], "rb"))[3]
+    for i in range(0, ntemps):
+        for j in range(r1, r2+1):
+            pfit = interp1d(np.log10(inpress), np.log10(inlinelist[:, i, j]))
             linelist[gas, :, i, (j-r1)] = np.asfortranarray(pfit(np.log10(press)))
 
 linelist[np.isnan(linelist)] = -50.0
@@ -288,7 +288,7 @@ linelist[np.isnan(linelist)] = -50.0
 
 # Get the cia bits
 tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat", inwavenum)
-cia = np.asfortranarray(np.empty((4, ciatemps.size,nwave)), dtype='float32')
+cia = np.asfortranarray(np.empty((4, ciatemps.size, nwave)), dtype='float32')
 cia[:, :, :] = tmpcia[:, :, :nwave]
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
@@ -306,16 +306,16 @@ nco = coscale.size
 
 bff_raw = np.zeros([nabtemp, nlayers, 3])
 gases_myP = np.zeros([nmet, nco, nabtemp, nlayers, ngas+3])
-gases = np.zeros([nmet,nco,nabtemp,nabpress,ngas+3])
+gases = np.zeros([nmet, nco, nabtemp, nabpress, ngas+3])
 
 if (chemeq == 0):
     # Just want the ion fractions for solar metallicity in this case
     ab_myP = np.empty([nabtemp, nlayers, nabgas])
     i1 = np.where(metscale == 0.0)
     i2 = np.where(coscale == 1.0)
-    for gas in range (0,nabgas):
-        for i in range (0,nabtemp):
-            pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i1[0], i2[0], i, :, gas]), k=1)
+    for gas in range(0, nabgas):
+        for i in range(0, nabtemp):
+            pfit = InterpolatedUnivariateSpline(Pgrid, np.log10(abunds[i1[0], i2[0], i, :, gas]), k=1)
             ab_myP[i, :, gas] = pfit(np.log10(press))
             
             bff_raw = np.zeros([nabtemp, nlayers, 3])
@@ -329,8 +329,8 @@ else:
     gases[:, :, :, :, 1] = abunds[:, :, :, :, 2]
     gases[:, :, :, :, 2] = abunds[:, :, :, :, 4]
     nmatch = 0 
-    for i in range(0,ngas):
-        for j in range(0,nabgas):
+    for i in range(0, ngas):
+        for j in range(0, nabgas):
             if (gasnames[j].lower() == gaslist[i].lower()):
                 gases[:, :, :, :, i+3] = abunds[:, :, :, :, j]
                 nmatch = nmatch + 1
@@ -365,13 +365,13 @@ if not pool.is_master():
 # put it all together in the sampler..
 
 
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),pool=pool)
-#'''
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
+# '''
 # run the sampler
 print "running the sampler"
 clock = np.empty(80000)
 k = 0
-times = open(rfile,"w")
+times = open(rfile, "w")
 times.close()
 if (runtest == 0):
     pos, prob, state = sampler.run_mcmc(p0, nburn)
@@ -418,6 +418,4 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,outdir+finalout)
-
-
+save_object(sampler, outdir+finalout)
