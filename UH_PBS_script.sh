@@ -4,7 +4,7 @@
 #PBS -l nodes=16:ppn=6
 #PBS -l walltime=00:30:00
 #PBS -k oe
-#PBS -q car
+#PBS -q main
 
 module unload mpich2-x86_64
 module load mpich2-intel
