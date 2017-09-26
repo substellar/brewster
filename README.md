@@ -6,7 +6,7 @@ code for retrieval analysis of emission spectra from brown dwarfs and giant plan
 - Atmospheric Models
 - Line lists 
 - Clouds (.mieff files) (This must be at the same level as the brewster directory)
-- gFortran compiler
+- gFortran compiler (https://gcc.gnu.org/wiki/GFortranBinaries)
  
  The line list and Atmospheric Models can live anywhere on your machine.
 
