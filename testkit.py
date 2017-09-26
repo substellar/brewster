@@ -475,7 +475,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     junkP = np.ones([13])
     if (proftype == 1):
         gam = theta[pc+nc]
-        T = theta[pc+nc:]
+        T = theta[pc+nc+1:]
         diff=np.roll(T,-1)-2.*T+np.roll(T,1)
         pp=len(T)
     
