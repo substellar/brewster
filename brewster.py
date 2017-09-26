@@ -43,7 +43,7 @@ __status__ = "Development"
 runname = "D1425_Pdeck_CE"
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("D1425_2MassJcalib.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("D1425_2MassJcalib.dat", dtype='d', unpack=True))
 
 # Now the wavelength range
 w1 = 0.8
@@ -103,8 +103,8 @@ logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 logfinePress = np.arange(-4.0, 2.4, 0.1)
 # forward model wants pressure in bar
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
-coarsePress = pow(10,logcoarsePress)
-press = pow(10,logfinePress)
+coarsePress = pow(10, logcoarsePress)
+press = pow(10, logfinePress)
 
 
 # Where are the cross sections?
@@ -179,7 +179,7 @@ r2d2 = (7e7 / (dist*3.086e+16))**2.
 # inherit plus randomise the VMRs. 2. See below to enter this filename
 fresh = 0
 p0 = np.empty([nwalkers, ndim])
-if (fresh == 0):
+if fresh == 0:
     p0[:, 0] = 0.5*np.random.randn(nwalkers).reshape(nwalkers)  # [Fe/H]
     p0[:, 1] = 1.0 + (0.1*np.random.randn(nwalkers).reshape(nwalkers))  # C/O
     p0[:, 2] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
@@ -202,7 +202,7 @@ if (fresh == 0):
     for i in range(0, nwalkers):
         while True:
             Tcheck = TPmod.set_prof(proftype, coarsePress, press, p0[i, ndim-5:])
-            if (min(Tcheck) > 1.0):
+            if min(Tcheck) > 1.0:
                 break
             else:
                 p0[i, ndim-5] = 0.39 + 0.01*np.random.randn()
@@ -212,11 +212,11 @@ if (fresh == 0):
                 p0[i, ndim-1] = 4200. + (200.*np.random.randn())
 
     
-if (fresh != 0):
+if fresh != 0:
     fname = chaindump
     pic = pickle.load(open(fname, 'rb'))
     p0 = pic
-    if (fresh == 2):
+    if fresh == 2:
         for i in range(0, 9):
             p0[:, i] = (np.random.rand(nwalkers).reshape(nwalkers)*0.5) + p0[:, i]
 
@@ -224,7 +224,7 @@ if (fresh != 0):
 
 
 prof = np.full(13, 100.)
-if (proftype == 9):
+if proftype == 9:
     modP, modT = np.loadtxt(pfile, skiprows=1, usecols=(1, 2), unpack=True)
     tfit = InterpolatedUnivariateSpline(np.log10(modP), modT, k=1)
     prof = tfit(logcoarsePress)
@@ -243,15 +243,15 @@ with open('gaslist.dat') as fa:
 list1 = []    
 for i in range(0, ngas):
     for j in range(0, totgas):
-            if (gasdata[j][1].lower() == gaslist[i].lower()):
+            if gasdata[j][1].lower() == gaslist[i].lower():
                 list1.append(gasdata[j])
 
-if (malk == 1):
+if malk == 1:
     for i in range(0, ngas):
         list1[i] = [w.replace('K_xsecs.pic', 'K_Mike_xsecs.pic') for w in list1[i]]
         list1[i] = [w.replace('Na_xsecs.pic', 'Na_Mike_xsecs.pic') for w in list1[i]]
 
-if (mch4 == 1):
+if mch4 == 1:
     for i in range(0, ngas):
         list1[i] = [w.replace('CH4_xsecs.pic', 'CH4_Mike_xsecs.pic') for w in list1[i]]
     
@@ -265,7 +265,8 @@ rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(xpath+'/H2O_xsec
 
 wn1 = 10000./w2
 wn2 = 10000. / w1
-inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))], dtype='float64')
+inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2,
+                                                                               rawwavenum[:] < wn1)))], dtype='float64')
 ntemps = inlinetemps.size
 npress = press.size
 nwave = inwavenum.size
@@ -308,7 +309,7 @@ bff_raw = np.zeros([nabtemp, nlayers, 3])
 gases_myP = np.zeros([nmet, nco, nabtemp, nlayers, ngas+3])
 gases = np.zeros([nmet, nco, nabtemp, nabpress, ngas+3])
 
-if (chemeq == 0):
+if chemeq == 0:
     # Just want the ion fractions for solar metallicity in this case
     ab_myP = np.empty([nabtemp, nlayers, nabgas])
     i1 = np.where(metscale == 0.0)
@@ -331,10 +332,10 @@ else:
     nmatch = 0 
     for i in range(0, ngas):
         for j in range(0, nabgas):
-            if (gasnames[j].lower() == gaslist[i].lower()):
+            if gasnames[j].lower() == gaslist[i].lower():
                 gases[:, :, :, :, i+3] = abunds[:, :, :, :, j]
                 nmatch = nmatch + 1
-    if (nmatch != ngas):
+    if nmatch != ngas:
         print "you've requested a gas that isn't in the Vischer table. Please check and try again."
         exit
     
@@ -373,13 +374,13 @@ clock = np.empty(80000)
 k = 0
 times = open(rfile, "w")
 times.close()
-if (runtest == 0):
+if runtest == 0:
     pos, prob, state = sampler.run_mcmc(p0, nburn)
     sampler.reset()
     p0 = pos
 for result in sampler.sample(p0, iterations=niter):
     clock[k] = time.clock()
-    if (k > 1):
+    if k > 1:
         tcycle = clock[k] - clock[k-1]
         times = open(rfile, "a")
         times.write("*****TIME FOR CYCLE*****")
