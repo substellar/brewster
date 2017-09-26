@@ -112,8 +112,8 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     do_clouds = np.asfortranarray(do_clouds,dtype = 'i')
 
     # Now get the BFF stuff sorted
-    bff = np.zeros([3,nlayers],dtype="float64") 
     if (chemeq == 0 and do_bff == 1):
+        bff = np.zeros([3,nlayers],dtype="float64") 
         for gas in range(0,3):
             for i in range(0,nlayers):
                 tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1) 
