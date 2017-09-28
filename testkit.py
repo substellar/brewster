@@ -47,13 +47,13 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
     ngas = gasnum.size
+    bff = np.zeros([3,nlayers],dtype="float64")
 
     # check if its a fixed VMR or a profile from chem equilibrium 
     # VMR is log10(VMR) !!!
     if invmr.size > invmr.shape[0]:
         chemeq = 1
         # this case is a profile
-        bff = np.zeros([3,nlayers],dtype="float64")
         ng = invmr.shape[2]
         ngas = ng - 3
         logVMR = np.zeros([ngas,nlayers],dtype='d')
@@ -113,7 +113,6 @@ def lnlike(intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_c
 
     # Now get the BFF stuff sorted
     if (chemeq == 0 and do_bff == 1):
-        bff = np.zeros([3,nlayers],dtype="float64") 
         for gas in range(0,3):
             for i in range(0,nlayers):
                 tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1) 
@@ -475,7 +474,7 @@ def lnprior(theta,obspec,dist,proftype,press,do_clouds,gasnum,cloudnum,cloudtype
     junkP = np.ones([13])
     if (proftype == 1):
         gam = theta[pc+nc]
-        T = theta[pc+nc:]
+        T = theta[pc+nc+1:]
         diff=np.roll(T,-1)-2.*T+np.roll(T,1)
         pp=len(T)
     

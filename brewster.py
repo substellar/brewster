@@ -40,20 +40,20 @@ __status__ = "Development"
 # First get data and parameters for object
 
 # Give the run name
-runname = "D1425_Pdeck_CE"
+runname = "G570_test"
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("D1425_2MassJcalib.dat", dtype='d', unpack=True))
+obspec = np.asfortranarray(np.loadtxt("G570D_2MHcalib.dat", dtype='d', unpack=True))
 
 # Now the wavelength range
-w1 = 0.8
+w1 = 1
 w2 = 2.5
 
 # FWHM of data in microns(WE DON'T USE THIS FOR SPEX DATA. SET TO 0.0)
 fwhm = 0.0
 
 # DISTANCE (in parsecs)
-dist = 11.58
+dist = 5.84
 
 # How many patches & clouds do we want??
 # Must be at least 1 of each, but can turn off cloud below
@@ -64,7 +64,7 @@ nclouds = 1
 do_clouds = np.zeros([npatches], dtype='i')
 
 # Which patches are cloudy
-do_clouds[:] = 1
+do_clouds[:] = 0
 
 # set up cloud detail arrays
 cloudnum = np.zeros([npatches, nclouds], dtype='i')
@@ -87,11 +87,11 @@ cloudtype[:, 0] = 2
 
 # Are we assuming chemical equilibrium, or similarly precomputed gas abundances?
 # Or are we retrieving VMRs (0)
-chemeq = 1
+chemeq = 0
 
 # Are we doing H- bound-free, free-free continuum opacities?
 # (Is the profile going above 3000K in the photosphere?)
-do_bff = 1
+do_bff = 0
 
 # Set the profile type. If we're using a fixed one. Give the file name
 proftype = 2
@@ -109,7 +109,7 @@ press = pow(10, logfinePress)
 
 # Where are the cross sections?
 # give the full path
-xpath = "/nobackup/bburning/Linelists/"
+xpath = "../Linelists/"
 
 # now the cross sections
 
@@ -118,7 +118,7 @@ xpath = "/nobackup/bburning/Linelists/"
 # together at Asplund solar ratio. See Line at al (2015)
 # Else if K is after Na, they'll be separate
 
-gaslist = ['h2o', 'co', 'tio', 'vo', 'crh', 'feh', 'na', 'k']
+gaslist = ['h2o', 'CH4','CO', 'NH3', 'K', 'Na']
 
 ngas = len(gaslist)
 
@@ -126,11 +126,11 @@ ngas = len(gaslist)
 # Use Mike's Alkalis?
 malk = 0
 # Use Mike's CH4?
-mch4 = 0
+mch4 = 1
 
 # now set up the EMCEE stuff
 # How many dimensions???  Count them up in the p0 declaration. Carefully
-ndim = 15
+ndim = 14
 
 # How many walkers we running?
 nwalkers = ndim * 16
@@ -146,7 +146,7 @@ runtest = 0
 
 
 # Where is the output going?
-outdir = "/nobackup/bburning/"
+outdir = "../Results"
 
 # Names for the final output files:
 
@@ -174,30 +174,31 @@ do_fudge = 1
 # get first guess at scale factor
 r2d2 = (7e7 / (dist*3.086e+16))**2.
 
-
 # If we want fresh guess set to 0, total inherit the previous set 1
 # inherit plus randomise the VMRs. 2. See below to enter this filename
 fresh = 0
 p0 = np.empty([nwalkers, ndim])
 if fresh == 0:
-    p0[:, 0] = 0.5*np.random.randn(nwalkers).reshape(nwalkers)  # [Fe/H]
-    p0[:, 1] = 1.0 + (0.1*np.random.randn(nwalkers).reshape(nwalkers))  # C/O
-    p0[:, 2] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
-    p0[:, 3] = (0.5 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2
-    p0[:, 4] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:, 5] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2, :]**2)*(0.1 - 0.01))) +
-                        (0.01*min(obspec[2, 10::3]**2)))
-    # some cloud bits now. two clouds, thin first, then deck, both power
-    p0[:, 6] = np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 7] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:, 8] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:, 9] = np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,0] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # H2O
+    p0[:,1] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 3.5 # CH4
+    p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 7.5 # CO
+    p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.6 # NH3
+    p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5  # Na+K
+    p0[:,5] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
+    p0[:,6] = (0.5 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2
+    p0[:,7] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,8] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2, :]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2, 10::3]**2)))
+#    # some cloud bits now. two clouds, thin first, then deck, both power
+#    p0[:, 6] = np.random.randn(nwalkers).reshape(nwalkers)
+#    p0[:, 7] = np.random.rand(nwalkers).reshape(nwalkers)
+#    p0[:, 8] = np.random.rand(nwalkers).reshape(nwalkers)
+#    p0[:, 9] = np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:, 10] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 11] = 0.14 + 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 12] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 13] = 2.25 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 14] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:, 9] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 10] = 0.14 + 0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 11] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 12] = 2.25 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:, 13] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))
 
     for i in range(0, nwalkers):
         while True:
@@ -272,6 +273,8 @@ npress = press.size
 nwave = inwavenum.size
 r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
+
+
 
 # Here we are interpolating the linelist onto our fine pressure scale.
 # pickles have linelist as 4th entry....
@@ -351,19 +354,15 @@ else:
             
 ceTgrid = Tgrid
 
-runargs = gases_myP, chemeq, dist, cloudtype, do_clouds, gasnum, cloudnum, inlinetemps, coarsePress, press, inwavenum,\
-          linelist, cia, ciatemps, use_disort, fwhm, obspec, proftype, do_fudge, prof, do_bff, bff_raw, ceTgrid, \
-          metscale, coscale
+runargs = gases_myP, chemeq, dist, cloudtype, do_clouds, gasnum, cloudnum, inlinetemps, coarsePress, press, inwavenum,linelist, cia, ciatemps, use_disort, fwhm, obspec, proftype, do_fudge, prof, do_bff, bff_raw, ceTgrid,metscale, coscale
 
-    
+   
 # Now we set up the MPI bits
-pool = MPIPool()
+pool = MPIPool(loadbalance=True)
 if not pool.is_master():
     pool.wait()
     sys.exit()
 
-
-# put it all together in the sampler..
 
 
 sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
