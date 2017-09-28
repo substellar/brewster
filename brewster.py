@@ -382,7 +382,7 @@ for result in sampler.sample(p0, iterations=niter):
     if k > 1:
         tcycle = clock[k] - clock[k-1]
         times = open(rfile, "a")
-        times.write("*****TIME FOR CYCLE*****")
+        times.write("*****TIME FOR CYCLE*****\n")
         times.write(str(tcycle))
         times.close()
     k = k+1
