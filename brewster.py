@@ -184,21 +184,22 @@ if fresh == 0:
     p0[:,2] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 7.5 # CO
     p0[:,3] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 4.6 # NH3
     p0[:,4] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5  # Na+K
-    p0[:,5] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
-    p0[:,6] = (0.5 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2
-    p0[:,7] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    p0[:,8] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2, :]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2, 10::3]**2)))
+    p0[:,5] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0 #gravity
+    p0[:,6] = (0.5 * np.random.randn(nwalkers).reshape(nwalkers) * r2d2) + r2d2 #scale factor
+    p0[:,7] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001 #delta lambda
+    p0[:,8] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2, :]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2, 10::3]**2))) #fudge factor (logb) tolerance parameter
 #    # some cloud bits now. two clouds, thin first, then deck, both power
 #    p0[:, 6] = np.random.randn(nwalkers).reshape(nwalkers)
 #    p0[:, 7] = np.random.rand(nwalkers).reshape(nwalkers)
 #    p0[:, 8] = np.random.rand(nwalkers).reshape(nwalkers)
 #    p0[:, 9] = np.random.randn(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:, 9] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 10] = 0.14 + 0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 11] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 12] = 2.25 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:, 13] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:, 9] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)  # alpha1
+    p0[:, 10] = 0.14 + 0.05*np.random.randn(nwalkers).reshape(nwalkers)  # alpha2
+    p0[:, 11] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)  # P1
+    # space for P2 of using profile=3
+    p0[:, 12] = 2.25 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)  # P3
+    p0[:, 13] = 4200. + (500.*np.random.randn(nwalkers).reshape(nwalkers))  # T3
 
     for i in range(0, nwalkers):
         while True:
