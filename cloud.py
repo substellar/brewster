@@ -103,7 +103,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                         cloudprof[i,l2,j] = const *  (p2**2 - pl1**2) 
                         for k in range (l1+1,l2):
                             l1,l2 = atlev(k,press)
-                            cloudprof[j,k,j] = const * (l2**2 - l1**2)
+                            cloudprof[i,k,j] = const * (l2**2 - l1**2)
 
                     # We're sampling particle radius in log space        
                     if (cloudnum[i,j] < 50.):
@@ -263,14 +263,14 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
                 cloudparams[0:4,0,j] = theta[pc+nc:pc+4+nc]
                 cloudparams[4,0,j] = 0.0
                 nc = nc + 4
-            elif ((cloudtype[0,j] == 2) and (cloudnum[0,j] == 89)):
+            elif ((cloudtype[0,j] == 2) and (cloudnum[0,j] < 90)):
                 cloudparams[1:5,0,j] = theta[pc+nc:pc+4+nc]
                 nc = nc +4
             elif ((cloudtype[0,j] == 3) and (cloudnum[0,j] == 99)):
                 cloudparams[0:2,0,j] = theta[pc+nc:pc+nc+2]
                 cloudparams[3,0,j] =  theta[pc+nc+2]
                 nc = nc +3
-            elif ((cloudtype[0,j] == 3) and (cloudnum[0,j] == 89)):
+            elif ((cloudtype[0,j] == 3) and (cloudnum[0,j] < 90)):
                 cloudparams[0:2,0,j] = theta[pc+nc:pc+nc+2]
                 cloudparams[3:5,0,j] =  theta[pc+nc+2:pc+nc+4]
                 nc = nc + 4
@@ -278,7 +278,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
                 cloudparams[1,0,j] = theta[pc+nc]
                 cloudparams[3,0,j] = theta[pc+nc+1]
                 nc = nc +2
-            elif ((cloudtype[0,j] == 4) and (cloudnum[0,j] == 89)):
+            elif ((cloudtype[0,j] == 4) and (cloudnum[0,j] < 90)):
                 cloudparams[1,0,j] = theta[pc+nc]
                 cloudparams[3:5,0,j] = theta[pc+nc+1:pc+nc+3]
                 nc = nc +3                    
