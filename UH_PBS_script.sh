@@ -1,5 +1,5 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_FeEnst2c2P_multi
+#PBS -N 2M2224_FeEnst2c2P_AlkTrim
 #PBS -m abe
 #PBS -l nodes=6:ppn=18
 #PBS -l walltime=80:00:00
@@ -43,7 +43,7 @@ cd ${WDIR}
 
 mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 108 python 2m2224_FeEnst2c2p_multi.py > /beegfs/car/bb/brew_2M2224_FeEnst2c2p.log
+mpiexec -machinefile $PBS_NODEFILE -np 108 python 2m2224_FeEnst2c2p_AlkTrim.py > /beegfs/car/bb/brew_2M2224_FeEnst2c2p.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

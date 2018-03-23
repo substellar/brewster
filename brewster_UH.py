@@ -45,17 +45,17 @@ if not pool.is_master():
 # First get data and parameters for object
 
 # Give the run name
-runname = "2M2224_FeEnst2c2P_nf"
+runname = "2M2224_FeEnst2c2P_AlkTrim"
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("2M2224_multi.txt",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("2M2224_11_15_trim.dat",dtype='d',unpack='true'))
 
 # Now the wavelength range
-w1 = 0.8
+w1 = 1.1
 w2 = 15.
 
 # FWHM of data in microns(WE DON'T USE THIS FOR SPEX DATA. SET TO 0.0)
-fwhm = 0.005
+fwhm = -1
 
 # DISTANCE (in parsecs)
 dist = 11.35
@@ -68,7 +68,7 @@ nclouds = 2
 # set up array for setting patchy cloud answers
 do_clouds = np.zeros([npatches],dtype='i')
 
-# Which patches are cloudy
+# Which patchdes are cloudy
 do_clouds[:] = 1
 
 # set up cloud detail arrays
@@ -138,7 +138,7 @@ mch4 = 1
 
 # now set up the EMCEE stuff
 # How many dimensions???  Count them up in the p0 declaration. Carefully
-ndim  = 26
+ndim  = 31
 
 # How many walkers we running?
 nwalkers = ndim * 16
@@ -150,7 +150,7 @@ nburn = 3000
 niter = 30000
 
 # Is this a test or restart?
-runtest = 1
+runtest = 0
 
 # Are we writing the arguments to a pickle?
 # Set = 1 for write and exit (no run); = 2 for write and continue
@@ -181,7 +181,7 @@ rfile = "runtimes_"+runname+".dat"
 use_disort = 0 
 
 # use the fudge factor?
-do_fudge = 0
+do_fudge = 1
 
 
 # If we want fresh guess set to 0, total inherit the previous set 1
@@ -199,26 +199,30 @@ if (fresh == 0):
     p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
     p0[:,8] = np.random.rand(nwalkers).reshape(nwalkers) + 4.0
     p0[:,9] =  1.0e-19 + (np.random.rand(nwalkers).reshape(nwalkers) * 5.e-21)
-    p0[:,10] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
-    #p0[:,11] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,10] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1)
+    p0[:,11] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1)    
+    p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,14] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,15] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # some cloud bits now. two clouds, thin first, then deck, both power
-    p0[:,11] = np.random.rand(nwalkers).reshape(nwalkers) # covering fraction
-    p0[:,12] = np.random.rand(nwalkers).reshape(nwalkers)    
-    p0[:,13] = -2. + np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,14] = np.random.rand(nwalkers).reshape(nwalkers)    
-    p0[:,15] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,16] = 0.2*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,16] = np.random.rand(nwalkers).reshape(nwalkers) # covering fraction
+    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers)    
+    p0[:,18] = -2. + np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,19] = np.random.rand(nwalkers).reshape(nwalkers)    
+    p0[:,20] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,21] = 0.2*np.random.rand(nwalkers).reshape(nwalkers)
     # 2nd deep cloud
-    p0[:,17] = 0.5 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,18] = np.random.rand(nwalkers).reshape(nwalkers)       
-    p0[:,19] = np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,20] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,22] = 0.5 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,23] = np.random.rand(nwalkers).reshape(nwalkers)       
+    p0[:,24] = np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,25] = np.random.rand(nwalkers).reshape(nwalkers)
     # And now the T-P params
-    p0[:,21] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,22] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,23] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,24] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,25] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,26] = 0.39 + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,27] = 0.14 +0.05*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,28] = -1.2 + 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,29] = 2.25+ 0.2*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,30] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
     for i in range (0,nwalkers):
         while True:
             Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,ndim-5:])
