@@ -1,7 +1,8 @@
-def get_endchain(pic):
+def get_endchain(runname,fin):
     import pickle as pickle
     import numpy as np
-    if ('pk1' in pic):
+    if (fin == 1):
+        pic = runname+".pk1"
         with open(pic, 'rb') as input:
             sampler = pickle.load(input) 
         nwalkers = sampler.chain.shape[0]
@@ -16,7 +17,8 @@ def get_endchain(pic):
         max_end_like = np.amax(flatendprobs)
         print "maximum likelihood in final 2K iterations= ", max_end_like
 
-    elif('pic' in pic):
+    elif(fin ==0):
+        pic = runname+"_snapshot.pic"
         with open(pic, 'rb') as input:
             chain,probs = pickle.load(input) 
         nwalkers = chain.shape[0]
@@ -37,3 +39,5 @@ def get_endchain(pic):
         stop
         
     return flatendchain, flatendprobs,ndim
+
+

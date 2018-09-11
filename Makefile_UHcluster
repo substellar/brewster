@@ -11,6 +11,11 @@
 # ======================================================================
 # Let's start with the declarations
 # ======================================================================
+#export LD_LIBRARY_PATH /usr/local/lib/:/soft/intel/compilers_and_libraries/linux/lib/intel64/:/soft/intel/compilers_and_libraries/linux/ipp/lib/intel64/:/soft/intel/compilers_and_libraries/linux/mkl/lib/intel64/:/soft/intel/compilers_and_libraries/linux/tbb/lib/intel64
+
+
+checkLD:
+	@echo $(LD_LIBRARY_PATH)
 
 # The compiler
 #FC = gfortran
@@ -27,8 +32,8 @@
 #F77FLAGS = -O3 -fPIC -fdefault-real-8 -std=legacy -m64
 
 # Intel compiler version
- FCFLAGS = -O3 -fPIC
- F77FLAGS = -O3 -fPIC -autodouble
+ FCFLAGS = -O3 -fPIC -axCORE-AVX2
+ F77FLAGS = -O3 -fPIC -axCORE-AVX2 -autodouble
 
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
@@ -39,7 +44,7 @@ F77FLAGS += -I/usr/include
 #F7FLAGS += -I/usr/include
 
 # libraries needed for linking, unused in the examples
-LDFLAGS = -L/usr/local/lib/:/soft/intel-compilers/composerxe-2011.3.174/compiler/lib/intel64/
+LDFLAGS = -L/usr/local/lib/
 
 # List of executables to be built within the package
 #PROGRAMS = forward
@@ -106,14 +111,16 @@ pysig:
 
 pymod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
-	f2py --fcompiler=intelem --compiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib:/soft/intel-compilers/composerxe-2011.3.174/compiler/lib/intel64/ -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2 -fPIC -qopenmp" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
-	f2py --fcompiler=intelem  --compiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib:/soft/intel-compilers/composerxe-2011.3.174/compiler/lib/intel64/ -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2 -qopenmp" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+
 
 # Utility targets
 

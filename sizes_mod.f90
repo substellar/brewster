@@ -38,7 +38,7 @@ module sizes
   integer, parameter :: nmiewave = 196
 
   ! max wave number
-  integer, parameter :: maxwave = 19501
+  integer, parameter :: maxwave = 40000
 
   ! max number of patches
   integer, parameter :: maxpatch = 4
