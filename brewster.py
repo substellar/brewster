@@ -154,6 +154,7 @@ mch4 = 0
 # How many dimensions???  Count them up in the p0 declaration. Carefully
 ndim  = 29
 
+
 # How many walkers we running?
 nwalkers = ndim * 16
 
@@ -196,7 +197,6 @@ picdump = runname+"_snapshot.pic"
 # Names for status file runtimes
 statfile = "status_ball"+runname+".txt"
 rfile = "runtimes_"+runname+".dat"
-
 
 # scale factor r2d2 from distance 1 Rj radius
 r2d2 = (71492e3)**2. / (dist * 3.086e+16)**2.
