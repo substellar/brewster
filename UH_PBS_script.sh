@@ -1,20 +1,24 @@
 #PBS -S /bin/tcsh
-#PBS -N D1425_nc
+#PBS -N 2M2224_FeEnst2c2P_AlkTrim
 #PBS -m abe
-#PBS -l nodes=16:ppn=6
-#PBS -l walltime=00:30:00
+#PBS -l nodes=6:ppn=18
+#PBS -l walltime=80:00:00
 #PBS -k oe
 #PBS -q main
 
+module load use.own
 module unload mpich2-x86_64
-module load mpich2-intel
-#module load mvapich2
+module load intel-mpi
 
-#setenv OMP_NUM_THREADS  12
 
-setenv WDIR /home/bb/retrievals/ABDor
+setenv WDIR /home/bb/retrievals/longWaveMie
+
+setenv PATH ${PATH}:${WDIR}
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
-setenv PATH ${WDIR}:${PATH}    
+
+unlimit stacksize
+
+limit coredumpsize 0
 
 set time_start=`date '+%T%t%d_%h_06'`
   
@@ -34,17 +38,16 @@ echo PBS: PATH = $PBS_O_PATH
 echo ------------------------------------------------------
 
 
-set NPROCS = `wc -l < $PBS_NODEFILE`
-
-echo PBS: NProcs = $NPROCS
 
 cd ${WDIR}
 
+mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -np $NPROCS python D1425_nc_UH.py > /beegfs/car/bb/brew_D1425_nc.log
+mpiexec -machinefile $PBS_NODEFILE -np 108 python 2m2224_FeEnst2c2p_AlkTrim.py > /beegfs/car/bb/brew_2M2224_FeEnst2c2p.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
 echo Ended at: $time_end
 echo ------------------------------------------------------
 echo Job ends
+
