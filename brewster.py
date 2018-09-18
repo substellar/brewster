@@ -75,14 +75,14 @@ npatches = 1
 nclouds = 2
 
 # set up array for setting patchy cloud answers
-do_clouds = np.zeros([npatches],dtype='i')
+do_clouds = np.zeros([npatches], dtype='i')
 
 # Which patchdes are cloudy
 do_clouds[:] = 1
 
 # set up cloud detail arrays
-cloudnum = np.zeros([npatches,nclouds],dtype='i')
-cloudtype =np.zeros([npatches,nclouds],dtype='i')
+cloudnum = np.zeros([npatches, nclouds], dtype='i')
+cloudtype = np.zeros([npatches, nclouds], dtype='i')
 
 # Now fill cloud details. What kind of clouds and shape are they?
 # Cloud types
@@ -92,6 +92,7 @@ cloudtype =np.zeros([npatches,nclouds],dtype='i')
 # 4: deep thick cloud with fixed height log dP = 0.005
 # In both cases the cloud properties are density, rg, rsig for real clouds
 # and dtau, w0, and power law for cloudnum = 89 or 99 for grey
+
 cloudnum[:,0] = 5
 cloudtype[:,0] = 1
 
@@ -108,7 +109,7 @@ chemeq = 0
 
 # Are we doing H- bound-free, free-free continuum opacities?
 # (Is the profile going above 3000K in the photosphere?)
-do_bff = 1
+do_bff = 0
 
 # Set the profile type. If we're using a fixed one. Give the file name
 # Set the profile type. If we're using a fixed one. Give the file name
@@ -124,6 +125,7 @@ pfile = "t1700g1000f3.dat"
 # set up pressure grids in log(bar) cos its intuitive
 logcoarsePress = np.arange(-4.0, 2.5, 0.53)
 logfinePress = np.arange(-4.0, 2.4, 0.1)
+
 # but forward model wants pressure in bar
 coarsePress = pow(10,logcoarsePress)
 press = pow(10,logfinePress)
@@ -148,7 +150,7 @@ ngas = len(gaslist)
 # Use Mike's (Burrows) Alkalis?
 malk = 0
 # Use Mike's CH4?
-mch4 = 0
+mch4 = 1
 
 # now set up the EMCEE stuff
 # How many dimensions???  Count them up in the p0 declaration. Carefully
@@ -198,6 +200,7 @@ picdump = runname+"_snapshot.pic"
 statfile = "status_ball"+runname+".txt"
 rfile = "runtimes_"+runname+".dat"
 
+
 # scale factor r2d2 from distance 1 Rj radius
 r2d2 = (71492e3)**2. / (dist * 3.086e+16)**2.
 
@@ -245,15 +248,16 @@ if (fresh == 0):
     p0[:,28] = 4200. + (500.*  np.random.randn(nwalkers).reshape(nwalkers))
     for i in range (0,nwalkers):
         while True:
-            Tcheck = TPmod.set_prof(proftype,coarsePress,press,p0[i,ndim-5:])
-            if (min(Tcheck) > 1.0):
+            Tcheck = TPmod.set_prof(proftype, coarsePress, press, p0[i, ndim-5:])
+            if min(Tcheck) > 1.0:
                 break
             else:
-                p0[i,ndim-5] = 0.39 + 0.01*np.random.randn()
-                p0[i,ndim-4] = 0.14 + 0.01*np.random.randn()
-                p0[i,ndim-3] = -1.2 + 0.2*np.random.randn()
-                p0[i,ndim-2] = 2. + 0.2*np.random.randn()
-                p0[i,ndim-1] = 4200. + (200.*  np.random.randn())
+                p0[i, ndim-5] = 0.39 + 0.01*np.random.randn()
+                p0[i, ndim-4] = 0.14 + 0.01*np.random.randn()
+                p0[i, ndim-3] = -1.2 + 0.2*np.random.randn()
+                p0[i, ndim-2] = 2. + 0.2*np.random.randn()
+                p0[i, ndim-1] = 4200. + (200.*np.random.randn())
+
 
 # If we're doing profile type 1, we need to replace the last TP entries with
 # this stuff.....
@@ -274,10 +278,10 @@ if (fresh != 0):
 
 
 
-prof = np.full(13,100.)
-if (proftype == 9):
-    modP,modT = np.loadtxt(pfile,skiprows=1,usecols=(1,2),unpack=True)
-    tfit = InterpolatedUnivariateSpline(np.log10(modP),modT,k=1)
+prof = np.full(13, 100.)
+if proftype == 9:
+    modP, modT = np.loadtxt(pfile, skiprows=1, usecols=(1, 2), unpack=True)
+    tfit = InterpolatedUnivariateSpline(np.log10(modP), modT, k=1)
     prof = tfit(logcoarsePress)
 
 
@@ -292,60 +296,63 @@ with open('gaslist.dat') as fa:
     
     
 list1 = []    
-for i in range(0,ngas):
-    for j in range(0,totgas):
-            if (gasdata[j][1].lower() == gaslist[i].lower()):
+for i in range(0, ngas):
+    for j in range(0, totgas):
+            if gasdata[j][1].lower() == gaslist[i].lower():
                 list1.append(gasdata[j])
 
-if (malk == 1):
-    for i in range (0,ngas):    
+if malk == 1:
+    for i in range(0, ngas):
         list1[i] = [w.replace('K_xsecs.pic', 'K_Mike_xsecs.pic') for w in list1[i]]
         list1[i] = [w.replace('Na_xsecs.pic', 'Na_Mike_xsecs.pic') for w in list1[i]]
 
-if (mch4 ==1):
-    for i in range (0,ngas):    
+if mch4 == 1:
+    for i in range(0, ngas):
         list1[i] = [w.replace('CH4_xsecs.pic', 'CH4_Mike_xsecs.pic') for w in list1[i]]
     
 
 lists = [xpath+i[3] for i in list1[0:ngas]]
-gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
+gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]], dtype='i'))
 
 
 # get the basic framework from water list
-rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open(xpath+'/H2O_xsecs.pic', "rb" ) )
+rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(xpath+'/H2O_xsecs.pic', "rb"))
 
 wn1 = 10000./w2
 wn2 = 10000. / w1
-inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))],dtype='float64')
+inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2,
+                                                                               rawwavenum[:] < wn1)))], dtype='float64')
 ntemps = inlinetemps.size
-npress= press.size
+npress = press.size
 nwave = inwavenum.size
 r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
 
+
+
 # Here we are interpolating the linelist onto our fine pressure scale.
 # pickles have linelist as 4th entry....
-linelist = (np.ones([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
-for gas in range (0,ngas):
-    inlinelist= pickle.load( open(lists[gas], "rb" ) )[3]
-    for i in range (0,ntemps):
-        for j in range (r1,r2+1):
-            pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
-            linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(press)))
+linelist = (np.ones([ngas, npress, ntemps, nwave], order='F')).astype('float64', order='F')
+for gas in range(0, ngas):
+    inlinelist = pickle.load(open(lists[gas], "rb"))[3]
+    for i in range(0, ntemps):
+        for j in range(r1, r2+1):
+            pfit = interp1d(np.log10(inpress), np.log10(inlinelist[:, i, j]))
+            linelist[gas, :, i, (j-r1)] = np.asfortranarray(pfit(np.log10(press)))
 
 linelist[np.isnan(linelist)] = -50.0
 
 
 
 # Get the cia bits
-tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
-cia = np.asfortranarray(np.empty((4,ciatemps.size,nwave)),dtype='float32')
-cia[:,:,:] = tmpcia[:,:,:nwave] 
+tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat", inwavenum)
+cia = np.asfortranarray(np.empty((4, ciatemps.size, nwave)), dtype='float32')
+cia[:, :, :] = tmpcia[:, :, :nwave]
 ciatemps = np.asfortranarray(ciatemps, dtype='float32')
 
 
 # Sort out the BFF opacity stuff and chemical equilibrium tables:
-metscale,coscale,Tgrid,Pgrid,gasnames,abunds = pickle.load( open( "chem_eq_tables.pic", "rb" ) )
+metscale, coscale, Tgrid, Pgrid, gasnames, abunds = pickle.load(open("chem_eq_tables.pic", "rb"))
 nlayers = press.shape[0]
 nabpress = Pgrid.size
 nabtemp = Tgrid.size
@@ -355,55 +362,54 @@ nco = coscale.size
 
 
 
-bff_raw = np.zeros([nabtemp,nlayers,3])
-gases_myP = np.zeros([nmet,nco,nabtemp,nlayers,ngas+3])
-gases = np.zeros([nmet,nco,nabtemp,nabpress,ngas+3])
+bff_raw = np.zeros([nabtemp, nlayers, 3])
+gases_myP = np.zeros([nmet, nco, nabtemp, nlayers, ngas+3])
+gases = np.zeros([nmet, nco, nabtemp, nabpress, ngas+3])
 
-if (chemeq == 0):
+if chemeq == 0:
     # Just want the ion fractions for solar metallicity in this case
-    ab_myP = np.empty([nabtemp,nlayers,nabgas])
+    ab_myP = np.empty([nabtemp, nlayers, nabgas])
     i1 = np.where(metscale == 0.0)
     i2 = np.where(coscale == 1.0)
-    for gas in range (0,nabgas):
-        for i in range (0,nabtemp):
-            pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i1[0],i2[0],i,:,gas]),k=1)
-            ab_myP[i,:,gas] = pfit(np.log10(press))
+    for gas in range(0, nabgas):
+        for i in range(0, nabtemp):
+            pfit = InterpolatedUnivariateSpline(Pgrid, np.log10(abunds[i1[0], i2[0], i, :, gas]), k=1)
+            ab_myP[i, :, gas] = pfit(np.log10(press))
             
-            bff_raw = np.zeros([nabtemp,nlayers,3])
-            bff_raw[:,:,0] = ab_myP[:,:,0]
-            bff_raw[:,:,1] = ab_myP[:,:,2]
-            bff_raw[:,:,2] = ab_myP[:,:,4]
+            bff_raw = np.zeros([nabtemp, nlayers, 3])
+            bff_raw[:, :, 0] = ab_myP[:, :, 0]
+            bff_raw[:, :, 1] = ab_myP[:, :, 2]
+            bff_raw[:, :, 2] = ab_myP[:, :, 4]
 
 else:
     # In this case we need the rows for the gases we're doing and ion fractions
-    gases[:,:,:,:,0] = abunds[:,:,:,:,0]
-    gases[:,:,:,:,1] = abunds[:,:,:,:,2]
-    gases[:,:,:,:,2] = abunds[:,:,:,:,4]
+    gases[:, :, :, :, 0] = abunds[:, :, :, :, 0]
+    gases[:, :, :, :, 1] = abunds[:, :, :, :, 2]
+    gases[:, :, :, :, 2] = abunds[:, :, :, :, 4]
     nmatch = 0 
-    for i in range(0,ngas):
-        for j in range(0,nabgas):
-            if (gasnames[j].lower() == gaslist[i].lower()):
-                gases[:,:,:,:,i+3] = abunds[:,:,:,:,j]
+    for i in range(0, ngas):
+        for j in range(0, nabgas):
+            if gasnames[j].lower() == gaslist[i].lower():
+                gases[:, :, :, :, i+3] = abunds[:, :, :, :, j]
                 nmatch = nmatch + 1
-    if (nmatch != ngas):
-        print "you've requested a gas that isn't in the Vischer table. Please chaeck and try again."
+    if nmatch != ngas:
+        print "you've requested a gas that isn't in the Vischer table. Please check and try again."
         exit
     
-    for i in range(0,nmet):
-        for j in range(0,nco):
-            for k in range(0,ngas+3):
-                for l in range(0,nabtemp):
-                    pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(gases[i,j,l,:,k]),k=1)
-                    gases_myP[i,j,l,:,k] = pfit(np.log10(press))
+    for i in range(0, nmet):
+        for j in range(0, nco):
+            for k in range(0, ngas+3):
+                for l in range(0, nabtemp):
+                    pfit = InterpolatedUnivariateSpline(Pgrid, np.log10(gases[i, j, l, :, k]), k=1)
+                    gases_myP[i, j, l, :, k] = pfit(np.log10(press))
     
 
     
             
 ceTgrid = Tgrid
 
-runargs = gases_myP,chemeq,dist, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge, prof,do_bff,bff_raw,ceTgrid,metscale,coscale
+runargs = gases_myP, chemeq, dist, cloudtype, do_clouds, gasnum, cloudnum, inlinetemps, coarsePress, press, inwavenum,linelist, cia, ciatemps, use_disort, fwhm, obspec, proftype, do_fudge, prof, do_bff, bff_raw, ceTgrid,metscale, coscale
 
-    
 
 # Write the arguments to a pickle if needed
 if (make_arg_pickle > 0):
@@ -411,31 +417,28 @@ if (make_arg_pickle > 0):
     if( make_arg_pickle == 1):
         sys.exit()
 
-    
-# put it all together in the sampler..
 
-
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),pool=pool)
-#'''
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
+# '''
 # run the sampler
 print "running the sampler"
 clock = np.empty(80000)
-k=0
-times = open(rfile,"w")
+k = 0
+times = open(rfile, "w")
 times.close()
-if (runtest == 0):
-    pos,prob,state = sampler.run_mcmc(p0,nburn)
+if runtest == 0:
+    pos, prob, state = sampler.run_mcmc(p0, nburn)
     sampler.reset()
     p0 = pos
-for result in sampler.sample(p0,iterations=niter):
+for result in sampler.sample(p0, iterations=niter):
     clock[k] = time.clock()
-    if (k > 1):
+    if k > 1:
         tcycle = clock[k] - clock[k-1]
-        times = open(rfile,"a")
-        times.write("*****TIME FOR CYCLE*****")
+        times = open(rfile, "a")
+        times.write("*****TIME FOR CYCLE*****\n")
         times.write(str(tcycle))
         times.close()
-    k=k+1
+    k = k+1
     position = result[0]
     f = open(statfile, "w")
     f.write("****Iteration*****")
@@ -447,6 +450,7 @@ for result in sampler.sample(p0,iterations=niter):
     f.write("*****Values****")
     f.write(str(result[0]))
     f.close()
+
     if (k==10 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 or k==19000 or k==20000 or k==21000 or k==22000 or k==23000 or k==24000 or k==25000 or k==26000 or k==27000 or k==28000 or k==29000 or k == 30000 or k == 35000 or k == 40000 or k == 45000 or k == 50000 or k == 55000 or k == 60000 or k == 65000):
         chain=sampler.chain
 	lnprob=sampler.lnprobability
@@ -455,8 +459,10 @@ for result in sampler.sample(p0,iterations=niter):
 	pickle.dump(chain[:,k-1,:], open(chaindump,'wb'))
 
 
+
 # get rid of problematic bit of sampler object
 del sampler.__dict__['pool']
+
 
 def save_object(obj, filename):
     with open(filename, "wb") as output:
@@ -464,6 +470,4 @@ def save_object(obj, filename):
 
 pool.close()
 
-save_object(sampler,outdir+finalout)
-
-
+save_object(sampler, outdir+finalout)
