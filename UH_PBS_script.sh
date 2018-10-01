@@ -1,20 +1,21 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_FeEnst2c2P_AlkTrim
+#PBS -N g570test
 #PBS -m abe
-#PBS -l nodes=6:ppn=18
-#PBS -l walltime=80:00:00
+#PBS -l nodes=4:ppn=29
+#PBS -l walltime=00:30:00
 #PBS -k oe
 #PBS -q main
 
+source ~/.tcshrc
 module load use.own
 module unload mpich2-x86_64
-module load intel-mpi
+module load intel-mpi 
 
-
-setenv WDIR /home/bb/retrievals/longWaveMie
+setenv WDIR /home/bb/retrievals/g570test
 
 setenv PATH ${PATH}:${WDIR}
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
+
 
 unlimit stacksize
 
@@ -41,9 +42,12 @@ echo ------------------------------------------------------
 
 cd ${WDIR}
 
-mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
 
-mpiexec -machinefile $PBS_NODEFILE -np 108 python 2m2224_FeEnst2c2p_AlkTrim.py > /beegfs/car/bb/brew_2M2224_FeEnst2c2p.log
+mpirun -env I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=1 \
+       -machinefile $PBS_NODEFILE -n 116 -ppn 29 \
+       python g570test.py > /beegfs/car/bb/g570test.log
+
+
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
@@ -51,3 +55,4 @@ echo Ended at: $time_end
 echo ------------------------------------------------------
 echo Job ends
 
+#mpdallexit
