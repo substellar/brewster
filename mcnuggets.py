@@ -2,6 +2,7 @@
 
 
 """ McNuggets: the post-processing tool for brewster"""
+from __future__ import print_function
 
 import numpy as np
 import scipy as sp
@@ -227,15 +228,15 @@ nwalkers = sampler.chain.shape[0]
 niter = sampler.chain.shape[1]
 ndim = sampler.chain.shape[2]
 
-print(nwalkers,' walkers')
-print(ndim,' dimensions')
+print((nwalkers,' walkers'))
+print((ndim,' dimensions'))
     
 samples = sampler.chain[:,niter-3000:,:].reshape((-1, ndim))
 
 #samples = samples[1500:2500,:]
 slen = samples.shape[0]
 
-print(slen, ' samples for post production')
+print((slen, ' samples for post production'))
 
 
 # set up run arguments
@@ -384,7 +385,7 @@ if COMM.rank == 0:
     # Flatten list of lists.
     results = [_i for tmp in results for _i in tmp]
 
-    print "writing results to samplus"
+    print("writing results to samplus")
 
     samplus = np.array(results)
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 def get_endchain(runname,fin):
     import pickle as pickle
     import numpy as np
@@ -10,12 +11,12 @@ def get_endchain(runname,fin):
         ndim = sampler.chain.shape[2]
         flatprobs = sampler.lnprobability[:,:].reshape((-1))
         max_like = flatprobs[np.argmax(flatprobs)]
-        print "maximum likelihood = ", max_like
+        print("maximum likelihood = ", max_like)
         flatendchain = sampler.chain[:,niter-2000:,:].reshape((-1,ndim))
         flatendprobs = sampler.lnprobability[:,niter-2000:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
-        print "maximum likelihood in final 2K iterations= ", max_end_like
+        print("maximum likelihood in final 2K iterations= ", max_end_like)
 
     elif(fin ==0):
         pic = runname+"_snapshot.pic"
@@ -27,15 +28,15 @@ def get_endchain(runname,fin):
         niter = np.count_nonzero(chain) / (nwalkers*ndim)
         flatprobs = probs[:,:].reshape((-1))
         max_like = flatprobs[np.argmax(probs)]
-        print "Unfinished symphony. Number of successful iterations = ", niter
-        print "maximum likelihood = ", max_like
+        print("Unfinished symphony. Number of successful iterations = ", niter)
+        print("maximum likelihood = ", max_like)
         flatendchain = chain[:,(niter)-2000:niter].reshape((-1,ndim))
         flatendprobs = probs[:,(niter)-2000:niter].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
-        print "maximum likelihood in final 2K iterations= ", max_end_like
+        print("maximum likelihood in final 2K iterations= ", max_end_like)
     else:
-        print "File extension not recognised"
+        print("File extension not recognised")
         stop
         
     return flatendchain, flatendprobs,ndim

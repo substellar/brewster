@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """ Module of bits to process mags to fluxes and spectra to band fluxes """
+from __future__ import print_function
 
 import scipy as sp
 import numpy as np
@@ -66,7 +67,7 @@ def getfilt(filtname):
         bw = 4.1013
         isow = 22.08
     else:
-        print "Filter ", filtname, " not recognised"
+        print("Filter ", filtname, " not recognised")
         return np.nan
 
     return rawfilt, bw, isow

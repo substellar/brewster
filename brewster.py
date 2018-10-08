@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """This is Brewster: the golden retriever of smelly atmospheres"""
+from __future__ import print_function
 
 import multiprocessing
 import time
@@ -10,6 +11,7 @@ import emcee
 import testkit
 import ciamod
 import TPmod
+import settings
 import os
 import gc
 import sys
@@ -33,11 +35,7 @@ __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
-# Now we set up the MPI bits
-pool=MPIPool(loadbalance=True)
-if not pool.is_master():
-    pool.wait()
-    sys.exit()
+
 
 # This module set up the model arguments the drop these into
 # theta(state vector) or runargs
@@ -393,7 +391,7 @@ else:
                 gases[:, :, :, :, i+3] = abunds[:, :, :, :, j]
                 nmatch = nmatch + 1
     if nmatch != ngas:
-        print "you've requested a gas that isn't in the Vischer table. Please check and try again."
+        print("you've requested a gas that isn't in the Vischer table. Please check and try again.")
         exit
     
     for i in range(0, nmet):
@@ -408,20 +406,25 @@ else:
             
 ceTgrid = Tgrid
 
-runargs = gases_myP, chemeq, dist, cloudtype, do_clouds, gasnum, cloudnum, inlinetemps, coarsePress, press, inwavenum,linelist, cia, ciatemps, use_disort, fwhm, obspec, proftype, do_fudge, prof, do_bff, bff_raw, ceTgrid,metscale, coscale
+settings.init()
+settings.runargs = gases_myP,chemeq,dist, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge, prof,do_bff,bff_raw,ceTgrid,metscale,coscale
 
+pool=MPIPool(loadbalance=True)
+if not pool.is_master():
+    pool.wait()
+    sys.exit()
 
 # Write the arguments to a pickle if needed
 if (make_arg_pickle > 0):
-    pickle.dump(runargs,open(outdir+runname+"_runargs.pic","wb"))
+    pickle.dump(settings.runargs,open(outdir+runname+"_runargs.pic","wb"))
     if( make_arg_pickle == 1):
         sys.exit()
 
 
-sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs), pool=pool)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, pool=pool)
 # '''
 # run the sampler
-print "running the sampler"
+print("running the sampler")
 clock = np.empty(80000)
 k = 0
 times = open(rfile, "w")

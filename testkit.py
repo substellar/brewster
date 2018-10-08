@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """ Module of bits to plug into Brewster """
+from __future__ import print_function
 import math
 import time
 import gc
@@ -9,6 +10,7 @@ import scipy as sp
 import forwardmodel
 import cloud
 import TPmod
+import settings
 from scipy import interpolate
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import interp1d
@@ -18,8 +20,6 @@ from astropy.convolution import Gaussian1DKernel
 from bensconv import spex_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
-#from pysynphot import observation
-#from pysynphot import spectrum
 
 __author__ = "Ben Burningham"
 __copyright__ = "Copyright 2015 - Ben Burningham"
@@ -30,27 +30,17 @@ __maintainer__ = "Ben Burningham"
 __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
-# This bit is for flux conservation rebin of spectrum
-#def rebinspec(wave, specin, wavenew,):
-#    spec = spectrum.ArraySourceSpectrum(wave=wave, flux=specin)
-#    f = np.ones(len(wave))
-#    filt = spectrum.ArraySpectralElement(wave, f, waveunits='microns')
-#    obs = observation.Observation(spec, filt, binset=wavenew, force='taper')
- 
-#    return obs.binflux
-    
-    
-def lnprob(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale):
 
     
-    runargs = gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale
+def lnprob(theta):
+
 
     # now check against the priors, if not beyond them, run the likelihood
-    lp = lnprior(theta,*runargs)
+    lp = lnprior(theta)
     if not np.isfinite(lp):
         return -np.inf
     # run the likelihood
-    lnlike_value = lnlike(theta,*runargs)
+    lnlike_value = lnlike(theta)
 
     lnprb = lp+lnlike_value
     if np.isnan(lnprb):
@@ -58,9 +48,9 @@ def lnprob(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inli
     return lnprb
 
 
-def lnprior(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale):
+def lnprior(theta):
 
-    #    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = runargs
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     # set up the priors here
     if (chemeq != 0):
@@ -536,35 +526,52 @@ def lnprior(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inl
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3 
         #         and  and (-5. < logbeta < 0))
-        print "Rj = ", Rj
-        print "M = ", M
-        print "[M/H] = ",mh
-        print "[C/O] = ", co
-        print "logg = ", logg
-        print "R2D2 = ", r2d2
-        print "dlam = ", dlam
-        print "VMRs = ", invmr
-        print "ng = ", ng
-        print "sum VMRs = ", np.sum(10.**(invmr[0:ng]))
-        print "cloud_top = ", cloud_top
-        print "cloud_bot = ", cloud_bot
-        print "loga = ", loga
-        print "b = ", b
-        print "cloud_tau0 = ", cloud_tau0
-        print "w0 = ", w0
-        print "pcover = ", pcover
-        print "sum(pcover) = ", np.sum(pcover)
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
-            and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
-            and  metscale[0] <= mh <= metscale[-1]
-            and  coscale[0] <= co <= coscale[-1]
-            and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
-            and  0. < r2d2 < 1.
-            and 0.1 < scale1 < 10.0
-            and 0.1 < scale2 < 10.0
-            and  0.5 < Rj < 2.0
-            and -0.01 < dlam < 0.01 
+        print("Rj = ", Rj)
+        print("M = ", M)
+        print("[M/H] = ",mh)
+        print("[C/O] = ", co)
+        print("logg = ", logg)
+        print("R2D2 = ", r2d2)
+        print("scale1 = ",scale1)
+        print("scale2 = ",scale1)
+        print("Rj = ", Rj)
+        print("dlam = ", dlam)
+        print("logf = ", logf)
+        print("logf1 = ", logf1)
+        print("logf2 = ", logf2)
+        print("logf3 = ", logf3)
+        print(((0.01*np.min(obspec[2,:]**2))))
+        print((100.*np.max(obspec[2,:]**2)))
+        print("VMRs = ", invmr)
+        print("ng = ", ng)
+        print("sum VMRs = ", np.sum(10.**(invmr[0:ng])))
+        print("cloud_top = ", cloud_top)
+        print("cloud_bot = ", cloud_bot)
+        print("cloud_height = ", cloud_height)
+        print("loga = ", loga)
+        print("b = ", b)
+        print("cloud_tau0 = ", cloud_tau0)
+        print("w0 = ", w0)
+        print("taupow = ", taupow)
+        print("pcover = ", pcover)
+        print("sum(pcover) = ", np.sum(pcover))
+        print("metscale = ", metscale)
+        print("coscale = ", coscale)
+        print("press[press.size-1]  = ", press[press.size-1])
+        print("press[0] = ",press[0]) 
+        if (all(invmr[0:ng] > -12.0)
+            and all(invmr[0:ng] < 0.0)
+            and (np.sum(10.**(invmr[0:ng])) < 1.0)
+            and all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and (metscale[0] <= mh <= metscale[-1])
+            and (coscale[0] <= co <= coscale[-1])
+            and (0.0 < logg < 6.0)
+            and (1.0 < M < 80.) 
+            and (0. < r2d2 < 1.)
+            and (0.1 < scale1 < 10.0)
+            and (0.1 < scale2 < 10.0)
+            and (0.5 < Rj < 2.0)
+            and (-0.01 < dlam < 0.01) 
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
@@ -589,11 +596,12 @@ def lnprior(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inl
             and np.all(b < 1.0)
             and np.all(b > 0.0)):
             return 0.0
+
         return -np.inf
 
-def lnlike(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale):
+def lnlike(theta):
 
-    runargs = gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale 
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     #intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,ceTgrid):
 
@@ -601,7 +609,7 @@ def lnlike(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inli
     # get the spectrum
     # for MCMC runs we don't want diagnostics
     gnostics = 0
-    shiftspec, photspec,tauspec,cfunc = modelspec(theta,runargs,gnostics)
+    shiftspec, photspec,tauspec,cfunc = modelspec(theta,settings.runargs,gnostics)
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
             ng = gasnum.size - 1
@@ -789,8 +797,8 @@ def lnlike(theta,gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inli
     return lnLik
 
 
-def modelspec(theta, runargs,gnostics):
-    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = runargs
+def modelspec(theta, args,gnostics):
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
     nlayers = press.size
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
@@ -925,7 +933,6 @@ def modelspec(theta, runargs,gnostics):
         for i in range(0,ngas):                              
             logVMR[i,:] = tmpvmr[i]
 
-    #print logVMR
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
 

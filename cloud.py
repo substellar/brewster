@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """ Module of processes to interpret cloud parameters from Brewster in testkit"""
+from __future__ import print_function
 
 import numpy as np
 import scipy as sp

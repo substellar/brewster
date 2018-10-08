@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """This is Brewster: the golden retriever of smelly atmospheres"""
+from __future__ import print_function
 
 import multiprocessing
 import time
@@ -359,7 +360,7 @@ else:
                 gases[:,:,:,:,i+3] = abunds[:,:,:,:,j]
                 nmatch = nmatch + 1
     if (nmatch != ngas):
-        print "you've requested a gas that isn't in the Vischer table. Please chaeck and try again."
+        print("you've requested a gas that isn't in the Vischer table. Please chaeck and try again.")
         exit
     
     for i in range(0,nmet):
@@ -391,7 +392,7 @@ if (make_arg_pickle > 0):
 sampler = emcee.EnsembleSampler(nwalkers, ndim, testkit.lnprob, args=(runargs),pool=pool)
 #'''
 # run the sampler
-print "running the sampler"
+print("running the sampler")
 clock = np.empty(80000)
 k=0
 times = open(rfile,"w")
