@@ -1,11 +1,12 @@
 from __future__ import print_function
+import pickle
+import numpy as np
+import os
+
 def get_endchain(runname,fin):
-    import pickle as pickle
-    import numpy as np
     if (fin == 1):
         pic = runname+".pk1"
-        with open(pic, 'rb') as input:
-            sampler = pickle.load(input) 
+        sampler = pickle_load(pic)
         nwalkers = sampler.chain.shape[0]
         niter = sampler.chain.shape[1]
         ndim = sampler.chain.shape[2]
@@ -13,25 +14,24 @@ def get_endchain(runname,fin):
         max_like = flatprobs[np.argmax(flatprobs)]
         print("maximum likelihood = ", max_like)
         flatendchain = sampler.chain[:,niter-2000:,:].reshape((-1,ndim))
-        flatendprobs = sampler.lnprobability[:,niter-2000:].reshape((-1))
+        flatendprobs = sampler.lnprobability[niter-2000:,:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
 
     elif(fin ==0):
         pic = runname+"_snapshot.pic"
-        with open(pic, 'rb') as input:
-            chain,probs = pickle.load(input) 
+        chain,probs = pickle_load(pic) 
         nwalkers = chain.shape[0]
         ntot = chain.shape[1]
         ndim = chain.shape[2]
-        niter = np.count_nonzero(chain) / (nwalkers*ndim)
+        niter = int(np.count_nonzero(chain) / (nwalkers*ndim))
         flatprobs = probs[:,:].reshape((-1))
         max_like = flatprobs[np.argmax(probs)]
         print("Unfinished symphony. Number of successful iterations = ", niter)
         print("maximum likelihood = ", max_like)
-        flatendchain = chain[:,(niter)-2000:niter].reshape((-1,ndim))
-        flatendprobs = probs[:,(niter)-2000:niter].reshape((-1))
+        flatendchain = chain[:,(niter-2000):niter,:].reshape((-1,ndim))
+        flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
@@ -164,3 +164,45 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
     return outspec
             
 
+class MacOSFile(object):
+
+    def __init__(self, f):
+        self.f = f
+
+    def __getattr__(self, item):
+        return getattr(self.f, item)
+
+    def read(self, n):
+        # print("reading total_bytes=%s" % n, flush=True)
+        if n >= (1 << 31):
+            buffer = bytearray(n)
+            idx = 0
+            while idx < n:
+                batch_size = min(n - idx, 1 << 31 - 1)
+                # print("reading bytes [%s,%s)..." % (idx, idx + batch_size), end="", flush=True)
+                buffer[idx:idx + batch_size] = self.f.read(batch_size)
+                # print("done.", flush=True)
+                idx += batch_size
+            return buffer
+        return self.f.read(n)
+
+    def write(self, buffer):
+        n = len(buffer)
+        print("writing total_bytes=%s..." % n, flush=True)
+        idx = 0
+        while idx < n:
+            batch_size = min(n - idx, 1 << 31 - 1)
+            print("writing bytes [%s, %s)... " % (idx, idx + batch_size), end="", flush=True)
+            self.f.write(buffer[idx:idx + batch_size])
+            print("done.", flush=True)
+            idx += batch_size
+
+
+def pickle_dump(obj, file_path):
+    with open(file_path, "wb") as f:
+        return pickle.dump(obj, MacOSFile(f), protocol=pickle.HIGHEST_PROTOCOL)
+
+
+def pickle_load(file_path):
+    with open(file_path, "rb") as f:
+        return pickle.load(MacOSFile(f))

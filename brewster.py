@@ -374,10 +374,10 @@ if chemeq == 0:
             pfit = InterpolatedUnivariateSpline(Pgrid, np.log10(abunds[i1[0], i2[0], i, :, gas]), k=1)
             ab_myP[i, :, gas] = pfit(np.log10(press))
             
-            bff_raw = np.zeros([nabtemp, nlayers, 3])
-            bff_raw[:, :, 0] = ab_myP[:, :, 0]
-            bff_raw[:, :, 1] = ab_myP[:, :, 2]
-            bff_raw[:, :, 2] = ab_myP[:, :, 4]
+    bff_raw = np.zeros([nabtemp, nlayers, 3])
+    bff_raw[:, :, 0] = ab_myP[:, :, 0]
+    bff_raw[:, :, 1] = ab_myP[:, :, 2]
+    bff_raw[:, :, 2] = ab_myP[:, :, 4]
 
 else:
     # In this case we need the rows for the gases we're doing and ion fractions

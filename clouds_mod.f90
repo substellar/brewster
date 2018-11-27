@@ -2,7 +2,7 @@ module clouds
 
 contains
   
-  subroutine cloudatlas(column)
+  subroutine cloudatlas(column,sizdist)
 
     use sizes
     use common_arrays
@@ -20,20 +20,20 @@ contains
     double precision, dimension(nmiewave):: miewavelen,miewaven, wdiff
     double precision, allocatable, dimension(:,:) :: radius_in, radius
     double precision, allocatable, dimension(:,:) :: dr, rup
-    double precision,allocatable, dimension(:,:,:) :: scat_cloud,ext_cloud
-    double precision,allocatable, dimension(:,:,:) :: cqs_cloud
-    double precision,allocatable, dimension(:,:):: opd_ext,opd_scat, cos_qs
+    double precision, allocatable, dimension(:,:,:) :: scat_cloud,ext_cloud
+    double precision, allocatable, dimension(:,:,:) :: cqs_cloud
+    double precision, allocatable, dimension(:,:):: opd_ext,opd_scat, cos_qs
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2,bot
     double precision :: f1, f2, intfact,lintfact,vrat,rmin
     double precision :: a, b, ndz, drr, arg3, argscat, argext, argcosqs
-    double precision :: logcon
+    double precision :: logcon, qpir2
 
     ! this will take the clouds and in turn calculate their opacities the layers
     ! based on name, density, mean radius and width of log normal distribution
     ! or using Hansen distribution: effective radius, radius spread and density
 
-    ! set the distribution here. Hardcoded for now
-    ! 1 = log normal, 2= hansen
+    ! get the distribution from do_clouds
+    ! 2 = log normal, 1 = hansen
     allocate(qscat(nmiewave,nrad,nclouds),qext(nmiewave,nrad,nclouds))
     allocate(cos_qscat(nmiewave,nrad,nclouds))
     allocate(radius_in(nrad,nclouds), radius(nrad,nclouds))
@@ -44,7 +44,6 @@ contains
     allocate(opd_ext(nlayers,nmiewave),opd_scat(nlayers,nmiewave))
     allocate(cos_qs(nlayers,nmiewave))
     
-    sizdist = 2
 
     ! first set up the grids and get the Mie coefficients, cloud by cloud
 
@@ -58,67 +57,12 @@ contains
        
        ! set rmin and vrat here though:
        
-       if (trim(column(1)%cloud(icloud)%name) .eq. 'CH4' ) then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'NH3' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'H2O' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'Fe' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'KCl' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'NaCl' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'Cr' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'MgSiO3' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'MgSiO3Cry' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'Mg2SiO4' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'Mg2SiO4rich' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'Al2O3' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'ZnS' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'MnS' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'Na2S' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'NH4H2PO4' )then
-          vrat = 2.2
-          rmin = 1e-5
-       elseif( column(1)%cloud(icloud)%name .eq. 'tholins' )then
-          vrat = 2.2
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'soot' )then
+       if (trim(column(1)%cloud(icloud)%name) .eq. 'soot' ) then
           vrat = 1.3
-          rmin = 1e-7
-       elseif( column(1)%cloud(icloud)%name .eq. 'testgrid3' )then
-          vrat = 2.2
-          rmin = 1e-5
+          rmin = 1e-8
        else
-          write(*,*) "init_optics(): bad igas = ", icloud," ",trim(column(1)%cloud(icloud)%name)
-          
-          stop 
+          vrat = 2.2
+          rmin = 1e-7
        endif
 
 
@@ -198,34 +142,33 @@ contains
           
           if (column(ilayer)%cloud(icloud)%dtau1 .gt. 1.d-4) then
              idum1 = ilayer
-             if (sizdist .eq. 1) then
-                !  HAVEN't UPDATED LOGNORMAL OPTION TO GET density from dtau!!!
-                
+             if (sizdist .eq. 2) then
+                ! we take geometric mean parameter from python code
+                ! as a value between 0 and 1. This is then translated here to
+                ! hold a value between 1 and 5
+                rsig = 1. + (column(ilayer)%cloud(icloud)%rsig * 4)
                 ! radii supplied in um, convert to cm
-                rsig = column(ilayer)%cloud(icloud)%rsig * 1e-4
                 rg  = column(ilayer)%cloud(icloud)%rg * 1e-4
                 
                 r2 = rg**2 * exp( 2*log(rsig)**2 )
              
-                ! check the logic for this bit!!!
-                ! Optical depth for conservative geometric scatterers 
-                !opd_layer(ilayer,icloud) = 2.*pi*r2 * &
-                !     column(ilayer)%cloud(icloud)%density * &
-                !     column(ilayer)%dz
-                
-                !  Calculate normalization factor (forces lognormal sum = 1.0)
-                
+                !  Calculate normalization factor , i.e N_0
+                ! This is based on setting tau_cl = 1 at 1 micron
+                ! so we sum up the cross-section contrbutions at 1um from
+                ! all radii particles across the distribution
+                ! get Ndz from 1/ this sum
                 norm = 0.
                 
                 do irad = 1,nrad
                    rr = radius(irad,icloud)
                    arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
                    arg2 = -log( rr/ rg )**2 / ( 2*log(rsig)**2 )
-                   norm = norm + arg1*exp( arg2 )
+                   qpir2 = PI * rr**2 * qext(loc1,irad,icloud)
+                   norm = norm + (qpir2 * arg1 * exp(arg2))
                 end do
                 
-                ! my lengths and densities are in metres, but radii are in cm
-                norm = (ndz  * 10.**(-4)) / norm
+                ! so Ndz (i.e total number density * height of layer) 
+                ndz  =  1. / norm
                 
                 
                 ! now loop over radius and fill up wavelength dependent opacity for
@@ -234,9 +177,9 @@ contains
                    do irad = 1, nrad
                       
                       rr = radius(irad,icloud)
-                      arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*log(rsig) )
+                      arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
                       arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
-                      pir2ndz = norm*PI*rr*arg1*exp( arg2 )
+                      pir2ndz = ndz * PI * rr**2 * arg1* exp( arg2 )
                       
                       
                       scat_cloud(ilayer,imiewave,icloud) =  &
@@ -260,7 +203,7 @@ contains
                         scat_cloud(ilayer,imiewave,icloud))
       
                 end do ! miewave loop
-             else if (sizdist .eq. 2) then
+             else if (sizdist .eq. 1) then
 
                 ! Hansen distribution
                 

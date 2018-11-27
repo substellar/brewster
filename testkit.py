@@ -367,6 +367,7 @@ def lnprior(theta):
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
                  < (100.*np.max(obspec[2,s3]**2)))
             and (np.all(cloud_tau0 >= 0.0))
+            and (np.all(cloud_tau0 <= 100.0))
             and np.all(cloud_top < cloud_bot)
             and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
@@ -434,6 +435,7 @@ def lnprior(theta):
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
                  < (100.*np.max(obspec[2,s3]**2)))
             and (np.all(cloud_tau0 >= 0.0))
+            and (np.all(cloud_tau0 <= 100.0))
             and np.all(cloud_top < cloud_bot)
             and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
@@ -498,6 +500,7 @@ def lnprior(theta):
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
                  < (100.*np.max(obspec[2,s3]**2)))
             and (np.all(cloud_tau0 >= 0.0))
+            and (np.all(cloud_tau0 <= 100.0))
             and np.all(cloud_top < cloud_bot)
             and np.all(cloud_bot <= np.log10(press[-1]))
             and np.all(np.log10(press[0]) <= cloud_top)
@@ -581,6 +584,7 @@ def lnprior(theta):
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
                  < (100.*np.max(obspec[2,s3]**2)))
             and (np.all(cloud_tau0 >= 0.0))
+            and (np.all(cloud_tau0 <= 100.0))
             and np.all(cloud_top < cloud_bot)
             and np.all(cloud_bot <= np.log10(press[press.size-1]))
             and np.all(np.log10(press[0]) <= cloud_top)

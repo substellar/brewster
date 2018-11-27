@@ -32,7 +32,7 @@ module define_types
 
   type a_patch
      integer:: index
-     logical :: cloudy
+     integer :: cloudy
      real:: cover
      type(a_layer),allocatable,dimension(:):: atm
   end type a_patch
