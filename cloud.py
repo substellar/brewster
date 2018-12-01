@@ -58,7 +58,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
     
     for i in range(0, npatch):
-        if (do_clouds[i] == 1):
+        if (do_clouds[i] > 0):
             for j in range(0,ncloud):
 
                 if (cloudtype[i,j] == 1 or cloudtype[i,j] == 3):
@@ -194,7 +194,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[4,:] = 0.5
 
     for i in range (0,npatches):
-        if (do_clouds[i] == 1):
+        if (do_clouds[i] > 0):
             for j in range (0, nclouds):
                 if ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 99)):
                     cloudparams[1:4,i,j] = theta[pc+nc:pc+3+nc]
@@ -254,7 +254,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[4,:] = 0.0
 
     # First patch
-    if (do_clouds[0] == 1):
+    if (do_clouds[0] > 0):
         for j in range (0, nclouds):
             if ((cloudtype[0,j] == 2) and (cloudnum[0,j] == 99)):
                 cloudparams[1:4,0,j] = theta[pc+nc:pc+3+nc]
@@ -288,7 +288,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
                 nc = nc + 5
                     
     # 2nd patch
-    if (do_clouds[1] == 1):
+    if (do_clouds[1] > 0):
         cloudparams[:,1,:] = cloudparams[:,0,:]
         
     return(cloudparams,nc)

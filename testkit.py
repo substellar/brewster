@@ -179,7 +179,7 @@ def lnprior(theta):
 
     if (sum(do_clouds) >= 1):    
         for i in range(0,npatches):
-            if (do_clouds[i] == 1):
+            if (do_clouds[i] > 0):
                 for j in range (0, nclouds):
                     if (cloudnum[i,j] == 99):
                         if (cloudtype[i,j] == 1):

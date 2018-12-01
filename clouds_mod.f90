@@ -203,7 +203,7 @@ contains
                         scat_cloud(ilayer,imiewave,icloud))
       
                 end do ! miewave loop
-             else if (sizdist .eq. 1) then
+             elseif (sizdist .eq. 1) then
 
                 ! Hansen distribution
                 
