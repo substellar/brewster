@@ -121,7 +121,7 @@ contains
         ! 2 ia just Rayleigh
           do ilayer = 1, nlayers
 
-             if (patch(ipatch)%cloudy) then
+             if (patch(ipatch)%cloudy .gt. 0) then
                 SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
                      patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
                 ! test lines

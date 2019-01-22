@@ -195,7 +195,7 @@ contains
        
        patch(ipatch)%cloudy = do_clouds(ipatch)
        
-       if (patch(ipatch)%cloudy) then
+       if (patch(ipatch)%cloudy .gt. 0) then
           do icloud = 1, nclouds
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
              
@@ -237,7 +237,7 @@ contains
           end do ! cloud loop
           if (any(cloudnum(ipatch,:) .lt. 50)) then
              !write(*,*) "calling cloud atlas"
-             call cloudatlas(patch(ipatch)%atm)
+             call cloudatlas(patch(ipatch)%atm,patch(ipatch)%cloudy)
           end if
           
        else

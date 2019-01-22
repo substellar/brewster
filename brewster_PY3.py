@@ -335,7 +335,7 @@ r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwaven
 
 # Here we are interpolating the linelist onto our fine pressure scale.
 # pickles have linelist as 4th entry....
-linelist = (np.ones([ngas, npress, ntemps, nwave], order='F')).astype('float64', order='F')
+linelist = (np.zeros([ngas, npress, ntemps, nwave], order='F')).astype('float64', order='F')
 for gas in range(0, ngas):
     inlinelist = pickle.load(open(lists[gas], "rb"))[3]
     for i in range(0, ntemps):
@@ -379,10 +379,10 @@ if chemeq == 0:
             pfit = InterpolatedUnivariateSpline(Pgrid, np.log10(abunds[i1[0], i2[0], i, :, gas]), k=1)
             ab_myP[i, :, gas] = pfit(np.log10(press))
             
-            bff_raw = np.zeros([nabtemp, nlayers, 3])
-            bff_raw[:, :, 0] = ab_myP[:, :, 0]
-            bff_raw[:, :, 1] = ab_myP[:, :, 2]
-            bff_raw[:, :, 2] = ab_myP[:, :, 4]
+    bff_raw = np.zeros([nabtemp, nlayers, 3])
+    bff_raw[:, :, 0] = ab_myP[:, :, 0]
+    bff_raw[:, :, 1] = ab_myP[:, :, 2]
+    bff_raw[:, :, 2] = ab_myP[:, :, 4]
 
 else:
     # In this case we need the rows for the gases we're doing and ion fractions
