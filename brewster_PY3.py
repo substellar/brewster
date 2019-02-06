@@ -306,8 +306,8 @@ for i in range(0, ngas):
 
 if malk == 1:
     for i in range(0, ngas):
-        list1[i] = [w.replace('K_xsecs.pic', 'K_Mike_xsecs.pic') for w in list1[i]]
-        list1[i] = [w.replace('Na_xsecs.pic', 'Na_Mike_xsecs.pic') for w in list1[i]]
+        list1[i] = [w.replace('K_xsecs_R10K.pic', 'K_Mike_xsecs_R10K.pic') for w in list1[i]]
+        list1[i] = [w.replace('Na_xsecs_R10K.pic', 'Na_Mike_xsecs_R10K.pic') for w in list1[i]]
 
 if mch4 == 1:
     for i in range(0, ngas):

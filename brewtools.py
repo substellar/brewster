@@ -18,6 +18,8 @@ def get_endchain(runname,fin):
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
+        print("Mean autocorrelation time: {0:.3f} steps"
+              .format(np.mean(sampler.get_autocorr_time(discard=0,c=10,quiet=True))))
 
     elif(fin ==0):
         pic = runname+"_snapshot.pic"
