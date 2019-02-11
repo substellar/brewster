@@ -50,7 +50,7 @@ contains
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     integer :: do_bff
-    real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish
+    real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish,allelse
     real:: linstart, linfinish,distart, difinish,cloudstart,cloudfinish
     real:: bfstart,bffinish
     logical :: disorting,pspec,tspec,bfing,do_cf
@@ -116,8 +116,10 @@ contains
     
     ! now H2 and He fractions and mu for each layer
     do ilayer = 1, nlayers
-       
-       fboth = 1.0 - sum(patch(1)%atm(ilayer)%gas%VMR)
+
+       allelse = sum(patch(1)%atm(ilayer)%gas%VMR) + patch(1)%atm(ilayer)%fe &
+            + patch(1)%atm(ilayer)%fH + patch(1)%atm(ilayer)%fHmin
+       fboth = 1.0 - allelse
        
        ! hardcoded H/He ratio
        ! from solar abundance of 91.2 by number H, 8.7 by number He
@@ -280,12 +282,12 @@ contains
     
     call cpu_time(tfinish)
     
-    write(*,*) "Time elapsed :", (tfinish - tstart), " seconds"
+    !write(*,*) "Time elapsed :", (tfinish - tstart), " seconds"
     
-    write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
+    !write(*,*) "Opacity interpolations took : ", (opfinish - opstart), " seconds"
 
-    write(*,*) "Cloud bits took: ", (cloudfinish - cloudstart), " seconds"
-    write(*,*) "RT took : ", (difinish - distart), " seconds"
+    !write(*,*) "Cloud bits took: ", (cloudfinish - cloudstart), " seconds"
+    !write(*,*) "RT took : ", (difinish - distart), " seconds"
 
     deallocate(wavelen,wavenum)
     do ipatch = 1, npatch
