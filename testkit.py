@@ -993,8 +993,8 @@ def modelspec(theta, args,gnostics):
     trimspec = outspec[:,:nwave]
     photspec = tmpphotspec[0:npatches,:nwave].reshape(npatches,nwave)
     tauspec = tmptauspec[0:npatches,:nwave].reshape(npatches,nwave)
-    cfunc = np.zeros([nlayers,nwave],dtype='d')
-    cfunc[:,:] = cfunc[:,:nwave]
+    cfunc = np.zeros([npatches,nwave,nlayers],dtype='d')
+    cfunc = cf[:npatches,:nwave,:nlayers].reshape(npatches,nwave,nlayers)
     # now shift wavelen by delta_lambda
     shiftspec = np.empty_like(trimspec)
     shiftspec[0,:] =  trimspec[0,:] + dlam
