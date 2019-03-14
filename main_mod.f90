@@ -46,7 +46,7 @@ contains
     double precision,allocatable, dimension(:,:),INTENT(INOUT) :: photspec,tauspec
     double precision,allocatable, dimension(:,:,:),INTENT(INOUT) :: cf
     double precision,allocatable, dimension(:)::specflux
-    real:: metal,grav,test
+    real:: metal,grav,test,tau1
     ! counters
     integer :: ch4index,ipatch,icloud,ilayer,iwave,igas,nw1,nw2,use_disort
     integer :: do_bff
@@ -197,7 +197,7 @@ contains
        
        patch(ipatch)%cloudy = do_clouds(ipatch)
        
-       if (patch(ipatch)%cloudy .gt. 0) then
+       if (patch(ipatch)%cloudy .ne. 0) then
           do icloud = 1, nclouds
              patch(ipatch)%atm(1)%cloud(icloud)%name = cloudname(ipatch,icloud)
              
@@ -241,6 +241,10 @@ contains
              !write(*,*) "calling cloud atlas"
              call cloudatlas(patch(ipatch)%atm,patch(ipatch)%cloudy)
           end if
+          !do ilayer = 1,nlayers
+          !   tau1 = tau1  + patch(1)%atm(ilayer)%cloud(1)%dtau1
+          !end do
+          !write(*,*)'cloud 1 total optical depth = ', tau1
           
        else
           do ilayer = 1, nlayers

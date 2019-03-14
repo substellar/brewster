@@ -157,7 +157,7 @@ def lnprior(theta):
         
     # use correct unpack method depending on situation
     
-    if ((npatches > 1) and np.all(do_clouds > 0)):
+    if ((npatches > 1) and np.all(do_clouds != 0)):
         cloudparams, nc = cloud.unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds)
     else:
         cloudparams, nc = cloud.unpack_default(theta,pc,cloudtype,cloudnum,do_clouds)
@@ -177,9 +177,9 @@ def lnprior(theta):
     loga = np.empty_like(cloud_tau0)
     b = np.empty_like(cloud_tau0)
 
-    if (sum(do_clouds) >= 1):    
+    if (np.abs(sum(do_clouds)) >= 1):    
         for i in range(0,npatches):
-            if (do_clouds[i] > 0):
+            if (do_clouds[i] != 0):
                 for j in range (0, nclouds):
                     if (cloudnum[i,j] == 99):
                         if (cloudtype[i,j] == 1):
@@ -802,6 +802,7 @@ def lnlike(theta):
 
 
 def modelspec(theta, args,gnostics):
+
     gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
     nlayers = press.size
     if chemeq == 0:
@@ -821,7 +822,7 @@ def modelspec(theta, args,gnostics):
         gases_myM = mfit(mh)
         cfit = interp1d(coscale,gases_myM,axis=0)
         invmr = cfit(co)
-        
+
     logg = theta[ng]
     if (fwhm < 0.0):
         if (fwhm == -1 or fwhm == -3):
@@ -868,7 +869,7 @@ def modelspec(theta, args,gnostics):
         
     # use correct unpack method depending on situation
     
-    if ((npatches > 1) and np.all(do_clouds > 0)):
+    if ((npatches > 1) and np.all(do_clouds != 0)):
         cloudparams, nc = cloud.unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds)
     else:
         cloudparams, nc = cloud.unpack_default(theta,pc,cloudtype,cloudnum,do_clouds)
@@ -983,7 +984,7 @@ def modelspec(theta, args,gnostics):
         tspec = 1
         pspec = 1
         make_cf = 1
-        
+
     # now we can call the forward model
     outspec,tmpphotspec,tmptauspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,make_cf,do_bff,bff)
 

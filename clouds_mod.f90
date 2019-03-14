@@ -17,7 +17,7 @@ contains
     integer :: loc(1)
     character(len=50) :: miefile
     double precision ,allocatable, dimension(:,:,:) :: qscat,qext,cos_qscat
-    double precision, dimension(nmiewave):: miewavelen,miewaven, wdiff
+    double precision, dimension(nmiewave):: miewavelen,miewaven, wdiff,ext,scat,cqs
     double precision, allocatable, dimension(:,:) :: radius_in, radius
     double precision, allocatable, dimension(:,:) :: dr, rup
     double precision, allocatable, dimension(:,:,:) :: scat_cloud,ext_cloud
@@ -77,9 +77,14 @@ contains
           dr(irad,icloud) = f2*radius(irad,icloud)
        enddo
        
-       ! first get the mie coefficients for the condensate
-       
-       write(miefile,"(A,A,A)")"../Clouds/",trim(column(1)%cloud(icloud)%name),".mieff"
+       ! first get the mie or DHS  coefficients for the condensate
+
+       if (sizdist .gt. 0) then
+          write(miefile,"(A,A,A)")"../Clouds/",trim(column(1)%cloud(icloud)%name),".mieff"
+       else if (sizdist .lt. 0) then
+          write(miefile,"(A,A,A)")"../Clouds/",trim(column(1)%cloud(icloud)%name),".dhs"
+       end if
+          
        
        
        open(unit=10, file= miefile, status='old')
@@ -142,7 +147,7 @@ contains
           
           if (column(ilayer)%cloud(icloud)%dtau1 .gt. 1.d-4) then
              idum1 = ilayer
-             if (sizdist .eq. 2) then
+             if (abs(sizdist) .eq. 2) then
                 ! we take geometric mean parameter from python code
                 ! as a value between 0 and 1. This is then translated here to
                 ! hold a value between 1 and 5
@@ -203,7 +208,7 @@ contains
                         scat_cloud(ilayer,imiewave,icloud))
       
                 end do ! miewave loop
-             elseif (sizdist .eq. 1) then
+             elseif (abs(sizdist) .eq. 1) then
 
                 ! Hansen distribution
                 
@@ -265,8 +270,7 @@ contains
                            cqs_cloud(ilayer,imiewave,icloud) + &
                            exp(logcon + arg1 + arg2 + argcosqs)
                       
-                   end do  ! radius loop
-                   
+                   end do  ! radius loop                                     
                    ! sum over clouds
                    opd_scat(ilayer,imiewave) = opd_scat(ilayer,imiewave) + &
                         scat_cloud(ilayer,imiewave,icloud)
@@ -275,17 +279,15 @@ contains
                    cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + cqs_cloud(ilayer,imiewave,icloud)
                 end do ! miewave loop
              end if
-             !write (*,*) scat_cloud(ilayer,loc1,icloud)
-             !write (*,*) ext_cloud(ilayer,loc1,icloud)
-             !write (*,*) cqs_cloud(ilayer,loc1,icloud)
+             write (*,*) scat_cloud(ilayer,loc1,icloud)
+             write (*,*) ext_cloud(ilayer,loc1,icloud)
+             write (*,*) cqs_cloud(ilayer,loc1,icloud)
              
              !write(*,*) "opd_scat @ 1um = ", opd_scat(ilayer,loc1)
              !write(*,*) "opd_ext @ 1um = ", opd_ext(ilayer,loc1)
              !write(*,*) "cos_qs @ 1um = ", cos_qs(ilayer,loc1)
           end if
        end do  ! cloud loop
-      
-
        
        ! rebin to working resolution (nwave) grid and write to
        
@@ -349,7 +351,23 @@ contains
     !write(*,*) "clouds line 188 opd_ext layer",column(idum1)%opd_ext(loc1a)
     !write(*,*) "clouds line 189 gg layer ",column(idum1)%gg(loc1a)
 
- 
+    ! test line write cloud optical depth out
+    !open(unit=10,file='cloud1_diagn.txt',form='formatted',status='new')
+    !scat = 0.
+    !ext = 0.
+    !cqs = 0.
+    !do imiewave= 1, nmiewave
+    !   do ilayer = 1, nlayers
+    !      scat(imiewave) = scat(imiewave) + scat_cloud(ilayer,imiewave,1)
+    !      ext(imiewave) = ext(imiewave) + ext_cloud(ilayer,imiewave,1)
+    !      cqs(imiewave) = cqs(imiewave) + cqs_cloud(ilayer,imiewave,1)
+    !   end do
+    !   write(10,*) miewavelen(imiewave),scat(imiewave),ext(imiewave),cqs(imiewave)
+    !enddo
+    !close(10)
+
+
+
     deallocate(qscat,qext,cos_qscat,radius_in,radius,dr,rup)
     deallocate(scat_cloud,ext_cloud)
     deallocate(cqs_cloud,opd_ext,opd_scat,cos_qs)

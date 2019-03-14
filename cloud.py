@@ -58,12 +58,12 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
     
     for i in range(0, npatch):
-        if (do_clouds[i] > 0):
+        if (do_clouds[i] != 0):
             for j in range(0,ncloud):
 
                 if (cloudtype[i,j] == 1 or cloudtype[i,j] == 3):
                     # 5 entries for cloudparams are:
-                    # 0) dtau
+                    # 0) total tau for cloud at 1 micron
                     # 1) log top pressure
                     # 2) pressure thickness in dex
                     # 3) rg
@@ -114,13 +114,12 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                 if (cloudtype[i,j] == 2 or cloudtype[i,j] == 4):
 
                     # 5 entries for cloudparams are:
-                    # 0) reference density 
+                    # 0) empty
                     # 1) top pressure
                     # 2) scale height (in dex)
                     # 3) rg
                     # 4) rsig
             
-                    tau = cloudparams[0,i,j]
                     p0 = 10.**cloudparams[1,i,j]
                     if (cloudtype[i,j] == 2):
                         dP = cloudparams[2,i,j]
@@ -134,7 +133,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
             
                 
                     # In cloud 99/89 case rsig is power law for tau~lambda^alpha 
-                    # Here P0 is the pressure where tau = 1 for the cloud
+                    # Here P0 is the pressure where tau= 1 for the cloud
                     # so dtau / dP = const * exp((P-P0) / scale)
                     # See notes for derivation of constant and integral
                     const = 1. / (1 - np.exp(-p0 / scale))
@@ -194,7 +193,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[4,:] = 0.5
 
     for i in range (0,npatches):
-        if (do_clouds[i] > 0):
+        if (do_clouds[i] != 0):
             for j in range (0, nclouds):
                 if ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 99)):
                     cloudparams[1:4,i,j] = theta[pc+nc:pc+3+nc]
@@ -254,7 +253,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[4,:] = 0.0
 
     # First patch
-    if (do_clouds[0] > 0):
+    if (do_clouds[0] != 0):
         for j in range (0, nclouds):
             if ((cloudtype[0,j] == 2) and (cloudnum[0,j] == 99)):
                 cloudparams[1:4,0,j] = theta[pc+nc:pc+3+nc]
@@ -288,7 +287,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
                 nc = nc + 5
                     
     # 2nd patch
-    if (do_clouds[1] > 0):
+    if (do_clouds[1] != 0):
         cloudparams[:,1,:] = cloudparams[:,0,:]
         
     return(cloudparams,nc)
