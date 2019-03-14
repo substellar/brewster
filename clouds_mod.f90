@@ -279,9 +279,9 @@ contains
                    cos_qs(ilayer,imiewave) = cos_qs(ilayer,imiewave) + cqs_cloud(ilayer,imiewave,icloud)
                 end do ! miewave loop
              end if
-             write (*,*) scat_cloud(ilayer,loc1,icloud)
-             write (*,*) ext_cloud(ilayer,loc1,icloud)
-             write (*,*) cqs_cloud(ilayer,loc1,icloud)
+             !write (*,*) scat_cloud(ilayer,loc1,icloud)
+             !write (*,*) ext_cloud(ilayer,loc1,icloud)
+             !write (*,*) cqs_cloud(ilayer,loc1,icloud)
              
              !write(*,*) "opd_scat @ 1um = ", opd_scat(ilayer,loc1)
              !write(*,*) "opd_ext @ 1um = ", opd_ext(ilayer,loc1)
