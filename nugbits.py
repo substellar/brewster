@@ -68,7 +68,7 @@ def teffRM(theta,sigDist,sigPhot):
             r2d2 = R2D2[0]
             scale1 = R2D2[1]            
     else:
-        r2d2 = R2D2
+        r2d2 = theta[ng+1]
 
     if (fwhm < 0.0):
         # This is for multi-instrument cases
