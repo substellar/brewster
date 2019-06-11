@@ -147,6 +147,7 @@ contains
     do ipatch = 1, npatch
        do ilayer = 1, nlayers
           patch(ipatch)%atm(ilayer)%opd_scat = 0.0
+          patch(ipatch)%atm(ilayer)%gg = 0.0
           patch(ipatch)%atm(ilayer)%opd_CIA = 0.0
           patch(ipatch)%atm(ilayer)%opd_ext = 0.0
           patch(ipatch)%atm(ilayer)%opd_lines = 0.0
