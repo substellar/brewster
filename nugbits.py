@@ -100,6 +100,9 @@ def teffRM(theta,sigDist,sigPhot):
             spec2 = scale1 * outflux[mr2]
 
             flux = np.concatenate((spec1,spec2))
+    else:
+        # For SpeX only data
+        flux = outflux
             
     for j in range(1, (wave.size - 1)):
         sbin = ((wave[j] - wave[j-1]) + (wave[j+1] - wave[j])) / 2. 
@@ -153,7 +156,7 @@ def get_endchain(runname,fin):
         flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
     else:
         print("File extension not recognised")
-        stop
+
         
     return flatendchain, flatendprobs,ndim
 
