@@ -315,10 +315,12 @@ contains
                 call opa_hmbf(wavenum(iwave),sbf)
              
                 !this needs abundance of H- ions
+                !sbf = 0.
                 tauhmbf = sbf * patch(1)%atm(ilayer)%fHmin * colden                     
              endif
              !Then we get the H- continuum ff opacity
              call opa_hmff(wavenum(iwave),patch(1)%atm(ilayer)%temp,sff_hm)
+             !sff_hm = 0.0
              tauhmff = patch(1)%atm(ilayer)%press * 1.e6 * &
                   patch(1)%atm(ilayer)%fH * patch(1)%atm(ilayer)%fe * &
                   sff_hm * colden / (patch(1)%atm(ilayer)%temp * kbolt_cgs)

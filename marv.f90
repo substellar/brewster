@@ -1,8 +1,8 @@
 subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      do_clouds,incloudnum,cloudrad,cloudsig,cloudprof,&
      inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,&
-     use_disort,make_pspec,make_tspec,make_cf,do_bff,bff,outspec,&
-     phot_press,tau_spec,cfunc)
+     use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff,bff,outspec,&
+     cl_phot_press,oth_phot_press,cfunc)
 
   use sizes
   use main
@@ -11,13 +11,13 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py integer, parameter :: nlinetemps
   !f2py intent(in) logg,R2D2
   !f2py intent(inout) temp,logVMR,inpress
-  !f2py intent(in) use_disort,make_pspec,make_tspec,make_cf,do_bff
+  !f2py intent(in) use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff
   !f2py intent(in) inlinetemps
   !f2py intent(inout) cloudrad,cloudsig,cloudprof
   !f2py intent(inout) cia, ciatemps
   !f2py intent(inout) inlinelist, inwavenum,bff
   !f2py intent(inout) do_clouds,pcover,ingasnum,incloudnum
-  !f2py intent(out) out_spec, phot_press,cfunc
+  !f2py intent(out) out_spec, cl_phot_press,oth_phot_press,cfunc
 
   real,intent(inout) :: cia(:,:,:)
   real,dimension(nciatemps) :: ciatemps
@@ -39,16 +39,16 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,intent(inout) :: cloudsig(:,:,:)
   double precision,intent(inout) :: cloudprof(:,:,:)
   double precision,dimension(2,maxwave),intent(OUT):: outspec
-  double precision,dimension(maxpatch,maxwave),intent(OUT):: phot_press,tau_spec
-  double precision,dimension(:,:),allocatable :: out_spec, photspec,tauspec
+  double precision,dimension(maxpatch,maxwave),intent(OUT):: cl_phot_press,oth_phot_press
+  double precision,dimension(:,:),allocatable :: out_spec, clphotspec,othphotspec
   double precision,dimension(:,:,:),allocatable :: cf
   double precision,dimension(maxpatch,maxwave,maxlayers) :: cfunc
   double precision,intent(inout) :: inwavenum(:)
   real,dimension(nlinetemps) :: inlinetemps
   real,intent(inout) :: inpress(:)
   integer :: maxgas,maxcloud,igas,icloud, idum1, idum2
-  integer :: use_disort,make_pspec,make_tspec,do_bff,make_cf
-  logical :: pspec,tspec,do_cf
+  integer :: use_disort,make_oth_pspec,make_cl_pspec,do_bff,make_cf
+  logical :: othphot,clphot,do_cf
   
   call initlayers(size(inpress))
   call initwave(size(inwavenum))
@@ -61,8 +61,8 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
 
   allocate(out_spec(2,nwave))
 
-  pspec = make_pspec
-  tspec = make_tspec
+  clphot = make_cl_pspec
+  othphot = make_oth_pspec
   do_cf = make_cf
   
   open(10,file="gaslist.dat", status='old')
@@ -102,22 +102,23 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   deallocate(cloudlist,gaslist,masslist)  
   call forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
        do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,pspec,tspec,do_cf,do_bff,bff,out_spec,photspec,tauspec,cf)
+       inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,&
+       clphot,othphot,do_cf,do_bff,bff,out_spec,clphotspec,othphotspec,cf)
 
   outspec = 0.d0
   outspec(1,1:nwave)  = out_spec(1,1:nwave)
   outspec(2,1:nwave) = out_spec(2,1:nwave)
 
-  phot_press  = 0.d0
-  if (pspec) then
+  cl_phot_press  = 0.d0
+  if (clphot) then
      do ipatch = 1, npatch
-        phot_press(ipatch,1:nwave) = photspec(ipatch,1:nwave)
+        cl_phot_press(ipatch,1:nwave) = clphotspec(ipatch,1:nwave)
      end do
   end if
-  tau_spec  = 0.d0
-  if (tspec) then
+  oth_phot_press  = 0.d0
+  if (othphot) then
      do ipatch = 1, npatch
-        tau_spec(ipatch,1:nwave) = tauspec(ipatch,1:nwave)
+        oth_phot_press(ipatch,1:nwave) = othphotspec(ipatch,1:nwave)
      end do
   end if
 
@@ -130,7 +131,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
      end do
   end if
 
-  deallocate(out_spec,photspec,tauspec,cf)
+  deallocate(out_spec,clphotspec,othphotspec,cf)
  
 end subroutine marv
 

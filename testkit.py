@@ -974,25 +974,33 @@ def modelspec(theta, args,gnostics):
     press = np.asfortranarray(press,dtype='float32')
     temp = np.asfortranarray(temp,dtype='float64')
     logVMR = np.asfortranarray(logVMR,dtype='float64')
-    # Set pspec,tspec and cfunc as we don't need these in the emcee run
+
+    # Diagnostics below.
+    # make_cf = get a contribution function
+    # clphot = get pressure for cloud_tau = 1.0 as function of wavelength
+    # ^^ i.e the cloud photosphere
+    # ophot = get pressures for tau(not cloud) = 1.0 as function of wavelength]
+    # ^^ i.e. the photosphere due to other (gas phase) opacities)
+    
+    # Set clphot,ophot and cfunc as we don't need these in the emcee run
     if (gnostics == 0):
-        tspec = 0
-        pspec = 0
+        clphot = 0
+        ophot = 0
         make_cf = 0
     else:
-        tspec = 1
-        pspec = 1
+        clphot = 1
+        ophot = 1
         make_cf = 1
 
     # now we can call the forward model
-    outspec,tmpphotspec,tmptauspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,make_cf,do_bff,bff)
+    outspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
 
     # Trim to length where it is defined.
     nwave = inwavenum.size
     trimspec = np.zeros([2,nwave],dtype='d')
     trimspec = outspec[:,:nwave]
-    photspec = tmpphotspec[0:npatches,:nwave].reshape(npatches,nwave)
-    tauspec = tmptauspec[0:npatches,:nwave].reshape(npatches,nwave)
+    cloud_phot_press = tmpclphotspec[0:npatches,:nwave].reshape(npatches,nwave)
+    other_phot_press = tmpophotspec[0:npatches,:nwave].reshape(npatches,nwave)
     cfunc = np.zeros([npatches,nwave,nlayers],dtype='d')
     cfunc = cf[:npatches,:nwave,:nlayers].reshape(npatches,nwave,nlayers)
 
@@ -1002,4 +1010,4 @@ def modelspec(theta, args,gnostics):
     shiftspec[1,:] =  trimspec[1,:]
 
 
-    return shiftspec, photspec,tauspec,cfunc
+    return shiftspec, cloud_phot_press,other_phot_press,cfunc

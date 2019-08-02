@@ -2,7 +2,7 @@
 
 contains
 
-  subroutine run_RT(spectrum,photspec,tauspec,cf,disorting,pspec,tspec,do_cf)
+  subroutine run_RT(spectrum,clphotspec,othphotspec,cf,disorting,clphot,othphot,do_cf)
 
     use sizes
     use common_arrays
@@ -27,13 +27,15 @@ contains
     
     integer ::ntau
     double precision,dimension(MAXULV) :: utau
-    
+    double precision, allocatable, dimension(:,:) :: tau_cloud, tau_others   
     double precision,allocatable,dimension(:), INTENT(OUT):: spectrum
-    double precision,allocatable,dimension(:,:), INTENT(OUT):: photspec,tauspec    
+    double precision,allocatable,dimension(:,:), INTENT(OUT):: clphotspec,othphotspec
+   
     double precision,allocatable,dimension(:,:,:), INTENT(OUT):: cf
     double precision, dimension(nlayers) :: DTAUC, SSALB, COSBAR
     double precision, dimension(nlayers+1) :: temper
-    double precision :: WVNMLO, WVNMHI, wint, tau1, tau2, p1, p2,ptau,taup,tau
+    double precision :: WVNMLO, WVNMHI, wint, tau1, tau2, p1, p2
+    double precision :: taup_cl,taup_oth,tau
     integer :: ipatch,ilayer, iwave
     double precision,dimension(0:MAXMOM,nlayers) :: PMOM
     double precision:: phi(maxphi),phi0, umu(maxumu), umu0
@@ -47,7 +49,7 @@ contains
     character(len=0):: HEADER
     integer :: NUMU,NSTR,NMOM,NLYR, NPHI, IBCND
     logical :: LAMBER,  PLANK,  USRTAU, USRANG, ONLYFL,disorting
-    logical :: pspec,tspec,tdone, pdone,do_cf
+    logical :: clphot,othphot,othdone, cldone,do_cf
     double precision :: FBEAM, FISOT,  ALBEDO , ACCUR, TEMIS
     double precision :: bbplk
     external :: bbplk
@@ -88,15 +90,26 @@ contains
     call set_temp_levels(temper)
 
     allocate(upflux(nwave),spectrum(nwave))
-    allocate(photspec(npatch,nwave),tauspec(npatch,nwave))
+    allocate(clphotspec(npatch,nwave),othphotspec(npatch,nwave))
     allocate(cf(npatch,nwave,nlayers))
-    
-    spectrum = 0.0
+    allocate(tau_cloud(nlayers,nwave),tau_others(nlayers,nwave))
+
+    clphotspec = 0d0
+    othphotspec = 0d0
+    spectrum = 0d0
     
     do ipatch = 1, npatch
        ! add up the taus to get extinction
        do ilayer = 1, nlayers
-        
+
+          tau_cloud(ilayer,:) = patch(ipatch)%atm(ilayer)%opd_ext
+
+          tau_others(ilayer,:) = patch(ipatch)%atm(ilayer)%opd_lines + &
+               patch(ipatch)%atm(ilayer)%opd_CIA + &
+               patch(ipatch)%atm(ilayer)%opd_rayl + &
+               patch(ipatch)%atm(ilayer)%opd_hmbff
+          
+          
           patch(ipatch)%atm(ilayer)%opd_ext = &
                patch(ipatch)%atm(ilayer)%opd_ext + &
                patch(ipatch)%atm(ilayer)%opd_lines + &
@@ -107,6 +120,8 @@ contains
           patch(ipatch)%atm(ilayer)%opd_scat = &
                patch(ipatch)%atm(ilayer)%opd_scat + &
                patch(ipatch)%atm(ilayer)%opd_rayl
+
+                    
        end do
      
 
@@ -121,7 +136,7 @@ contains
         ! 2 ia just Rayleigh
           do ilayer = 1, nlayers
 
-             if (patch(ipatch)%cloudy .gt. 0) then
+             if (patch(ipatch)%cloudy .ne. 0) then
                 SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
                      patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
                 ! test lines
@@ -146,101 +161,121 @@ contains
 !          write(*,*) sum(dtauc)
           DTAUC = 0.d0
 
-          ! get the pressure level where tau = taup
-          ! set taup
-          taup = 1.0
-          ! also  get tau at set pressure level
-          ptau = 1.0
+          ! get the pressure level where tau_cloud = taup_cl
+          ! set reference tau for cloud taup_cl
+          taup_cl = 1.0
+          ! set reference tau for others taup_oth
+          taup_oth = 1.0
 
-          pdone = .false.
-          tdone = .false.
+
+          cldone = .false.
+          othdone = .false.
+
+          ! Run through the layers...
+          
           do ilayer = 1, nlayers
              
+             !put optical depth into the right variable for radtran
              DTAUC(ilayer) = patch(ipatch)%atm(ilayer)%opd_ext(iwave)
 
-             if (pspec .and. .not. (pdone)) then
-                if (sum(dtauc) .gt. taup) then
-                   pdone = .true.
-                   tau2 = sum(dtauc)
-                   tau1 = tau2 - dtauc(ilayer)
-
+             ! now sort out the diagnostics for the photospheres
+             if (clphot .and. .not. (cldone)) then
+                
+                ! this bit calculates the pressure level where tau_cloud
+                ! reaches some value set above. Activate in python code with
+                ! gnostics
+                if (sum(tau_cloud(1:ilayer,iwave)) .gt. taup_cl) then
+                   cldone = .true.
+                   tau2 = sum(tau_cloud(1:ilayer,iwave))
+                   tau1 = tau2 - tau_cloud(ilayer,iwave)
+                   
+                   
                    if (ilayer .eq. nlayers) then
                       p1 = exp((0.5)*(log(patch(ipatch)%atm(ilayer-1)%press * patch(ipatch)%atm(ilayer)%press)))
                    else
                       p1 = exp(((1.5)*log(patch(ipatch)%atm(ilayer)%press)) - &
-               ((0.5)*log(patch(ipatch)%atm(ilayer+1)%press)))
+                           ((0.5)*log(patch(ipatch)%atm(ilayer+1)%press)))
                    end if
-
-                   photspec(ipatch,iwave) = p1 +((taup - tau1) * &
-                        patch(ipatch)%atm(ilayer)%dp / dtauc(ilayer))
                    
-                end if
-             end if
-
-             if (tspec .and. .not. (tdone)) then
-                if (sum(patch(ipatch)%atm(1:ilayer)%dp) .gt. ptau) then
-                   tdone = .true.
-                   p2 = sum(patch(ipatch)%atm(1:ilayer)%dp)
-                   p1 = p2 - patch(ipatch)%atm(ilayer)%dp
-
-                   tau1 = sum(dtauc) - dtauc(ilayer)
-
-                   tauspec(ipatch,iwave) = tau1 +((ptau - p1) * &
-                        dtauc(ilayer) / patch(ipatch)%atm(ilayer)%dp)
+                   clphotspec(ipatch,iwave) = p1 +((taup_cl - tau1) * &
+                        patch(ipatch)%atm(ilayer)%dp / tau_cloud(ilayer,iwave))
                 end if
              end if
              
+             if (othphot .and. .not. (othdone)) then
+                ! this bit calculates the pressure level where tau_other
+                ! (i.e. not clouds) reaches some value set above.
+                ! Activate in python code with gnostics
                 
+                if (sum(tau_others(1:ilayer,iwave)) .gt. taup_oth) then
+                   othdone = .true.
+                   tau2 = sum(tau_others(1:ilayer,iwave))
+                   tau1 = tau2 - tau_others(ilayer,iwave)
+                   
+                   
+                   if (ilayer .eq. nlayers) then
+                      p1 = exp((0.5)*(log(patch(ipatch)%atm(ilayer-1)%press * patch(ipatch)%atm(ilayer)%press)))
+                   else
+                      p1 = exp(((1.5)*log(patch(ipatch)%atm(ilayer)%press)) - &
+                           ((0.5)*log(patch(ipatch)%atm(ilayer+1)%press)))
+                   end if
+                   
+                   othphotspec(ipatch,iwave) = p1 +((taup_oth - tau1) * &
+                        patch(ipatch)%atm(ilayer)%dp / tau_others(ilayer,iwave))
+                end if
+             end if
+             
+             
           end do
           
           
-         if (disorting) then 
-
-                      
-          ! set up wavenumber interval....
-          
-          
-            if (iwave .eq. 1) then 
-               WVNMLO = wavenum(1) - 0.5*(wavenum(2) - wavenum(1))
-               WVNMHI =  wavenum(1) + 0.5*(wavenum(2) - wavenum(1))
-            else if (iwave .eq. nwave) then
-               WVNMLO = wavenum(nwave) - 0.5*(wavenum(nwave) - wavenum(nwave-1))
-               WVNMHI =  wavenum(nwave) + 0.5*(wavenum(nwave) - wavenum(nwave-1))
-            else
-               WVNMLO = wavenum(iwave) - 0.5*(wavenum(iwave) - wavenum(iwave-1))
-               WVNMHI = wavenum(iwave) + 0.5*(wavenum(iwave+1) -wavenum(iwave))
-            end if
-            
-            ! set top and bottom boundary temperatures
-            BTEMP = temper(nlayers+1)
-            TTEMP = temper(1)
-            
-            ! convert to flux density W/m2/um
-            ! need interval in um not cm^-1
-            wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
-
-            call DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO, &
-                 WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU, &
-                 UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0, &
-                 FISOT, LAMBER, ALBEDO, BTEMP, TTEMP, TEMIS,&
-                 PLANK, ONLYFL, ACCUR, PRNT, HEADER, MAXCLY,&
-                 MAXULV, MAXUMU, MAXPHI, MAXMOM, RFLDIR, RFLDN,&
-                 FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
-
-            upflux(iwave) = FLUP(1) / wint
-
-         else
-            call gfluxi(temper,DTAUC,SSALB,COSBAR,wavenum(iwave),ALBEDO,gflup,&
-                 fdi)
-            upflux(iwave) = gflup(1) !/ wint
-         endif
+          if (disorting) then 
+             
+             
+             ! set up wavenumber interval....
+             
+             
+             if (iwave .eq. 1) then 
+                WVNMLO = wavenum(1) - 0.5*(wavenum(2) - wavenum(1))
+                WVNMHI =  wavenum(1) + 0.5*(wavenum(2) - wavenum(1))
+             else if (iwave .eq. nwave) then
+                WVNMLO = wavenum(nwave) - 0.5*(wavenum(nwave) - wavenum(nwave-1))
+                WVNMHI =  wavenum(nwave) + 0.5*(wavenum(nwave) - wavenum(nwave-1))
+             else
+                WVNMLO = wavenum(iwave) - 0.5*(wavenum(iwave) - wavenum(iwave-1))
+                WVNMHI = wavenum(iwave) + 0.5*(wavenum(iwave+1) -wavenum(iwave))
+             end if
+             
+             ! set top and bottom boundary temperatures
+             BTEMP = temper(nlayers+1)
+             TTEMP = temper(1)
+             
+             ! convert to flux density W/m2/um
+             ! need interval in um not cm^-1
+             wint = (1.0e4 / wavenum(iwave)) * ((WVNMHI - WVNMLO)/ wavenum(iwave))
+             
+             call DISORT( NLYR, DTAUC, SSALB, NMOM, PMOM, TEMPER, WVNMLO, &
+                  WVNMHI, USRTAU, NTAU, UTAU, NSTR, USRANG, NUMU, &
+                  UMU, NPHI, PHI, IBCND, FBEAM, UMU0, PHI0, &
+                  FISOT, LAMBER, ALBEDO, BTEMP, TTEMP, TEMIS,&
+                  PLANK, ONLYFL, ACCUR, PRNT, HEADER, MAXCLY,&
+                  MAXULV, MAXUMU, MAXPHI, MAXMOM, RFLDIR, RFLDN,&
+                  FLUP, DFDT, UAVG, UU, ALBMED, TRNMED )
+             
+             upflux(iwave) = FLUP(1) / wint
+             
+          else
+             call gfluxi(temper,DTAUC,SSALB,COSBAR,wavenum(iwave),ALBEDO,gflup,&
+                  fdi)
+             upflux(iwave) = gflup(1) !/ wint
+          endif
           
        end do ! wave loop
        
        spectrum = spectrum + (upflux*patch(ipatch)%cover)
-
+       
     end do ! patch loop
-
+    
        
     deallocate(upflux)
     ! Get the contribution function for them that want it...
