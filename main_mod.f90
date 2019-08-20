@@ -109,7 +109,7 @@ contains
        patch(1)%atm%fH = 0.
        patch(1)%atm%fHmin = 0.
     endif
-    
+   
     grav = 10**(logg) / 100.
     
     
@@ -138,7 +138,7 @@ contains
             (patch(1)%atm(ilayer)%fH * XH) + &
             (patch(1)%atm(ilayer)%fHmin * XH) + &
             sum(patch(1)%atm(ilayer)%gas%VMR * patch(1)%atm(ilayer)%gas%molmass)
-       
+       !write(*,*) patch(1)%atm(ilayer)%mu
     end do
     ! now we want the layer thickness in LENGTH units
     
