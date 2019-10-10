@@ -1014,13 +1014,13 @@ def modelspec(theta, args,gnostics):
 
 
 
-def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',malk=0):
+def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.dat',malk=0):
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
     totgas = 24
     gasdata = []
-    with open('gaslistR10K.dat') as fa:
+    with open(xlist) as fa:
         for line_aa in fa.readlines()[1:totgas+1]:
             line_aa = line_aa.strip()
             gasdata.append(line_aa.split())
@@ -1034,8 +1034,8 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',malk=0):
 
     if (malk == 1):
         for i in range (0,ngas):    
-            list1[i] = [w.replace('K_xsecs.pic', 'K_Mike_xsecs.pic') for w in list1[i]]
-            list1[i] = [w.replace('Na_xsecs.pic', 'Na_Mike_xsecs.pic') for w in list1[i]]
+            list1[i] = [w.replace('K_', 'K_Mike_') for w in list1[i]]
+            list1[i] = [w.replace('Na_', 'Na_Mike_') for w in list1[i]]
 
      
 
@@ -1044,7 +1044,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',malk=0):
 
 
     # get the basic framework from water list
-    rawwavenum, inpress, inlinetemps, inlinelist = pickle.load( open(xpath+'/H2O_xsecs_R10K.pic', "rb" ) )
+    rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(lists[0], "rb"))
 
     wn1 = 10000. / w2
     wn2 = 10000. / w1

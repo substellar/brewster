@@ -35,7 +35,8 @@ contains
     double precision,INTENT(INOUT) :: cloudprof(:,:,:)
     integer,intent(inout):: incloudnum(:,:)
     double precision,intent(inout) :: inwavenum(:)
-    real,dimension(nlinetemps) :: inlinetemps
+    !real,dimension(nlinetemps) :: inlinetemps
+    real,intent(inout) :: inlinetemps(:)
     real,intent(in) :: inpress(:)
     double precision,intent(inout):: linelist(:,:,:,:)
     double precision,intent(inout):: bff(:,:)

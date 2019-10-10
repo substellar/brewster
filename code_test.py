@@ -28,7 +28,7 @@ from bensconv import conv_uniform_FWHM
 
 
 
-def NoCloud_Tdwarf(xpath):
+def NoCloud_Tdwarf(xpath,xlist):
      # start with the wavelength range
      w1 = 1.0
      w2 = 2.5
@@ -138,7 +138,7 @@ def NoCloud_Tdwarf(xpath):
 
 
      # Now we'll get the opacity files into an array
-     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,malk)
+     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
  
 
      # Get the cia bits
@@ -239,7 +239,7 @@ def NoCloud_Tdwarf(xpath):
           return False
 
 
-def MieClouds_Ldwarf(xpath):
+def MieClouds_Ldwarf(xpath,xlist):
 
      # Now the wavelength range
      w1 = 1.0
@@ -338,7 +338,7 @@ def MieClouds_Ldwarf(xpath):
 
 
      # Now we'll get the opacity files into an array
-     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,malk)
+     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
       
      # Get the cia bits
      tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)

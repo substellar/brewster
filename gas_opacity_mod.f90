@@ -18,7 +18,7 @@ contains
     double precision,intent(in):: linelist(:,:,:,:)
     integer :: Tlay1, Tlay2, torder, index, iounit
     double precision, allocatable,dimension(:,:) :: logkap1, logkap2,logintkappa
-    real, dimension(nlinetemps):: tdiff
+    real, allocatable,dimension(:):: tdiff
     double precision :: ndens, intfact, junk
     character(len=50) :: lines1,lines2,name
     
@@ -26,7 +26,7 @@ contains
     integer:: igas, j
     
     allocate(logkap1(ngas,nwave),logkap2(ngas,nwave),logintkappa(ngas,nwave))
-    
+    allocate(tdiff(nlinetemps))
     ! get line temp array locations bracketing our temperature
     
      

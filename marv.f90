@@ -12,7 +12,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   !f2py intent(in) logg,R2D2
   !f2py intent(inout) temp,logVMR,inpress
   !f2py intent(in) use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff
-  !f2py intent(in) inlinetemps
+  !f2py intent(inout) inlinetemps
   !f2py intent(inout) cloudrad,cloudsig,cloudprof
   !f2py intent(inout) cia, ciatemps
   !f2py intent(inout) inlinelist, inwavenum,bff
@@ -44,7 +44,8 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,dimension(:,:,:),allocatable :: cf
   double precision,dimension(maxpatch,maxwave,maxlayers) :: cfunc
   double precision,intent(inout) :: inwavenum(:)
-  real,dimension(nlinetemps) :: inlinetemps
+  !real,dimension(nlinetemps) :: inlinetemps
+  real,intent(inout) :: inlinetemps(:)
   real,intent(inout) :: inpress(:)
   integer :: maxgas,maxcloud,igas,icloud, idum1, idum2
   integer :: use_disort,make_oth_pspec,make_cl_pspec,do_bff,make_cf
@@ -55,6 +56,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   call initgas(size(ingasnum))
   call initpatch(size(do_clouds))
   call initcloud(size(cloudprof(1,1,:)))
+  call inittemps(size(inlinetemps))
 
   allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
