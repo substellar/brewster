@@ -21,7 +21,8 @@ module sizes
   integer,parameter :: maxlayers = 100
   
   ! number of temperatures in line list grid
-  integer, parameter :: nlinetemps = 27
+  !integer, parameter :: nlinetemps = 27
+  integer, protected :: nlinetemps
  
   
   ! number of temperatures in CIA tables
@@ -81,5 +82,9 @@ contains
     nlayers =  pval
   end subroutine initlayers
 
+  subroutine inittemps(pval)
+    integer :: pval
+    nlinetemps =  pval
+  end subroutine inittemps
   
 end module sizes

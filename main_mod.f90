@@ -5,8 +5,8 @@ module main
 contains 
   subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
        pcover,do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
-       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,pspec,&
-       tspec,do_cf,do_bff,bff,out_spec,photspec,tauspec,cf)
+       inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,clphot,&
+       othphot,do_cf,do_bff,bff,out_spec,clphotspec,othphotspec,cf)
     
     use sizes
     use common_arrays
@@ -35,7 +35,8 @@ contains
     double precision,INTENT(INOUT) :: cloudprof(:,:,:)
     integer,intent(inout):: incloudnum(:,:)
     double precision,intent(inout) :: inwavenum(:)
-    real,dimension(nlinetemps) :: inlinetemps
+    !real,dimension(nlinetemps) :: inlinetemps
+    real,intent(inout) :: inlinetemps(:)
     real,intent(in) :: inpress(:)
     double precision,intent(inout):: linelist(:,:,:,:)
     double precision,intent(inout):: bff(:,:)
@@ -43,7 +44,7 @@ contains
     real, intent(inout) :: cia(:,:,:)
     integer,intent(inout) :: ingasnum(:)
     double precision,allocatable, dimension(:,:),INTENT(OUT) :: out_spec
-    double precision,allocatable, dimension(:,:),INTENT(INOUT) :: photspec,tauspec
+    double precision,allocatable, dimension(:,:),INTENT(INOUT) :: clphotspec, othphotspec
     double precision,allocatable, dimension(:,:,:),INTENT(INOUT) :: cf
     double precision,allocatable, dimension(:)::specflux
     real:: metal,grav,test,tau1
@@ -53,7 +54,7 @@ contains
     real:: totcover, fboth, fratio, tstart,tfinish, opstart,opfinish,allelse
     real:: linstart, linfinish,distart, difinish,cloudstart,cloudfinish
     real:: bfstart,bffinish
-    logical :: disorting,pspec,tspec,bfing,do_cf
+    logical :: disorting,clphot,othphot,bfing,do_cf
 
     ! Are we using DISORT
     disorting = use_disort
@@ -100,11 +101,16 @@ contains
 
     end do
 
-    patch(1)%atm%fe = 10.**bff(1,:)
-    patch(1)%atm%fH = 10.**bff(2,:)
-    patch(1)%atm%fHmin = 10.**bff(3,:)
-
-    
+    if (bfing) then
+       patch(1)%atm%fe = 10.**bff(1,:)
+       patch(1)%atm%fH = 10.**bff(2,:)
+       patch(1)%atm%fHmin = 10.**bff(3,:)
+    else
+       patch(1)%atm%fe = 0.
+       patch(1)%atm%fH = 0.
+       patch(1)%atm%fHmin = 0.
+    endif
+   
     grav = 10**(logg) / 100.
     
     
@@ -119,6 +125,7 @@ contains
 
        allelse = sum(patch(1)%atm(ilayer)%gas%VMR) + patch(1)%atm(ilayer)%fe &
             + patch(1)%atm(ilayer)%fH + patch(1)%atm(ilayer)%fHmin
+       !write(*,*) allelse
        fboth = 1.0 - allelse
        
        ! hardcoded H/He ratio
@@ -129,8 +136,10 @@ contains
        
        patch(1)%atm(ilayer)%mu = (patch(1)%atm(ilayer)%fH2 * XH2) + &
             (patch(1)%atm(ilayer)%fHe * XHe) + &
+            (patch(1)%atm(ilayer)%fH * XH) + &
+            (patch(1)%atm(ilayer)%fHmin * XH) + &
             sum(patch(1)%atm(ilayer)%gas%VMR * patch(1)%atm(ilayer)%gas%molmass)
-       
+       !write(*,*) patch(1)%atm(ilayer)%mu
     end do
     ! now we want the layer thickness in LENGTH units
     
@@ -146,13 +155,13 @@ contains
       ! zero all the opacities
     do ipatch = 1, npatch
        do ilayer = 1, nlayers
-          patch(ipatch)%atm(ilayer)%opd_scat = 0.0
-          patch(ipatch)%atm(ilayer)%gg = 0.0
-          patch(ipatch)%atm(ilayer)%opd_CIA = 0.0
-          patch(ipatch)%atm(ilayer)%opd_ext = 0.0
-          patch(ipatch)%atm(ilayer)%opd_lines = 0.0
-          patch(ipatch)%atm(ilayer)%opd_rayl = 0.0
-          patch(ipatch)%atm(ilayer)%opd_hmbff = 0.0          
+          patch(ipatch)%atm(ilayer)%opd_scat = 0d0
+          patch(ipatch)%atm(ilayer)%gg = 0d0
+          patch(ipatch)%atm(ilayer)%opd_CIA = 0d0
+          patch(ipatch)%atm(ilayer)%opd_ext = 0d0
+          patch(ipatch)%atm(ilayer)%opd_lines = 0d0
+          patch(ipatch)%atm(ilayer)%opd_rayl = 0d0
+          patch(ipatch)%atm(ilayer)%opd_hmbff = 0d0          
        end do
     end do
     
@@ -275,7 +284,7 @@ contains
     call cpu_time(distart)
 
     
-    call run_RT(specflux,photspec,tauspec,cf,disorting,pspec,tspec,do_cf)
+    call run_RT(specflux,clphotspec,othphotspec,cf,disorting,clphot,othphot,do_cf)
 
     allocate(out_spec(2,nwave))
     out_spec(1,:) = wavelen

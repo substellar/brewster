@@ -10,7 +10,7 @@ import scipy as sp
 import testkit
 import ciamod
 import TPmod
-import nugbits
+import nugbits_2224LW as nb
 import settings
 import os
 import gc
@@ -77,7 +77,7 @@ outdir = "/beegfs/car/bb/"
 xpath = "/beegfs/car/bb/Linelists/"
 
 # that's all the input.. .off we go...
-rawsamples, probs,ndim = nugbits.get_endchain(outdir+runname,fin)
+rawsamples, probs,ndim = nb.get_endchain(outdir+runname,fin)
 
 testlen = 30
 slen = rawsamples.shape[0]
@@ -96,7 +96,7 @@ slen = settings.samples.shape[0]
     
     
 # get the run arguments
-gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = nugbits.getargs(outdir+runname)
+gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = nb.getargs(outdir+runname)
 
 # we're corrcting the distance in this case for Gaia update
 dist = 11.56
@@ -190,7 +190,7 @@ jobs = COMM.scatter(jobs, root=0)
 results = []
 
 for job in jobs:
-    results.append(nugbits.teffRM(settings.samples[job,0:ndim],sigDist,sigPhot))
+    results.append(nb.teffRM(settings.samples[job,0:ndim],sigDist,sigPhot))
 
 # Gather results on rank 0.
 results = MPI.COMM_WORLD.gather(results, root=0)

@@ -7,6 +7,7 @@ import time
 import gc
 import numpy as np
 import scipy as sp
+import pickle
 import forwardmodel
 import cloud
 import TPmod
@@ -14,7 +15,6 @@ import settings
 from scipy import interpolate
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import interp1d
-
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
 from bensconv import spex_non_uniform
@@ -974,25 +974,33 @@ def modelspec(theta, args,gnostics):
     press = np.asfortranarray(press,dtype='float32')
     temp = np.asfortranarray(temp,dtype='float64')
     logVMR = np.asfortranarray(logVMR,dtype='float64')
-    # Set pspec,tspec and cfunc as we don't need these in the emcee run
+
+    # Diagnostics below.
+    # make_cf = get a contribution function
+    # clphot = get pressure for cloud_tau = 1.0 as function of wavelength
+    # ^^ i.e the cloud photosphere
+    # ophot = get pressures for tau(not cloud) = 1.0 as function of wavelength]
+    # ^^ i.e. the photosphere due to other (gas phase) opacities)
+    
+    # Set clphot,ophot and cfunc as we don't need these in the emcee run
     if (gnostics == 0):
-        tspec = 0
-        pspec = 0
+        clphot = 0
+        ophot = 0
         make_cf = 0
     else:
-        tspec = 1
-        pspec = 1
+        clphot = 1
+        ophot = 1
         make_cf = 1
 
     # now we can call the forward model
-    outspec,tmpphotspec,tmptauspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,pspec,tspec,make_cf,do_bff,bff)
+    outspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
 
     # Trim to length where it is defined.
     nwave = inwavenum.size
     trimspec = np.zeros([2,nwave],dtype='d')
     trimspec = outspec[:,:nwave]
-    photspec = tmpphotspec[0:npatches,:nwave].reshape(npatches,nwave)
-    tauspec = tmptauspec[0:npatches,:nwave].reshape(npatches,nwave)
+    cloud_phot_press = tmpclphotspec[0:npatches,:nwave].reshape(npatches,nwave)
+    other_phot_press = tmpophotspec[0:npatches,:nwave].reshape(npatches,nwave)
     cfunc = np.zeros([npatches,nwave,nlayers],dtype='d')
     cfunc = cf[:npatches,:nwave,:nlayers].reshape(npatches,nwave,nlayers)
 
@@ -1002,4 +1010,122 @@ def modelspec(theta, args,gnostics):
     shiftspec[1,:] =  trimspec[1,:]
 
 
-    return shiftspec, photspec,tauspec,cfunc
+    return shiftspec, cloud_phot_press,other_phot_press,cfunc
+
+
+
+def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.dat',malk=0):
+    # Now we'll get the opacity files into an array
+    ngas = len(gaslist)
+
+    totgas = 24
+    gasdata = []
+    with open(xlist) as fa:
+        for line_aa in fa.readlines()[1:totgas+1]:
+            line_aa = line_aa.strip()
+            gasdata.append(line_aa.split())
+    
+    
+    list1 = []    
+    for i in range(0,ngas):
+        for j in range(0,totgas):
+            if (gasdata[j][1].lower() == gaslist[i].lower()):
+                list1.append(gasdata[j])
+
+    if (malk == 1):
+        for i in range (0,ngas):    
+            list1[i] = [w.replace('K_', 'K_Mike_') for w in list1[i]]
+            list1[i] = [w.replace('Na_', 'Na_Mike_') for w in list1[i]]
+
+     
+
+    lists = [xpath+i[3] for i in list1[0:ngas]]
+    gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
+
+
+    # get the basic framework from water list
+    rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(lists[0], "rb"))
+
+    wn1 = 10000. / w2
+    wn2 = 10000. / w1
+    inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))],dtype='float64')
+    ntemps = inlinetemps.size
+    npress= press.size
+    nwave = inwavenum.size
+    r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
+    r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
+    
+    # Here we are interpolating the linelist onto our fine pressure scale.
+    # pickles have linelist as 4th entry....
+    linelist = (np.zeros([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
+    for gas in range (0,ngas):
+        inlinelist= pickle.load( open(lists[gas], "rb" ) )[3]
+        for i in range (0,ntemps):
+            for j in range (r1,r2+1):
+                pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
+                linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(press)))
+    linelist[np.isnan(linelist)] = -50.0
+    
+    return inlinetemps,inwavenum,linelist,gasnum,nwave
+
+
+
+
+def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
+
+    # Sort out the BFF opacity stuff and chemical equilibrium tables:
+    metscale,coscale,Tgrid,Pgrid,gasnames,abunds = pickle.load( open(ce_table, "rb" ) )
+    nabpress = Pgrid.size
+    nabtemp = Tgrid.size
+    nabgas = abunds.shape[4]
+    nmet = metscale.size
+    nco = coscale.size
+    nlayers = press.size
+    ngas = len(gaslist)
+
+
+    bff_raw = np.zeros([nabtemp,nlayers,3])
+    gases_myP = np.zeros([nmet,nco,nabtemp,nlayers,ngas+3])
+    gases = np.zeros([nmet,nco,nabtemp,nabpress,ngas+3])
+
+    if (chemeq == 0):
+        # Just want the ion fractions for solar metallicity in this case
+        ab_myP = np.empty([nabtemp,nlayers,nabgas])
+        i1 = np.where(metscale == 0.0)
+        i2 = np.where(coscale == 1.0)
+        for gas in range (0,nabgas):
+            for i in range (0,nabtemp):
+                pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i1[0],i2[0],i,:,gas]),k=1)
+                ab_myP[i,:,gas] = pfit(np.log10(press))
+            
+                bff_raw = np.zeros([nabtemp,nlayers,3])
+                bff_raw[:,:,0] = ab_myP[:,:,0]
+                bff_raw[:,:,1] = ab_myP[:,:,2]
+                bff_raw[:,:,2] = ab_myP[:,:,4]
+
+    else:
+        # In this case we need the rows for the gases we're doing and ion fractions
+        gases[:,:,:,:,0] = abunds[:,:,:,:,0]
+        gases[:,:,:,:,1] = abunds[:,:,:,:,2]
+        gases[:,:,:,:,2] = abunds[:,:,:,:,4]
+        nmatch = 0 
+        for i in range(0,ngas):
+            for j in range(0,nabgas):
+                if (gasnames[j].lower() == gaslist[i].lower()):
+                    gases[:,:,:,:,i+3] = abunds[:,:,:,:,j]
+                    nmatch = nmatch + 1
+                    if (nmatch != ngas):
+                        print("you've requested a gas that isn't in the Vischer table. Please chaeck and try again.")
+                        exit
+    
+        for i in range(0,nmet):
+            for j in range(0,nco):
+                for k in range(0,ngas+3):
+                    for l in range(0,nabtemp):
+                        pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(gases[i,j,l,:,k]),k=1)
+                        gases_myP[i,j,l,:,k] = pfit(np.log10(press))
+    
+
+    return bff_raw,Tgrid,metscale,coscale,gases_myP
+
+

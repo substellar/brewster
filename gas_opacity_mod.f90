@@ -18,7 +18,7 @@ contains
     double precision,intent(in):: linelist(:,:,:,:)
     integer :: Tlay1, Tlay2, torder, index, iounit
     double precision, allocatable,dimension(:,:) :: logkap1, logkap2,logintkappa
-    real, dimension(nlinetemps):: tdiff
+    real, allocatable,dimension(:):: tdiff
     double precision :: ndens, intfact, junk
     character(len=50) :: lines1,lines2,name
     
@@ -26,7 +26,7 @@ contains
     integer:: igas, j
     
     allocate(logkap1(ngas,nwave),logkap2(ngas,nwave),logintkappa(ngas,nwave))
-    
+    allocate(tdiff(nlinetemps))
     ! get line temp array locations bracketing our temperature
     
      
@@ -315,10 +315,12 @@ contains
                 call opa_hmbf(wavenum(iwave),sbf)
              
                 !this needs abundance of H- ions
+                !sbf = 0.
                 tauhmbf = sbf * patch(1)%atm(ilayer)%fHmin * colden                     
              endif
              !Then we get the H- continuum ff opacity
              call opa_hmff(wavenum(iwave),patch(1)%atm(ilayer)%temp,sff_hm)
+             !sff_hm = 0.0
              tauhmff = patch(1)%atm(ilayer)%press * 1.e6 * &
                   patch(1)%atm(ilayer)%fH * patch(1)%atm(ilayer)%fe * &
                   sff_hm * colden / (patch(1)%atm(ilayer)%temp * kbolt_cgs)

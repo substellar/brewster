@@ -3,9 +3,9 @@ import pickle
 import numpy as np
 import os
 
-def get_endchain(runname,fin):
+def get_endchain(runname,fin,results_path='./'):
     if (fin == 1):
-        pic = runname+".pk1"
+        pic = results_path+runname+".pk1"
         sampler = pickle_load(pic)
         nwalkers = sampler.chain.shape[0]
         niter = sampler.chain.shape[1]
@@ -22,7 +22,7 @@ def get_endchain(runname,fin):
               .format(np.mean(sampler.get_autocorr_time(discard=0,c=10,quiet=True))))
 
     elif(fin ==0):
-        pic = runname+"_snapshot.pic"
+        pic = results_path+runname+"_snapshot.pic"
         chain,probs = pickle_load(pic) 
         nwalkers = chain.shape[0]
         ntot = chain.shape[1]
