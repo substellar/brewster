@@ -1,5 +1,5 @@
-# brewster
-code for retrieval analysis of emission spectra from brown dwarfs and giant planets
+# Brewster
+A spectral inversion code for retrieval analysis of emission spectra from brown dwarfs and giant planets.
 
 ## What's needed to run the code:
 - Everything in this repository
@@ -10,7 +10,7 @@ code for retrieval analysis of emission spectra from brown dwarfs and giant plan
  
  The Atmospheric Models can live anywhere on your machine.
 
-## Current Process for Installing Brewster
+## Current Installation Process for Brewster
 1. Get access to the Brewster Github. Either send Ben or Eileen your GitHub name or email associated with your GitHub account to get added to the Substellar team.
 2. If you do not have a fortran compiler on your machine, get the proper version of the gfortran compiler from https://gcc.gnu.org/wiki/GFortranBinaries or https://hpc.sourceforge.net.
 3. Git clone or fork the directory and place wherever your code lives. (If you plan to make any changes to the code you might like to incorporate into the master branch via a pull request, you should probably fork it.)
