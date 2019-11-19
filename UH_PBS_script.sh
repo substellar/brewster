@@ -1,21 +1,25 @@
 #PBS -S /bin/tcsh
-#PBS -N g570test
+#PBS -N YOUR_Runname
 #PBS -m abe
-#PBS -l nodes=4:ppn=29
-#PBS -l walltime=00:30:00
+#PBS -l nodes=8:ppn=32
+#PBS -l walltime=100:00:00
 #PBS -k oe
 #PBS -q main
 
 source ~/.tcshrc
-module load use.own
 module unload mpich2-x86_64
-module load intel-mpi 
+module load mpich2-intel
 
-setenv WDIR /home/bb/retrievals/g570test
+# This should be your working directory
+setenv WDIR /home/bb/retrievals/longWaveMie
 
+# Add the working directory to your path
 setenv PATH ${PATH}:${WDIR}
+# Add WD to LD_LIBRARY_PATH
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
 
+# Active python 3 environment
+py3up
 
 unlimit stacksize
 
@@ -44,8 +48,8 @@ cd ${WDIR}
 
 
 mpirun -env I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=1 \
-       -machinefile $PBS_NODEFILE -n 116 -ppn 29 \
-       python g570test.py > /beegfs/car/bb/g570test.log
+       -machinefile $PBS_NODEFILE -n 256 -ppn 32 \
+       python YOUR_BREWSTER.py > /your/path/for/saving/log
 
 
 
@@ -55,4 +59,3 @@ echo Ended at: $time_end
 echo ------------------------------------------------------
 echo Job ends
 
-#mpdallexit
