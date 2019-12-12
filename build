@@ -13,6 +13,8 @@ make pysig
 make pymod
 make ciasig
 make ciamod
+make bbconvsig
+make bbconv
 
 
 

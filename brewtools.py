@@ -70,18 +70,18 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         elif (fwhm == -2):
             scale1 = theta[ng+2]
  
+    modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
 
     # If we've set a value for FWHM that we're using... 
     if (fwhm > 0.00 and fwhm < 1.00):
         # this is a uniform FWHM in microns
         
-        outspec = conv_uniform_FWHM(shiftspec,obspec,fwhm)
+        outspec = conv_uniform_FWHM(obspec,modspec,fwhm)
    
 
     elif (fwhm == 0.0):
         # Use Mike's convolution for Spex
-        wno = 1e4 / shiftspec[0,:]
-        outspec = spex_non_uniform(obspec[0,:],wno,shiftspec[1,:])
+        outspec = spex_non_uniform(obspec,modspec)
              
     elif (fwhm < 0.0):
         # This is for multi-instrument cases
@@ -91,12 +91,10 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         if (fwhm == -1):
 
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
+            mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[0,or1],wno,shiftspec[1,mr1])
+            spec1 = spex_non_uniform(obspec[:,or1],modspec)
 
-            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # AKARI IRC
             # dispersion constant across order 0.0097um
             # R = 100 at 3.6um for emission lines
@@ -104,7 +102,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             dL = 0.03
             mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
-            spec2 = scale1 * conv_uniform_FWHM(modspec[:,mr2],obspec[:,or2],dL)
+            spec2 = scale1 * conv_uniform_FWHM(obspec[:,or2],modspec,dL)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
@@ -112,46 +110,42 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             R = 100.0
             mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
-            spec3 = scale2 * conv_uniform_R(modspec[:,mr3],obspec[:,or3],R)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
 
             outspec = np.array(np.concatenate((spec1,spec2,spec3),axis=0))
 
         elif (fwhm == -2):
             # This is just spex + IRS
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
+            mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[0,or1],wno,shiftspec[1,mr1])
+            spec1 = spex_non_uniform(obspec[:,or1],modspec)
 
-            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-
+ 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
             # have R ~ 100
             R = 100.0
             mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
-            spec3 = scale1 * conv_uniform_R(modspec[:,mr3],obspec[:,or3],R)
+            spec3 = scale1 * conv_uniform_R(obspec[:,or3],modspec,R)
 
             outspec = np.array(np.concatenate((spec1,spec3),axis=0))
             
         elif (fwhm == -3):
             # This is spex + Mike Cushing's L band R = 425 + IRS
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
+            mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[0,or1],wno,shiftspec[1,mr1])
+            spec1 = spex_non_uniform(obspec[:,or1],modspec)
 
-            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-            # Mike Cushing supplied L band R = 425 
+             # Mike Cushing supplied L band R = 425 
             # dispersion constant across order 0.0097um
             # R = 425
             R = 425
             mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
-            spec2 = scale1 * conv_uniform_R(modspec[:,mr2],obspec[:,or2],R)
+            spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,R)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
@@ -159,7 +153,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             R = 100.0
             mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
-            spec3 = scale2 * conv_uniform_R(modspec[:,mr3],obspec[:,or3],R)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
 
             outspec =  np.array(np.concatenate((spec1,spec2,spec3),axis=0))
 
