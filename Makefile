@@ -116,6 +116,11 @@ ciamod:
 	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
 #	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
+bbconvsig:
+	f2py -m bbconv -h bbconv.pyf bbconv.f90
+
+bbconv:
+	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c bbconv.pyf bbconv.f90
 
 tausig:
 	f2py -m taumod -h taumod.pyf sizes_mod.f90 cloudtau.f90
