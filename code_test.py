@@ -373,7 +373,7 @@ def MieClouds_Ldwarf(xpath,xlist):
      print(' Test for L dwarf case, plotting via theta and testkit')
      print(' theta taken from 2M2224 case with Mie clouds')
      print(' crystalline enstatite slab + rust deck')
-     print(' optical data as at August 2019 in benchmark spectrum')
+     print(' optical data as at February 2020 in benchmark spectrum')
      print('------------------------------------------------------')
      print('mean value of modelspectrum / L benchmark = '+str(np.mean(difference_spectrum)))
 
