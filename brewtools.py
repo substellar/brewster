@@ -64,7 +64,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         ng = 2
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
         elif (fwhm == -2):
@@ -146,6 +146,32 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,R)
+
+            # Spitzer IRS
+            # R roughly constant within orders, and orders both appear to
+            # have R ~ 100
+            R = 100.0
+            mr3 = np.where(modspec[0,:] > 5.0)
+            or3 = np.where(obspec[0,:] > 5.0)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
+
+            outspec =  np.array(np.concatenate((spec1,spec2,spec3),axis=0))
+
+        elif (fwhm == -4):
+            # This is spex  + GNIRS L band R = 600 + IRS 
+            # Spex
+            mr1 = np.where(modspec[0,:] < 2.5)
+            or1  = np.where(obspec[0,:] < 2.5)
+            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+
+            # Katelyn Allers spectrum of GNIRS R = 600
+            # R = 600 @ 3.5um linearly increading across order
+            # i.e. FWHM - 0.005833
+            dL = 0.005833
+            #dL = 0.0097
+
+            or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
+            spec2 = scale1 * conv_uniform_FWHM(obspec[:,or2],modspec,dL)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to

@@ -77,7 +77,7 @@ def lnprior(theta):
             
     logg = theta[ng]
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             s1  = np.where(obspec[0,:] < 2.5)
             s2  = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             s3 =  np.where(obspec[0,:] > 5.)
@@ -627,7 +627,7 @@ def lnlike(theta):
         ng = 2
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
             if (do_fudge == 1):
@@ -794,6 +794,48 @@ def lnlike(theta):
             lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
             lnLik = lnLik1 + lnLik2 + lnLik3
             
+        elif (fwhm == -4):
+            # This is spex + GNIRS L band R = 600 + IRS 
+            # Spex
+            mr1 = np.where(shiftspec[0,:] < 2.5)
+            or1  = np.where(obspec[0,:] < 2.5)
+            wno = 1e4 / shiftspec[0,mr1]
+            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+
+            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
+            # Katelyn Allers spectrum of GNIRS R = 600
+            # R = 600 @ 3.5um linearly increading across order
+            # i.e. FWHM - 0.005833
+            dL = 0.005833
+            #dL = 0.0097
+
+
+            or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
+            spec2 = scale1 * conv_uniform_FWHM(obspec[:,or2],modspec,dL)
+
+            # Spitzer IRS
+            # R roughly constant within orders, and orders both appear to
+            # have R ~ 100
+            R = 100.0
+            #mr3 = np.where(modspec[0,:] > 5.0)
+            or3 = np.where(obspec[0,:] > 5.0)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
+
+            if (do_fudge == 1):
+                s1 = obspec[2,or1]**2 + 10.**logf[0]
+                s2 = obspec[2,or2]**2 + 10.**logf[1]
+                s3 = obspec[2,or3]**2 + 10.**logf[2]
+            else:
+                s1 = obspec[2,or1]**2
+                s2 = obspec[2,or2]**2
+                s3 = obspec[2,or3]**2
+
+
+            lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1)**2) / s1) + np.log(2.*np.pi*s1))
+            lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s2) + np.log(2.*np.pi*s2))
+            lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
+            lnLik = lnLik1 + lnLik2 + lnLik3
+            
     return lnLik
 
 
@@ -821,7 +863,7 @@ def modelspec(theta, args,gnostics):
 
     logg = theta[ng]
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             r2d2 = theta[ng+1:ng+4]
             dlam = theta[ng+4]
             if (do_fudge == 1):
@@ -947,7 +989,7 @@ def modelspec(theta, args,gnostics):
 
     # get r2d2 sorted for multi-instruments
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             R2D2 = r2d2[0]
             scale1 = r2d2[1]
             scale2 = r2d2[2]
