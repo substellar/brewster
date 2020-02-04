@@ -21,7 +21,7 @@ def spex_non_uniform(obspec,modspec):
 
 def conv_uniform_FWHM(obspec,modspec,fwhm):
 
-    fluxout = confwhm(np.asfortranarray(obspec),np.asfortranarray(modspec),fwhm)[0:obspec[0,:].size]
+    fluxout = convfwhm(np.asfortranarray(obspec),np.asfortranarray(modspec),fwhm)[0:obspec[0,:].size]
     
     return fluxout
 

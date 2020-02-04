@@ -135,6 +135,7 @@ press = pow(10,logfinePress)
 # Where are the cross sections?
 # give the full path
 xpath = "/beegfs/car/bb/Linelists/"
+xlist = 'gaslistRox.dat'
 
 # now the cross sections
 
@@ -331,7 +332,6 @@ if proftype == 9:
 
 
 
-xlist = 'gaslistR10K.dat'
 
 # Now we'll get the opacity files into an array
 inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
