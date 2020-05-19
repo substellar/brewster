@@ -12,6 +12,7 @@ import forwardmodel
 import cloud
 import TPmod
 import settings
+import sys
 from scipy import interpolate
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import interp1d
@@ -1152,9 +1153,9 @@ def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
                 if (gasnames[j].lower() == gaslist[i].lower()):
                     gases[:,:,:,:,i+3] = abunds[:,:,:,:,j]
                     nmatch = nmatch + 1
-                    if (nmatch != ngas):
-                        print("you've requested a gas that isn't in the Vischer table. Please chaeck and try again.")
-                        exit
+        if (nmatch != ngas):
+            print("you've requested a gas that isn't in the Vischer table. Please check and try again.")
+            sys.exit()
     
         for i in range(0,nmet):
             for j in range(0,nco):

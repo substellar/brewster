@@ -26,7 +26,7 @@ contains
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2,bot
     double precision :: f1, f2, intfact,lintfact,vrat,rmin
     double precision :: a, b, ndz, drr, arg3, argscat, argext, argcosqs
-    double precision :: logcon, qpir2
+    double precision :: logcon, qpir2, frac
     real, allocatable,dimension(:) :: cld1arr 
     ! this will take the clouds and in turn calculate their opacities the layers
     ! based on name, density, mean radius and width of log normal distribution
@@ -178,8 +178,8 @@ contains
                 
                 ! so Ndz (i.e total number density * height of layer) 
                 ndz  =  1. / norm
-                
-                
+
+
                 ! now loop over radius and fill up wavelength dependent opacity for
                 ! each cloud
                 do imiewave = 1, nmiewave
@@ -241,9 +241,18 @@ contains
 
                 arg3 = ((((2.*b) - 1.)/b) * log(a*b))
                 arg2 = log_gamma((1.-(2.*b))/b)
-                
+
                 
                 ndz = exp(logcon +arg2 - arg3)
+
+                !if (icloud .eq. 1) then
+                !   frac = (ndz *1e4 / (column(ilayer)%dz)) * ((4/3)*PI * (0.008e-4**3)) * 0.032 * AVOGADRO / (column(ilayer)%ndens)
+                !   write(*,*) 'MgSiO3 mixing fraction = ', frac
+                !end if
+                !if (icloud .eq. 2) then
+                !   frac = (ndz * 1e4/ (column(ilayer)%dz)) * ((4/3)*PI * (0.34e-4**3)) * 0.044 * AVOGADRO / (column(ilayer)%ndens)
+                !   write(*,*) 'SiO2 mixing fraction = ', frac
+                !end if
 
                 !TEST writes for ndz etc
                 !if (ilayer .eq. idum1) then

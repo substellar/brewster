@@ -52,7 +52,7 @@ COMM = MPI.COMM_WORLD
 
 
 # only the first rank has to do all the crap...
-runname ="2M2224_cryESlabRustDeck"
+runname ="2M2224_ESlabSiO2SlabFeDeck"
 
 # using the Burrow's alkalis (via Mike)?
 malk = 0

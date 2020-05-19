@@ -65,7 +65,7 @@ w2 = 15.
 # -1 = spex + AKARI + spitzer
 # -2 = spex + spitzer
 # -3 = spex + L band + spitzer
-fwhm = -3
+fwhm = -2
 
 # DISTANCE (in parsecs)
 dist = 11.35
