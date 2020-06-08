@@ -663,7 +663,11 @@ def lnlike(theta):
         # this is a uniform FWHM in microns
         
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
-   
+        
+    elif (fwhm > 1.00):
+        # this is a uniform resolving power R.
+        Res = fwhm
+        spec = conv_uniform_R(obspec,modspec,Res)
         # Below is method for rebinning using conserve flux method
         #    oblen = obspec.shape[1]
         #    modspec = np.empty((2,oblen),dtype='d')

@@ -331,7 +331,12 @@ def lnlike(theta):
         # this is a uniform FWHM in microns
         
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
-   
+
+    elif (fwhm > 1.00):
+        # this is a uniform resolving power R.
+        Res = fwhm
+        spec = conv_uniform_R(obspec,modspec,Res)
+
         # Below is method for rebinning using conserve flux method
         #    oblen = obspec.shape[1]
         #    modspec = np.empty((2,oblen),dtype='d')
@@ -434,19 +439,19 @@ def lnlike(theta):
             modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # Mike Cushing supplied L band R = 425 
             # dispersion constant across order 0.0097um
-            # R = 425
-            R = 425
+            # Res = 425
+            Res = 425
             #mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
-            spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,R)
+            spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,Res)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
-            # have R ~ 100
-            R = 100.0
+            # have Res ~ 100
+            Res = 100.0
             #mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
-            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,Res)
 
             if (do_fudge == 1):
                 s1 = obspec[2,or1]**2 + 10.**logf[0]

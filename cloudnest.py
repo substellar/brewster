@@ -200,11 +200,11 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
                     nc = nc + 3
                 elif ((cloudtype[i,j] == 1) and (cloudnum[i,j] == 89)):
                     cloudparams[0:3,i,j] = theta[pc+nc:pc+3+nc]
-                    cloudparams[4,i,j] = theta[pc+4+nc]
+                    cloudparams[4,i,j] = theta[pc+3+nc]
                     nc = nc + 4
                 elif ((cloudtype[i,j] == 2) and (cloudnum[i,j] == 89)):
-                    cloudparams[1:3,i,j] = theta[pc+nc:pc+3+nc]
-                    cloudparams[4,i,j] = theta[pc+nc+3]
+                    cloudparams[1:3,i,j] = theta[pc+nc:pc+nc+2]
+                    cloudparams[4,i,j] = theta[pc+nc+2]
                     nc = nc + 3
                 elif ((cloudtype[i,j] == 2) and (cloudnum[i,j] < 80)):
                     cloudparams[1:5,i,j] = theta[pc+nc:pc+4+nc]
@@ -214,7 +214,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
                     nc = nc + 2
                 elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] == 89)):
                     cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
-                    cloudparams[4,i,j] = theta[pc+nc+3]
+                    cloudparams[4,i,j] = theta[pc+nc+2]
                     nc = nc + 3
                 elif ((cloudtype[i,j] == 3) and (cloudnum[i,j] < 80)):
                     cloudparams[0:2,i,j] = theta[pc+nc:pc+nc+2]
