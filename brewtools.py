@@ -77,7 +77,11 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         # this is a uniform FWHM in microns
         
         outspec = conv_uniform_FWHM(obspec,modspec,fwhm)
-   
+
+    elif (fwhm > 1.00):
+        # this is a uniform resolving power R.
+        Res = fwhm
+        spec = conv_uniform_R(obspec,modspec,Res)
 
     elif (fwhm == 0.0):
         # Use Mike's convolution for Spex
