@@ -84,15 +84,15 @@ def priormap(theta,plist=False):
             phi[ng+4] = (theta[ng+4] * 0.02) - 0.01
             if (do_fudge == 1):
                 # These are tolerances for each band due to difference SNRs
-                minerr_s1 =(0.01 *  np.min(obspec[2,s1]))**2.
-                maxerr_s1 = (10.*np.max(obspec[2,s1]))**2.
-                phi[ng+5] = np.log10((theta[ng+5] * (maxerr_s1 - minerr_s1)) + minerr_s1)
-                minerr_s2 =(0.01 *  np.min(obspec[2,s2]))**2.
-                maxerr_s2 = (10.*np.max(obspec[2,s2]))**2.               
-                phi[ng+6] = np.log10((theta[ng+6] * (maxerr_s2 - minerr_s2)) + minerr_s2)
-                minerr_s3 =(0.01 *  np.min(obspec[2,s3]))**2.
-                maxerr_s3 = (10.*np.max(obspec[2,s3]))**2.                
-                phi[ng+7] =  np.log10((theta[ng+7] * (maxerr_s3 - minerr_s3)) + minerr_s3)
+                minerr_s1 =np.log10((0.01 *  np.min(obspec[2,s1]))**2.)
+                maxerr_s1 =np.log10((100.*np.max(obspec[2,s1]))**2.)
+                phi[ng+5] = (theta[ng+5] * (maxerr_s1 - minerr_s1)) + minerr_s1
+                minerr_s2 =np.log10((0.01 *  np.min(obspec[2,s2]))**2.)
+                maxerr_s2 =np.log10((100.*np.max(obspec[2,s2]))**2.)
+                phi[ng+6] = (theta[ng+6] * (maxerr_s2 - minerr_s2)) + minerr_s2
+                minerr_s3 =np.log10((0.01 *  np.min(obspec[2,s3]))**2.)
+                maxerr_s3 = np.log10((100.*np.max(obspec[2,s3]))**2.)
+                phi[ng+7] = (theta[ng+7] * (maxerr_s3 - minerr_s3)) + minerr_s3
                 pc = ng+8
             else:
                 pc = ng + 5
@@ -105,12 +105,12 @@ def priormap(theta,plist=False):
             phi[ng+3] = (theta[ng+3] * 0.02) - 0.01
             if (do_fudge == 1):
                 # These are tolerances for each band due to difference SNR
-                minerr_s1 =(0.01 *  np.min(obspec[2,s1]))**2.
-                maxerr_s1 = (10.* np.max(obspec[2,s1]))**2.
-                phi[ng+4] = np.log10((theta[ng+4] * (maxerr_s1 - minerr_s1)) + minerr_s1)
-                minerr_s3 =(0.01 *  np.min(obspec[2,s3]))**2.
-                maxerr_s3 = (10*np.max(obspec[2,s3]))**2.                
-                phi[ng+5] =  np.log10((theta[ng+5] * (maxerr_s3 - minerr_s3)) + minerr_s3)
+                minerr_s1 = np.log10((0.01 *  np.min(obspec[2,s1]))**2.)
+                maxerr_s1 = np.log10((100.*np.max(obspec[2,s1]))**2.)
+                phi[ng+4] = (theta[ng+4] * (maxerr_s1 - minerr_s1)) + minerr_s1
+                minerr_s3 = np.log10((0.01 *  np.min(obspec[2,s3]))**2.)
+                maxerr_s3 = np.log10((100.*np.max(obspec[2,s3]))**2.)
+                phi[ng+5] = (theta[ng+5] * (maxerr_s3 - minerr_s3)) + minerr_s3
                 pc = ng+6
             else:
                 pc = ng + 4
@@ -122,9 +122,9 @@ def priormap(theta,plist=False):
         # now fudge
         if (do_fudge == 1):
             # logf here
-            minerr =(0.01 *  np.min(obspec[2,:]))**2.
-            maxerr = (10.*np.max(obspec[2,:])**2.)
-            phi[ng+3] = np.log10((theta[ng+3] * (maxerr - minerr)) + minerr)
+            minerr =np.log10((0.01 *  np.min(obspec[2,:]))**2.)
+            maxerr = np.log10((100.*np.max(obspec[2,:]))**2.)
+            phi[ng+3] = (theta[ng+3] * (maxerr - minerr)) + minerr
             pc = ng + 4
         else:
             pc = ng + 3
@@ -179,7 +179,7 @@ def priormap(theta,plist=False):
                         #cloud base
                         phi[pc+nc+1] = \
                             (theta[pc+nc+1] *(np.log10(press[-1]) \
-                                              - np.log10(press[0])))\
+                                              - np.log10(press[0]))) \
                                               + np.log10(press[0])
                         # cloud height
                         phi[pc+nc+2] = theta[pc+nc+2] * \
@@ -540,7 +540,7 @@ def modelspec(theta, args,gnostics=0):
     R = theta[ng+1] * 69911e3
     logg = np.log10(100.* GM / R**2.)
 
-    D = (dist + np.random.randn()*dist_err) * 3.086e16
+    D = (dist + (np.random.randn()*dist_err)) * 3.086e16
     R2D2 = R**2. / D**2.
 
     if (fwhm < 0.0):
