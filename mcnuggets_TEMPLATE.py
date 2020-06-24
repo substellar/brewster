@@ -10,7 +10,7 @@ import scipy as sp
 import testkit
 import ciamod
 import TPmod
-import nugbits_2224LW as nb
+import nugbits_TEMPLATE as nb
 import settings
 import os
 import gc
@@ -52,13 +52,16 @@ COMM = MPI.COMM_WORLD
 
 
 # only the first rank has to do all the crap...
-runname ="2M2224_ESlabSiO2SlabFeDeck"
+runname "YOUR RUNNAME HERE"
 
 # using the Burrow's alkalis (via Mike)?
 malk = 0
 
 #Are we testing?
 testrun = 0
+
+# length of test??
+testlen = 30
 
 # OK finish?
 fin = 1
@@ -72,6 +75,9 @@ sigPhot = 0.02
 # Where are the pickles stored?
 outdir = "/beegfs/car/bb/"
 
+# which opacity set did we use?
+xlist = "gaslistR10K.dat"
+
 # Where are the cross sections?
 # give the full path
 xpath = "/beegfs/car/bb/Linelists/"
@@ -79,7 +85,8 @@ xpath = "/beegfs/car/bb/Linelists/"
 # that's all the input.. .off we go...
 rawsamples, probs,ndim = nb.get_endchain(outdir+runname,fin)
 
-testlen = 30
+
+
 slen = rawsamples.shape[0]
 
 if (testrun == 1):
@@ -98,8 +105,9 @@ slen = settings.samples.shape[0]
 # get the run arguments
 gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = nb.getargs(outdir+runname)
 
-# we're corrcting the distance in this case for Gaia update
-dist = 11.56
+# If we're corrcting the distance (e.g for Gaia update),
+# put it here, or or comment out 
+# dist = 11.56
 
 # But we want to a much wider wavelength range...
 w1 = 0.7
@@ -108,53 +116,17 @@ w2 = 20.0
 # So, we'll use gasnum from runargs^^ to replace the opacity arrays from the
 # retrieval with new ones covering our new wavelength range. 
 
-ngas = gasnum.size
-totgas = 24
-gasdata = []
-with open('gaslistR10K.dat') as fa:
-    for line_aa in fa.readlines()[1:totgas+1]:
-        line_aa = line_aa.strip()
-        gasdata.append(line_aa.split())
-        
-list1 = []    
-for i in range(0, ngas):
-    for j in range(0, totgas):
-        if int(gasdata[j][0]) == gasnum[i]:
-            list1.append(gasdata[j])
-            
-if malk == 1:
-    for i in range(0, ngas):
-        list1[i] = [w.replace('K_xsecs_R10K.pic', 'K_Mike_xsecs_R10K.pic') for w in list1[i]]
-        list1[i] = [w.replace('Na_xsecs_R10K.pic', 'Na_Mike_xsecs_R10K.pic') for w in list1[i]]
-    
+with open(xlist, 'r') as infile:
+    lines=infile.readlines()[1:]
+gaslist = []
+for i in gasnum:
+    for j in range(0,len(lines)-1):
+        index = lines[j].split()[0]
+        if (int(index) == i):
+            gaslist.append(lines[j].split()[1])
 
-lists = [xpath+i[3] for i in list1[0:ngas]]
-
-# get the basic framework from water list
-rawwavenum, inpress, inlinetemps, inlinelist = pickle.load(open(xpath+'H2O_xsecs_R10K.pic', "rb"))
-
-wn1 = 10000./w2
-wn2 = 10000. / w1
-inwavenum = np.asfortranarray(rawwavenum[np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1)))], dtype='float64')
-ntemps = inlinetemps.size
-npress = press.size
-nwave = inwavenum.size
-r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
-r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
-
-
-
-# Here we are interpolating the linelist onto our fine pressure scale.
-# pickles have linelist as 4th entry....
-linelist = (np.zeros([ngas, npress, ntemps, nwave], order='F')).astype('float64', order='F')
-for gas in range(0, ngas):
-    inlinelist = pickle.load(open(lists[gas], "rb"))[3]
-    for i in range(0, ntemps):
-        for j in range(r1, r2+1):
-            pfit = interp1d(np.log10(inpress), np.log10(inlinelist[:, i, j]))
-            linelist[gas, :, i, (j-r1)] = np.asfortranarray(pfit(np.log10(press)))
-            
-linelist[np.isnan(linelist)] = -50.0
+# Now we'll get the opacity files into an array
+inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
 
 # Get the cia bits
 tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
@@ -170,8 +142,8 @@ settings.runargs = gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,in
 
 
 
-    # Collect whatever has to be done in a list. Here we'll just collect a list of
-    # numbers. Only the first rank has to do this.
+# Collect whatever has to be done in a list. Here we'll just collect a list of
+# numbers. Only the first rank has to do this.
 if COMM.rank == 0:
     jobs = list(range(slen))
     t1 = time.process_time()

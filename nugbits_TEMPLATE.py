@@ -107,6 +107,11 @@ def teffRM(theta,sigDist,sigPhot):
     for j in range(1, (wave.size - 1)):
         sbin = ((wave[j] - wave[j-1]) + (wave[j+1] - wave[j])) / 2. 
         fbol = (sbin * flux[j]) + fbol
+
+    # Get Lbol in log(L / Lsol)
+    lsun = 3.828e26
+    l_bol = np.log10((fbol * 4.*np.pi*(dist * 3.086e16)**2) / lsun)
+
     # now get T_eff
     t_ff = ((fbol/(r2d2 * 5.670367e-8))**(1./4.))
 
@@ -126,7 +131,57 @@ def teffRM(theta,sigDist,sigPhot):
     M = (R**2 * g/(6.67E-11))/1.898E27
     R = R / 71492e3
 
-    result = np.concatenate((theta,np.array([t_ff, R, M])),axis=0)
+    # Now lets get the C/O and M/H ratios...
+    # read molecules (elements!) to be used for M/H and C/O from theta
+    # Think about these choices, and maybe experiment
+    # Are the elements depleted by missed gases, or condensation
+    # e.g. Fe/H, from retrieved FeH abundance will look subsolar
+    # due to condensation of Fe.
+    # Similarly, N2 is not observable, so N/H from NH3 may look subsolar...
+
+    # Example here is for T dwarf gaslist:['h2o','ch4','co','co2','nh3','h2s','k','na']
+
+    # We will base e
+    h2o = theta[0]
+    ch4 = theta[1]
+    co = theta[2]
+    co2 = theta[3]
+    nak = theta[7]
+
+    # first get the C/O
+
+    O = 10**h2o + 10**co + 2.*10**(co2) 
+    C = 10**(co) + 10**(co2) + 10**(ch4)
+
+    CO_ratio = C/O
+
+    # rest of the elements
+    NaK = 10**nak
+
+    # Determine "fraction" of H2 in the L dwarf
+    gas_sum = 10**h2o + 10**co +10**co2 + 10**ch4 + 10**nak
+    fH2 = (1-gas_sum)* 0.84  # fH2/(fH2+FHe) = 0.84
+    fH = 2.*fH2
+
+    
+    # Determine linear solar abundance sum of elements in our L dwarf
+    # abundances taken from Asplund+ 2009
+    solar_H = 12.00
+    solar_O = 10**(8.69-solar_H)
+    solar_C = 10**(8.43-solar_H) 
+    #solar_Ti = 10**(4.95-solar_H)
+    #solar_V = 10**(3.93-solar_H)
+    #solar_Cr = 10**(5.64-solar_H)
+    #solar_Fe = 10**(7.50-solar_H)
+    solar_NaK = 10**(6.24-solar_H + 5.03-solar_H)
+    
+    # Calculate the metallicity fraction in the star and the same for the sun and then make the ratio
+    metallicity_target = (O/fH) + (C/fH) + (NaK/fH)
+    metallicity_sun = solar_O + solar_C + solar_NaK
+
+    MH = np.log10(metallicity_target / metallicity_sun)
+
+    result = np.concatenate((theta,np.array([l_bol, t_ff, R, M, MH, CO_ratio])),axis=0)
     
     return result
 

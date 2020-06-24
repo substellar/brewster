@@ -1,28 +1,26 @@
 #PBS -S /bin/tcsh
-#PBS -N 2M2224_Cs_pownug
+#PBS -N YOURJOBNAME
 #PBS -m abe
-#PBS -l select=5:ncpus=17:mpiprocs=17:model=has
+#PBS -l nodes=4:ppn=32
 #PBS -l walltime=20:00:00
 #PBS -k oe
-#PBS -r n
-#PBS -q long
-#PBS -W group_list=s1152
-source /usr/share/modules/init/csh
-module load mpi-intel/4.1.1.036 comp-intel/2015.0.090 python/2.7.10
-source /usr/local/lib/global.cshrc
+#PBS -q main
 
-setenv PATH ${PATH}:/home1/bburning/retrievals/2M2224spex:/u/scicon/tools/bin
-setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/home1/bburning/retrievals/2M2224spex
-#setenv MPI_BUFS_PER_PROC 512
-#setenv OMP_NUM_THREADS 20
+source ~/.tcshrc
+module load use.own
+module unload mpich2-x86_64
+module load mpich2-intel
+
+setenv WDIR /path/to/your/WDIR
+
+setenv PATH ${PATH}:${WDIR}
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
+
+py3up
 
 unlimit stacksize
 
 limit coredumpsize 0
-
-
-
-
 
 set time_start=`date '+%T%t%d_%h_06'`
   
@@ -43,11 +41,13 @@ echo ------------------------------------------------------
 
 
 
-cd /home1/bburning/retrievals/2M2224spex
+cd ${WDIR}
 
-mpdboot --file=$PBS_NODEFILE --ncpus=1 --totalnum=`cat $PBS_NODEFILE | sort -u | wc -l` --ifhn=`head -1 $PBS_NODEFILE` --rsh=ssh --mpd=`which mpd` --ordered
+mpirun -env I_MPI_JOB_RESPECT_PROCESS_PLACEMENT=1 \
+       -machinefile $PBS_NODEFILE -n 128 -ppn 32 \
+       python YOUR_mcnuggets_name.py > path/to/your/logfile.txt
 
-mpiexec -machinefile $PBS_NODEFILE -np 85 python mcnuggets_Cs.py > nugget.log
+
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start
@@ -55,6 +55,4 @@ echo Ended at: $time_end
 echo ------------------------------------------------------
 echo Job ends
 
-# terminate the MPD daemon
-
-mpdallexit
+#mpdallexit
