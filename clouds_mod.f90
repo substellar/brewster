@@ -13,7 +13,7 @@ contains
     implicit none
     type(a_layer), intent(inout):: column(nlayers)
     integer :: icloud, imiewave, irad,ilayer,oldw1, oldw2, idum1, idum2,iwave
-    integer :: sizdist,loc1,loc1a,loc1b
+    integer :: sizdist,loc1,loc1a,loc1b,loc1m
     integer :: loc(1)
     character(len=50) :: miefile
     double precision ,allocatable, dimension(:,:,:) :: qscat,qext,cos_qscat
@@ -24,7 +24,7 @@ contains
     double precision, allocatable, dimension(:,:,:) :: cqs_cloud
     double precision, allocatable, dimension(:,:):: opd_ext,opd_scat, cos_qs
     double precision :: norm, rr, r2, rg, rsig, pw, pir2ndz, arg1, arg2,bot
-    double precision :: f1, f2, intfact,lintfact,vrat,rmin
+    double precision :: f1, f2, intfact,lintfact,vrat,rmin,sum_ndz_2, sum_ndz_1
     double precision :: a, b, ndz, drr, arg3, argscat, argext, argcosqs
     double precision :: logcon, qpir2, frac
     real, allocatable,dimension(:) :: cld1arr 
@@ -134,7 +134,8 @@ contains
     opd_ext = 0.d0
     opd_scat = 0.d0
     cos_qs = 0.d0
-
+    sum_ndz_1 = 0.d0
+    sum_ndz_2 = 0.d0
     ! This sets up options to print ndz etc
     do ilayer = 1, nlayers
        cld1arr(ilayer) = column(ilayer)%cloud(1)%dtau1
@@ -245,13 +246,18 @@ contains
                 
                 ndz = exp(logcon +arg2 - arg3)
 
+
                 !if (icloud .eq. 1) then
+                !   sum_ndz_1 = sum_ndz_1 +ndz
                 !   frac = (ndz *1e4 / (column(ilayer)%dz)) * ((4/3)*PI * (0.008e-4**3)) * 0.032 * AVOGADRO / (column(ilayer)%ndens)
                 !   write(*,*) 'MgSiO3 mixing fraction = ', frac
+                ! write(*,*) 'sum ndz MgSiO3 = ', sum_ndz_1
                 !end if
                 !if (icloud .eq. 2) then
+                !   sum_ndz_2 = sum_ndz_2 +ndz
                 !   frac = (ndz * 1e4/ (column(ilayer)%dz)) * ((4/3)*PI * (0.34e-4**3)) * 0.044 * AVOGADRO / (column(ilayer)%ndens)
                 !   write(*,*) 'SiO2 mixing fraction = ', frac
+                !   write(*,*) 'sum ndz SiO2 = ', sum_ndz_2
                 !end if
 
                 !TEST writes for ndz etc
@@ -366,20 +372,25 @@ contains
 
 
     ! test line write cloud optical depth out
-    !open(unit=10,file='cloud1_diagn.txt',form='formatted',status='new')
+    !open(unit=10,file='cloud3_diagn.txt',form='formatted',status='new')
     !scat = 0.
     !ext = 0.
     !cqs = 0.
-    !do imiewave= 1, nmiewave
-    !   do ilayer = 1, nlayers
-    !      scat(imiewave) = scat(imiewave) + scat_cloud(ilayer,imiewave,1)
-    !      ext(imiewave) = ext(imiewave) + ext_cloud(ilayer,imiewave,1)
-    !      cqs(imiewave) = cqs(imiewave) + cqs_cloud(ilayer,imiewave,1)
-    !   end do
-    !   write(10,*) miewavelen(imiewave),scat(imiewave),ext(imiewave),cqs(imiewave)
+    !loc = minloc(abs((1e4*miewavelen) - 1.0 ))
+    !loc1m = loc(1)
+    !do ilayer = 1, nlayers
+    !   if (ext(loc1m) .lt. 1.0) then
+    !      do imiewave= 1, nmiewave
+    !         scat(imiewave) = scat(imiewave) + scat_cloud(ilayer,imiewave,3)
+    !         ext(imiewave) = ext(imiewave) + ext_cloud(ilayer,imiewave,3)
+    !         cqs(imiewave) = cqs(imiewave) + cqs_cloud(ilayer,imiewave,3)
+    !      end do
+    !   end if
     !enddo
+    !do imiewave = 1, nmiewave
+    !   write(10,*) miewavelen(imiewave),scat(imiewave),ext(imiewave),cqs(imiewave)
+    !end do
     !close(10)
-
 
 
     deallocate(qscat,qext,cos_qscat,radius_in,radius,dr,rup)

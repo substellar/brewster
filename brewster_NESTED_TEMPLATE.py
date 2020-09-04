@@ -117,7 +117,7 @@ press = pow(10,logfinePress)
 
 # Where are the cross sections?
 # give the full path
-xpath = "/nobackup/bburning/LineLists/"
+xpath = "/nobackup/bburning/Linelists/"
 xlist = 'gaslistRox.dat'
 
 
