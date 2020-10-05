@@ -33,7 +33,9 @@ def set_prof(proftype, coarsePress,press,intemp):
         # spline fit with max smoothing
         tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
         temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
-
+        #tfit = sp.interpolate.UnivariateSpline(np.log10(coarsePress),intemp,k=2,s=0)
+        #temp = tfit(np.log10(press))
+                    
     elif (proftype == 2):
         # unpact the parameters
         beta = 0.5

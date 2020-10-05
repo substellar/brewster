@@ -11,7 +11,8 @@
 # ======================================================================
 # Let's start with the declarations
 # ======================================================================
-export LD_LIBRARY_PATH /nasa/sgi/mpt/2.15r20/lib/:/nasa/intel/Compiler/2016.2.181/compilers_and_libraries/linux/lib/intel64:/nasa/intel/Compiler/2016.2.181/compilers_and_libraries/linux/ipp/lib/intel64:/nasa/intel/Compiler/2016.2.181/mkl/lib/intel64:/nasa/intel/Compiler/2016.2.181/tbb/lib/intel64/gcc4.1:./
+export LD_LIBRARY_PATH /nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/compiler/lib/intel64:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/compiler/lib/intel64_lin:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/ipp/lib/intel64:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/compiler/lib/intel64_lin:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/mkl/lib/intel64_lin:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/tbb/lib/intel64/gcc4.1:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/tbb/lib/intel64/gcc4.1:/nasa/intel/Compiler/2018.3.222/debugger_2018//libipt/intel64/lib:/nasa/intel/Compiler/2018.3.222/compilers_and_libraries_2018.3.222/linux/daal/lib/intel64_lin:/nasa/hpe/mpt/2.17r13/lib
+
 
 # The compiler
 #FC = gfortran
@@ -28,8 +29,8 @@ export LD_LIBRARY_PATH /nasa/sgi/mpt/2.15r20/lib/:/nasa/intel/Compiler/2016.2.18
 #F77FLAGS = -O3 -fPIC -fdefault-real-8 -std=legacy -m64
 
 # Intel compiler version
- FCFLAGS = -O3 -fPIC -axCORE-AVX2
- F77FLAGS = -O3 -fPIC -axCORE-AVX2 -autodouble
+ FCFLAGS = -O3 -fPIC -axCORE-AVX2 -heap-arrays -fp-model consistent
+ F77FLAGS = -O3 -fPIC -axCORE-AVX2 -autodouble -heap-arrays -fp-model consistent
 
 # intel debug version
 
@@ -122,6 +123,20 @@ ciasig:
 ciamod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
+
+
+bbconvsig:
+	f2py -m bbconv -h bbconv.pyf bbconv.f90
+
+bbconv:
+	f2py --fcompiler=intelem --compiler=intelem --noopt --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c bbconv.pyf bbconv.f90
+
+
+tausig:
+	f2py -m taumod -h taumod.pyf sizes_mod.f90 cloudtau.f90
+
+taumod:
+	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c taumod.pyf sizes_mod.f90 cloudtau.f90
 
 # Utility targets
 

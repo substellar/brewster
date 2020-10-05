@@ -1,21 +1,21 @@
 #PBS -S /bin/tcsh
-#PBS -N  D1425_Pdeck_CE
+#PBS -N TESTING123
 #PBS -m abe
-#PBS -l select=1:ncpus=1:mpiprocs=1:model=has+5:ncpus=17:mpiprocs=17:model=has
-#PBS -l walltime=65:00:00
+#PBS -l select=10:ncpus=24:mpiprocs=24:model=has
+#PBS -l walltime=1:00:00
 #PBS -k oe
 #PBS -r n
-#PBS -q long
+#PBS -q devel
 #PBS -W group_list=s1152
 source /usr/share/modules/init/csh
-module load mpi-sgi/mpt.2.15r20 comp-intel/2016.2.181 python/2.7.12
+module load mpi-sgi/mpt comp-intel/2018.3.222 python3/3.7.0
 source /usr/local/lib/global.cshrc
 
 setenv MPI_REQUEST_MAX 512
 setenv MPI_SHEPHERD true
 setenv MPI_BUFS_PER_PROC 512
 
-setenv WDIR /home1/bburning/retrievals/ABDor
+setenv WDIR /home4/bburning/retrievals/longWaveMie
 
 setenv PATH ${PATH}:${WDIR}:/u/scicon/tools/bin
 setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:${WDIR}
@@ -48,7 +48,7 @@ echo ------------------------------------------------------
 cd ${WDIR}
 
 
-mpiexec -np 86 python  D1425_Pdeck_CE.py > /nobackup/bburning/brew_D1425_Pdeck_CE.log
+mpiexec -np 240 python TEST_here.py > /nobackup/bburning/TEST.log
 
 set time_end=`date '+%T%t%d_%h_06'`
 echo Started at: $time_start

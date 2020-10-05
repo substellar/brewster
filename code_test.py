@@ -210,14 +210,14 @@ def NoCloud_Tdwarf(xpath,xlist):
      shiftspec[0,:] =  trimspec[0,:] + dlam
      shiftspec[1,:] =  trimspec[1,:]
 
+     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
 
-
+                        
      benchspec = np.loadtxt('No_cloud_800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
-     wno = 1e4 / shiftspec[0,:]
-     modspec = spex_non_uniform(benchspec[0,:],wno,shiftspec[1,:])
+     outspec = spex_non_uniform(benchspec,modspec)
 
 
-     difference_spectrum = modspec / benchspec[1,:]
+     difference_spectrum = outspec / benchspec[1,:]
      print('*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-')
      print('------------------------------------------------------------')
      print(' Test for T dwarf case, forward model only, No clouds')
@@ -225,7 +225,7 @@ def NoCloud_Tdwarf(xpath,xlist):
      print('mean value of modelspectrum / T benchmark = '+str(np.mean(difference_spectrum)))
      print('std deviation of modelspectrum / T benchmark = '+str(np.std(difference_spectrum)))
 
-     percent_change = np.mean(abs(modspec - benchspec[1,:])/benchspec[1,:])
+     percent_change = np.mean(abs(outspec - benchspec[1,:])/benchspec[1,:])
      
      if (percent_change < 0.01):
           print("less than 1percent difference with T dwarf regime benchmark")
@@ -373,7 +373,7 @@ def MieClouds_Ldwarf(xpath,xlist):
      print(' Test for L dwarf case, plotting via theta and testkit')
      print(' theta taken from 2M2224 case with Mie clouds')
      print(' crystalline enstatite slab + rust deck')
-     print(' optical data as at August 2019 in benchmark spectrum')
+     print(' optical data as at February 2020 in benchmark spectrum')
      print('------------------------------------------------------')
      print('mean value of modelspectrum / L benchmark = '+str(np.mean(difference_spectrum)))
 
