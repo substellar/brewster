@@ -399,10 +399,10 @@ for result in sampler.sample(p0, iterations=niter):
 
     if (k==10 or k==1000 or k==1500 or k==2000 or k==2500 or k==3000 or k==3500 or k==4000 or k==4500 or k==5000 or k==6000 or k==7000 or k==8000 or k==9000 or k==10000 or k==11000 or k==12000 or k==15000 or k==18000 or k==19000 or k==20000 or k==21000 or k==22000 or k==23000 or k==24000 or k==25000 or k==26000 or k==27000 or k==28000 or k==29000 or k == 30000 or k == 35000 or k == 40000 or k == 45000 or k == 50000 or k == 55000 or k == 60000 or k == 65000):
         chain=sampler.chain
-	lnprob=sampler.lnprobability
-	output=[chain,lnprob]
-	pickle.dump(output,open(outdir+picdump,"wb"))
-	pickle.dump(chain[:,k-1,:], open(chaindump,'wb'))
+        lnprob=sampler.lnprobability
+        output=[chain,lnprob]
+        pickle.dump(output,open(outdir+picdump,"wb"))
+        pickle.dump(chain[:,k-1,:], open(chaindump,'wb'))
 
 
 
