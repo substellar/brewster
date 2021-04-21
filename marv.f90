@@ -92,7 +92,7 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
    do ipatch = 1, npatch
      do icloud = 1, nclouds
         ! check if we're doing a specific cloud or a generic/mixed cloud
-        if (incloudnum(ipatch,icloud) .eq. 99) then
+        if (incloudnum(ipatch,icloud) .gt. 50) then
            cloudname(ipatch,icloud) = "mixto"
         else
            cloudname(ipatch,icloud) = trim(adjustl(cloudlist(incloudnum(ipatch,icloud))))

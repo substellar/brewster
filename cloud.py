@@ -233,8 +233,8 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
 
 def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
     # This unpacks a patchy cloud
-    # This is achieved by equated patch 2 to patch 1, but one cloud in patch 2
-    # is set to cloudtype = 0 (empty)
+    # This is achieved by equated patch 2 to patch 1,
+    # but all but some clouds in patch 2 are set to cloudtype = 0
     nc =0 
     if (cloudtype.size > cloudtype.shape[0]):
         nclouds = cloudtype.shape[1]
