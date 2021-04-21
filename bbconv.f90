@@ -1,9 +1,10 @@
-subroutine spex(obspec, modspec,Fratio_int)
+subroutine prism(obspec, modspec,resel,Fratio_int)
 
   implicit none
 
 
   !f2py intent(inout) obspec,modspec
+  !f2py intent(in) resel
   !f2py intent(out) Fratio_int
   
   integer, parameter:: maxwave = 40000  
@@ -11,7 +12,7 @@ subroutine spex(obspec, modspec,Fratio_int)
   double precision,dimension(maxwave),intent(out) :: Fratio_int
   double precision,allocatable,dimension(:):: delta1,delta2,delta
   double precision,allocatable,dimension(:):: gauss,wlmod,Fmod,wlobs
-  double precision:: sigma
+  double precision:: sigma,resel
   integer :: i, nwmod, nobs,nmod
 
   nobs = size(obspec(1,:))
@@ -35,7 +36,7 @@ subroutine spex(obspec, modspec,Fratio_int)
   delta(nobs) = delta(nobs - 1)
 
   do i = 1, nobs
-     sigma = delta(i) * 3.3 / 2.355
+     sigma = delta(i) * resel / 2.355
      gauss = exp(-(wlmod - wlobs(i))**2 / (2*sigma**2))
      gauss = gauss / sum(gauss)
      Fratio_int(i) = sum(gauss*Fmod)
@@ -44,7 +45,7 @@ subroutine spex(obspec, modspec,Fratio_int)
   deallocate(delta1,delta2,delta)
   deallocate(gauss,wlmod)
 
-end subroutine spex
+end subroutine prism
 
 subroutine convFWHM(obspec,modspec,fwhm,Fratio_int)
 

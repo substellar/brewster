@@ -47,7 +47,7 @@ def get_endchain(runname,fin,results_path='./'):
 def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
     import numpy as np
     import scipy as sp
-    from bensconv import spex_non_uniform
+    from bensconv import prism_non_uniform
     from bensconv import conv_uniform_R
     from bensconv import conv_uniform_FWHM
 
@@ -78,15 +78,39 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         
         outspec = conv_uniform_FWHM(obspec,modspec,fwhm)
 
-    elif (fwhm > 1.00):
+    elif (fwhm > 10.00):
         # this is a uniform resolving power R.
         Res = fwhm
-        spec = conv_uniform_R(obspec,modspec,Res)
+        outspec = conv_uniform_R(obspec,modspec,Res)
 
     elif (fwhm == 0.0):
         # Use Mike's convolution for Spex
-        outspec = spex_non_uniform(obspec,modspec)
-             
+        outspec = prism_non_uniform(obspec,modspec,3.3)
+    elif (fwhm == 1.0):
+        # Use convolution for JWST/NIRSpec Prism
+        outspec = prism_non_uniform(obspec,modspec,2.2)
+    elif (fwhm == 2.0):
+        # combo of JWST-NIRSpec PRISM + G395H grism
+        # single scaling & single fudge factor
+        spec = np.zeros_like(obspec[0,:])
+        # first convolution for JWST-NIRSpec PRISM
+        or1  = np.where(obspec[0,:] < 2.9)
+        spec[or1] = prism_non_uniform(obspec[:,or1],modspec,2.2)
+        # now 1st grism bit
+        dL = 0.0015
+        or2  = np.where(np.logical_and(obspec[0,:] > 2.9,obspec[0,:] < 3.69))
+        spec[or2] =  conv_uniform_FWHM(obspec[:,or2],modspec,dL)
+        # a bit more prism
+        or3 = np.where(np.logical_and(obspec[0,:] > 3.69,obspec[0,:] < 3.785))
+        spec[or3] = prism_non_uniform(obspec[:,or3],modspec,2.2)
+        # 2nd bit of grism
+        or4 = np.where(np.logical_and(obspec[0,:] > 3.785,obspec[0,:] < 5.14))
+        spec[or4] =  conv_uniform_FWHM(obspec[:,or4],modspec,dL)
+        # the rest of prism
+        or5 = np.where(obspec[0,:] > 5.14)
+        spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
+        outspec = spec
+        
     elif (fwhm < 0.0):
         # This is for multi-instrument cases
         # -1: spex + akari + IRS
@@ -97,7 +121,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             # Spex
             mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # AKARI IRC
             # dispersion constant across order 0.0097um
@@ -123,7 +147,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             # Spex
             mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
  
             # Spitzer IRS
@@ -141,7 +165,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             # Spex
             mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
              # Mike Cushing supplied L band R = 425 
             # dispersion constant across order 0.0097um
@@ -166,7 +190,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             # Spex
             mr1 = np.where(modspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # Katelyn Allers spectrum of GNIRS R = 600
             # R = 600 @ 3.5um linearly increading across order
@@ -187,6 +211,22 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
 
             outspec =  np.array(np.concatenate((spec1,spec2,spec3),axis=0))
 
+        elif (fwhm == -5):
+            # This is JWST NIRSpec + MIRI MRS no scaling + 1 fudge
+            join = np.array([0.,5.1,5.7,7.59,11.6,13.4,15.49,18.01,20.0])
+            pix = np.array([2.2,1.9,2.0,2.2,2.4,3.1,3.0,3.3])
+
+            # Now we just work through the Prism +MRS orders,
+            # using mid point in overlap regions
+            # divided into chunk based on fwhm of res element in pixels
+            spec = np.zeros_like(obspec[0,:])
+                                 
+            for i in range(0,pix.size):
+                bit = np.where(np.logical_and(obspec[0,:] > join[i],obspec[0,:] < join[i+1]))
+                spec[bit] = prism_non_uniform(obspec[:,bit],modspec,pix[i])
+
+            outspec = spec 
+            
     return outspec
             
 

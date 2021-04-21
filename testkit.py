@@ -18,7 +18,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import interp1d
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
-from bensconv import spex_non_uniform
+from bensconv import prism_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
 
@@ -120,7 +120,34 @@ def lnprior(theta):
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
                 pc = ng + 4
-
+        elif (fwhm == -5):
+            # this is for JWST NIRSpec prism + MIRI MRS
+            # we assume that this is all scaled well
+            # as is currently just simulated data anyhow
+            # so this unpack is the same as a single instrument
+            s1 = np.where(obspec[0,:] > 0.0)
+            s2 = s1
+            s3 = s1
+            r2d2 = theta[ng+1]
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                scale1 = 1.0
+                scale2 = 1.0
+                pc = ng + 4
+            else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                scale1 = 1.0
+                scale2 = 1.0
+                pc = ng + 3
+    
     else:
         # this just copes with normal, single instrument data
         s1 = np.where(obspec[0,:] > 0.0)
@@ -647,7 +674,16 @@ def lnlike(theta):
                 # This is a place holder value so the code doesn't break
                 logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
                 nb = 4
-
+                
+        elif (fwhm == -5):
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                nb = 3
+                
     else:
         if (do_fudge == 1):
             logf = theta[ng+3]
@@ -657,6 +693,7 @@ def lnlike(theta):
             logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
             nb = 3
 
+            
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
     # If we've set a value for FWHM that we're using... 
     if (fwhm > 0.00 and fwhm < 1.00):
@@ -664,20 +701,37 @@ def lnlike(theta):
         
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
         
-    elif (fwhm > 1.00):
+    elif (fwhm > 10.00):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
-        # Below is method for rebinning using conserve flux method
-        #    oblen = obspec.shape[1]
-        #    modspec = np.empty((2,oblen),dtype='d')
-        #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
-        # get log-likelihood
-        # We've lifted this from Mike's code, below is original from emcee docs
-        # Just taking every 3rd point to keep independence
     elif (fwhm == 0.0):
         # Use convolution for Spex
-        spec = spex_non_uniform(obspec,modspec)
+        spec = prism_non_uniform(obspec,modspec,3.3)
+    elif (fwhm == 1.0):
+        # Use convolution for JWST-NIRSpec PRISM
+        spec = prism_non_uniform(obspec,modspec,2.2)
+    elif (fwhm == 2.0):
+        # combo of JWST-NIRSpec PRISM + G395H grism
+        # single scaling & single fudge factor
+        spec = np.zeros_like(obspec[0,:])
+        # first convolution for JWST-NIRSpec PRISM
+        or1  = np.where(obspec[0,:] < 2.9)
+        spec[or1] = prism_non_uniform(obspec[:,or1],modspec,2.2)
+        # now 1st grism bit
+        dL = 0.0015
+        or2  = np.where(np.logical_and(obspec[0,:] > 2.9,obspec[0,:] < 3.69))
+        spec[or2] =  conv_uniform_FWHM(obspec[:,or2],modspec,dL)
+        # a bit more prism
+        or3 = np.where(np.logical_and(obspec[0,:] > 3.69,obspec[0,:] < 3.785))
+        spec[or3] = prism_non_uniform(obspec[:,or3],modspec,2.2)
+        # 2nd bit of grism
+        or4 = np.where(np.logical_and(obspec[0,:] > 3.785,obspec[0,:] < 5.14))
+        spec[or4] =  conv_uniform_FWHM(obspec[:,or4],modspec,dL)
+        # the rest of prism
+        or5 = np.where(obspec[0,:] > 5.14)
+        spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
+        
     if (fwhm >= 0.0):
         if (do_fudge == 1):
             s2=obspec[2,::3]**2 + 10.**logf
@@ -695,17 +749,14 @@ def lnlike(theta):
         if (fwhm == -1):
 
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # AKARI IRC
             # dispersion constant across order 0.0097um
             # R = 100 at 3.6um for emission lines
             # dL ~constant at 3.6 / 120
             dL = 0.03
-            #mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             spec2 = scale1 * conv_uniform_FWHM(obspec[:,or2],modspec,dL)
 
@@ -713,7 +764,6 @@ def lnlike(theta):
             # R roughly constant within orders, and orders both appear to
             # have R ~ 100
             R = 100.0
-            #mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
             spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
 
@@ -735,15 +785,13 @@ def lnlike(theta):
         elif (fwhm == -2):
             # This is just spex + IRS
             # Spex
-            #mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
             # have R ~ 100
             R = 100.0
-            #mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
             spec3 = scale1 * conv_uniform_R(obspec[:,or3],modspec,R)
 
@@ -762,17 +810,13 @@ def lnlike(theta):
         elif (fwhm == -3):
             # This is spex + Mike Cushing's L band R = 425 + IRS 
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
-            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # Mike Cushing supplied L band R = 425 
             # dispersion constant across order 0.0097um
             # R = 425
             R = 425
-            #mr2 = np.where(np.logical_and(modspec[0,:] > 2.5,modspec[0,:] < 5.0))
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,R)
 
@@ -780,7 +824,6 @@ def lnlike(theta):
             # R roughly constant within orders, and orders both appear to
             # have R ~ 100
             R = 100.0
-            #mr3 = np.where(modspec[0,:] > 5.0)
             or3 = np.where(obspec[0,:] > 5.0)
             spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
 
@@ -802,18 +845,14 @@ def lnlike(theta):
         elif (fwhm == -4):
             # This is spex + GNIRS L band R = 600 + IRS 
             # Spex
-            mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
-            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # Katelyn Allers spectrum of GNIRS R = 600
             # R = 600 @ 3.5um linearly increading across order
             # i.e. FWHM - 0.005833
             dL = 0.005833
             #dL = 0.0097
-
 
             or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             spec2 = scale1 * conv_uniform_FWHM(obspec[:,or2],modspec,dL)
@@ -840,6 +879,28 @@ def lnlike(theta):
             lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s2) + np.log(2.*np.pi*s2))
             lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
             lnLik = lnLik1 + lnLik2 + lnLik3
+
+        elif (fwhm == -5):
+            # This is JWST NIRSpec + MIRI MRS no scaling + 1 fudge
+            join = np.array([0.,5.1,5.7,7.59,11.6,13.4,15.49,18.01,20.0])
+            pix = np.array([2.2,1.9,2.0,2.2,2.4,3.1,3.0,3.3])
+
+            # Now we just work through the Prism +MRS orders,
+            # using mid point in overlap regions
+            # divided into chunk based on fwhm of res element in pixels
+            spec = np.zeros_like(obspec[0,:])
+                                 
+            for i in range(0,pix.size):
+                bit = np.where(np.logical_and(obspec[0,:] > join[i],obspec[0,:] < join[i+1]))
+                spec[bit] = prism_non_uniform(obspec[:,bit],modspec,pix[i])
+
+         
+            if (do_fudge == 1):
+                s2 = obspec[2,:]**2 + 10.**logf
+            else:
+                s2 = obspec[2,:]**2
+
+            lnLik=-0.5*np.sum((((obspec[1,:] - spec)**2) / s2) + np.log(2.*np.pi*s2))
             
     return lnLik
 
@@ -889,6 +950,16 @@ def modelspec(theta, args,gnostics):
                 logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
                 nb = 4
 
+        elif (fwhm == -5):
+            r2d2 = theta[ng+1]
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                nb = 3
     else:
         r2d2 = theta[ng+1]
         dlam = theta[ng+2]
@@ -1000,7 +1071,9 @@ def modelspec(theta, args,gnostics):
             scale2 = r2d2[2]
         elif (fwhm == -2):
             R2D2 = r2d2[0]
-            scale1 = r2d2[1]            
+            scale1 = r2d2[1]
+        elif (fwhm == -5):
+            R2D2 = r2d2
     else:
         R2D2 = r2d2
     

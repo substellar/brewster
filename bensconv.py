@@ -1,5 +1,5 @@
 import numpy as np
-from bbconv import spex
+from bbconv import prism
 from bbconv import convfwhm
 from bbconv import convr
 
@@ -11,10 +11,10 @@ from bbconv import convr
 
 #**************************************************************************
 
-def spex_non_uniform(obspec,modspec):
+def prism_non_uniform(obspec,modspec,resel):
 
 
-    fluxout = spex(np.asfortranarray(obspec),np.asfortranarray(modspec))[0:obspec[0,:].size]
+    fluxout = prism(np.asfortranarray(obspec),np.asfortranarray(modspec),resel)[0:obspec[0,:].size]
 
     return fluxout
 

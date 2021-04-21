@@ -22,7 +22,7 @@ from scipy.io.idl import readsav
 from scipy import interpolate
 from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline
-from bensconv import spex_non_uniform
+from bensconv import prism_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
 
@@ -214,7 +214,7 @@ def NoCloud_Tdwarf(xpath,xlist):
 
                         
      benchspec = np.loadtxt('No_cloud_800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
-     outspec = spex_non_uniform(benchspec,modspec)
+     outspec = prism_non_uniform(benchspec,modspec,3.3)
 
 
      difference_spectrum = outspec / benchspec[1,:]
