@@ -32,12 +32,13 @@ __status__ = "Development"
 
 
     
-def priormap(theta,plist=False):
+def priormap(theta):
 
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     phi = np.zeros_like(theta)
     ndim = phi.size
+
     # here are some priors you may want to edit:
     max_mass = 80. # jupiters
     min_mass = 1.0 # jupiters
@@ -52,13 +53,23 @@ def priormap(theta,plist=False):
     else:
         if (gasnum[gasnum.size-1] == 21):
             ng = gasnum.size - 1
-            phi[0:ng] = theta[0:ng] * -12.
+            rem = 1.0
+            for i in range(0, ng):
+                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                rem = rem - (10**phi[i])    
         elif (gasnum[gasnum.size-1] == 23):
             ng = gasnum.size - 2
-            phi[0:ng] = theta[0:ng] * -12.0
+            rem = 1.0
+            for i in range(0, ng):
+                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                rem = rem - (10**phi[i])    
         else:
             ng = gasnum.size
-            phi[0:ng] = theta[0:ng] * -12.0
+            rem = 1.0
+            for i in range(0, ng):
+                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                rem = rem - (10**phi[i])    
+
             
     # this is a simple uniform prior on mass
     # we want to use the radius, to set a mass prior. 
@@ -509,7 +520,10 @@ def lnlike(theta):
             lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s2) + np.log(2.*np.pi*s2))
             lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
             lnLik = lnLik1 + lnLik2 + lnLik3
-            
+
+    if np.isnan(lnLik):
+        lnLik = -np.inf
+        
     return lnLik
 
 
@@ -832,7 +846,7 @@ def countdims(runargs,plist = False):
     pnames = list() 
     # first the gases
     if (chemeq != 0):
-        pnames = pnames.extend(['[M/H]','(C/O)'])
+        pnames = ['[M/H]','(C/O)']
         ng = 2
     else:
         if (gasnum[gasnum.size-1] == 21):

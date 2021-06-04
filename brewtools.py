@@ -1,6 +1,7 @@
 from __future__ import print_function
 import pickle
 import numpy as np
+import emcee
 import os
 
 def get_endchain(runname,fin,results_path='./'):
@@ -14,7 +15,10 @@ def get_endchain(runname,fin,results_path='./'):
         max_like = flatprobs[np.argmax(flatprobs)]
         print("maximum likelihood = ", max_like)
         flatendchain = sampler.chain[:,niter-2000:,:].reshape((-1,ndim))
-        flatendprobs = sampler.lnprobability[niter-2000:,:].reshape((-1))
+        if (emcee.__version__ == '3.0rc2'):
+            flatendprobs = sampler.lnprobability[niter-2000:,:].reshape((-1))
+        else:
+            flatendprobs = sampler.lnprobability[:, niter-2000:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)

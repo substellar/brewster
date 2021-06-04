@@ -142,12 +142,12 @@ contains
                 ! test lines
                 !SSALB(ilayer) = 0.5d0
                 !patch(ipatch)%atm(ilayer)%gg(iwave) = 0.0d0
-                if (disorting) call &
-                     GETMOM(6,patch(ipatch)%atm(ilayer)%gg(iwave),&
-                     NMOM,0.0, PMOM(0,ilayer))
+                !if (disorting) call &
+                     ! GETMOM(6,patch(ipatch)%atm(ilayer)%gg(iwave),&
+                     ! NMOM,0.0, PMOM(0,ilayer))
                 COSBAR(ilayer) = patch(ipatch)%atm(ilayer)%gg(iwave)
              else     
-                CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer))
+                ! CALL GETMOM( 2, 0.0, NMOM, 0.0, PMOM(0:nmom,ilayer))
                 SSALB(ilayer) = patch(ipatch)%atm(ilayer)%opd_scat(iwave) / &
                      patch(ipatch)%atm(ilayer)%opd_ext(iwave)             
                 COSBAR(ilayer) = 0.0

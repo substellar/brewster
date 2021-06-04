@@ -15,6 +15,9 @@ make ciasig
 make ciamod
 make bbconvsig
 make bbconv
+make cloudpostsig
+make cloudpost
+
 
 
 

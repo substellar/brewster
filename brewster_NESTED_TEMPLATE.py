@@ -195,7 +195,7 @@ if (make_arg_pickle > 0):
 
 n_params = nestkit.countdims(settings.runargs)
 
-print(n_params)
+#print(n_params)
 
 result = mn.solve(LogLikelihood=nestkit.lnlike, Prior=nestkit.priormap,n_dims=n_params,n_live_points=6000, outputfiles_basename=outdir+runname, verbose=True)
 

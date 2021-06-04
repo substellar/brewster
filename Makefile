@@ -122,14 +122,13 @@ bbconvsig:
 bbconv:
 	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c bbconv.pyf bbconv.f90
 
-tausig:
-	f2py -m taumod -h taumod.pyf sizes_mod.f90 cloudtau.f90
+cloudpostsig:
+	f2py -m cloudpost -h cloudpost.pyf cloudpost.f90
 
-taumod:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c taumod.pyf sizes_mod.f90 cloudtau.f90
+cloudpost:
+	f2py --fcompiler=gfortran --f90flags="-O2 -fPIC -frecord-marker=4 -fbounds-check " -I/usr/include -L/usr/local/lib -c cloudpost.pyf cloudpost.f90
 
 # Utility targets
-
 
 .PHONY: clean 
 

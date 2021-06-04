@@ -172,7 +172,7 @@ contains
                 do irad = 1,nrad
                    rr = radius(irad,icloud)
                    arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
-                   arg2 = -log( rr/ rg )**2 / ( 2*log(rsig)**2 )
+                   arg2 = -(log( rr/ rg ))**2 / ( 2*(log(rsig))**2 )
                    qpir2 = PI * rr**2 * qext(loc1,irad,icloud)
                    norm = norm + (qpir2 * arg1 * exp(arg2))
                 end do
@@ -188,7 +188,7 @@ contains
                       
                       rr = radius(irad,icloud)
                       arg1 = dr(irad,icloud) / ( sqrt(2.*PI)*rr*log(rsig) )
-                      arg2 = -log( rr/rg)**2 / ( 2*log(rsig)**2 )
+                      arg2 = -(log( rr/rg))**2 / ( 2*(log(rsig))**2 )
                       pir2ndz = ndz * PI * rr**2 * arg1* exp( arg2 )
                       
                       
