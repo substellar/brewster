@@ -654,6 +654,7 @@ def lnlike(theta):
     else:
         ng = 2
 
+    # Get the scaling factors for the spectra. What is the FWHM? Negative number: preset combination of instruments
     if (fwhm < 0.0):
         if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             scale1 = theta[ng+2]
@@ -1152,6 +1153,11 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
         for i in range (0,ngas):    
             list1[i] = [w.replace('K_', 'K_Mike_') for w in list1[i]]
             list1[i] = [w.replace('Na_', 'Na_Mike_') for w in list1[i]]
+
+    if (malk == 2):
+        for i in range (0,ngas):
+            list1[i] = [w.replace('K_', 'K_2021_') for w in list1[i]]
+            list1[i] = [w.replace('Na_', 'Na_2021_') for w in list1[i]]
 
      
 

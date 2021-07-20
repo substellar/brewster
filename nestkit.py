@@ -17,7 +17,7 @@ from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import interp1d
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
-from bensconv import spex_non_uniform
+from bensconv import prism_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
 
@@ -31,8 +31,15 @@ __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
 
-    
+
 def priormap(theta):
+    """This function translates sample points in the n-dimensional hypercube from PyMultiNest into a set of parameters
+    for lnlike (and with that the forward model). By default the priors are uniform, so the prior-map carries out a
+    relatively simple task in translating the values from the sampler’s live points that lie between 0 and 1.
+    For example, the sample points for uniform-with-altitude gas volume mixing ratios must simply be multiplied by -12
+    to translate them into log10(gas-fraction) values within our uniform prior range -12 to 0.  Similar translations
+    are carried out for all other parameters. If you wish to add a non-uniform prior, this is where you should do it.
+    Be careful not to mess up the counting that keeps track of unpacking the 1D state vector."""
 
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
@@ -300,6 +307,7 @@ def lnlike(theta):
     # for MCMC runs we don't want diagnostics
     gnostics = 0
     shiftspec, photspec,tauspec,cfunc = modelspec(theta,settings.runargs,gnostics)
+    # Check if CE or VMR methods
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
             ng = gasnum.size - 1
@@ -312,6 +320,7 @@ def lnlike(theta):
     else:
         ng = 2
 
+    # Get the scaling factors for the spectra. What is the FWHM? Negative number: preset combination of instruments
     if (fwhm < 0.0):
         if (fwhm == -1 or fwhm == -3 or fwhm == -4):
             scale1 = theta[ng+2]
@@ -357,7 +366,7 @@ def lnlike(theta):
         # Just taking every 3rd point to keep independence
     elif (fwhm == 0.0):
         # Use convolution for Spex
-        spec = spex_non_uniform(obspec,modspec)
+        spec = prism_non_uniform(obspec,modspec,3.3)
     if (fwhm >= 0.0):
         if (do_fudge == 1):
             s2=obspec[2,::3]**2 + 10.**logf
@@ -378,7 +387,7 @@ def lnlike(theta):
             mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
             wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # AKARI IRC
             # dispersion constant across order 0.0097um
@@ -417,7 +426,7 @@ def lnlike(theta):
             # Spex
             #mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             # Spitzer IRS
             # R roughly constant within orders, and orders both appear to
@@ -445,7 +454,7 @@ def lnlike(theta):
             mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
             wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec, 3.3)
 
             modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # Mike Cushing supplied L band R = 425 
@@ -485,7 +494,7 @@ def lnlike(theta):
             mr1 = np.where(shiftspec[0,:] < 2.5)
             or1  = np.where(obspec[0,:] < 2.5)
             wno = 1e4 / shiftspec[0,mr1]
-            spec1 = spex_non_uniform(obspec[:,or1],modspec)
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
             modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
             # Katelyn Allers spectrum of GNIRS R = 600
@@ -733,7 +742,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
         for line_aa in fa.readlines()[1:totgas+1]:
             line_aa = line_aa.strip()
             gasdata.append(line_aa.split())
-    
+
     
     list1 = []    
     for i in range(0,ngas):
@@ -746,6 +755,10 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
             list1[i] = [w.replace('K_', 'K_Mike_') for w in list1[i]]
             list1[i] = [w.replace('Na_', 'Na_Mike_') for w in list1[i]]
 
+    if (malk == 2):
+        for i in range (0,ngas):
+            list1[i] = [w.replace('K_', 'K_2021_') for w in list1[i]]
+            list1[i] = [w.replace('Na_', 'Na_2021_') for w in list1[i]]
      
 
     lists = [xpath+i[3] for i in list1[0:ngas]]

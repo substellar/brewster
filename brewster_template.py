@@ -93,6 +93,7 @@ cloudtype = np.zeros([npatches, nclouds], dtype='i')
 # 4: deep thick cloud with fixed height log dP = 0.005
 # In both cases the cloud properties are density, rg, rsig for real clouds
 # and dtau, w0, and power law for cloudnum = 89 or 99 for grey
+# See cloudlist.dat for other cloudnum
 
 cloudnum[:,0] = 5
 cloudtype[:,0] = 1
@@ -150,6 +151,7 @@ ngas = len(gaslist)
 
 # some switches for alternative cross sections
 # Use Mike's (Burrows) Alkalis?
+#Use Allard (=0), Burrow's(=1), and new Allard (=2)
 malk = 0
 # Use Mike's CH4?
 mch4 = 1
