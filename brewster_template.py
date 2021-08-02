@@ -20,7 +20,7 @@ from scipy import interpolate
 from scipy.interpolate import interp1d
 from scipy.interpolate import InterpolatedUnivariateSpline
 from schwimmbad import MPIPool
-from astropy.io import fits
+
 
 
 
@@ -50,37 +50,10 @@ runname = "2M2224_ESlabFeDeck"
 
 # get the observed spectrum
 # text file with columns:
-# wavelength in microns
-# flux in W/m2/um
+# wavelength/ microns
+# flux / W/m2/um
 # flux error
-data_file= "Files_for_GPI_edits/betaPic_Flambda.txt"
-
-# Will we be using a covariance matrix? Yes=1, no=0. Give the path to the file.
-cov_matrix = 1
-cov_file ='Files_for_GPI_edits/BetaPic-covarAll.fits' #currently formatted to open fits files
-
-if cov_matrix==0:
-    obspec = np.asfortranarray(np.loadtxt(data_file,dtype='d',unpack=True))
-
-else:
-    # get the observed spectrum
-    inspec = np.asfortranarray(np.loadtxt(data_file, dtype='d', unpack=True, skiprows=1))
-    # read the covariance and strip out NANs from both spectrum and covariance
-    hdulist = fits.open(cov_file)
-    total_cov = hdulist[0].data
-    xcov = total_cov[np.where(np.invert(np.isnan(inspec[1]))), :]
-    ycov = xcov[0, :, np.where(np.invert(np.isnan(inspec[1])))]
-    # imgplot = plt.imshow(ycov[0, :, :]) #plot to check looks good
-    cov_matrix = ycov[0, :, :]
-    not_nan_index = np.where(np.invert(np.isnan(inspec[1]))) # find the indices where not nan
-    temp_wavelength = inspec[0, not_nan_index]
-    temp_flux = inspec[1, not_nan_index]
-    temp_error = inspec[2, not_nan_index]
-    obspec = np.empty([3, cov_matrix.shape[0]])
-    obspec[0, :] = temp_wavelength
-    obspec[1, :] = temp_flux
-    obspec[2, :] = temp_error
-
+obspec = np.asfortranarray(np.loadtxt("2M2224_multi1015.txt",dtype='d',unpack='true'))
 
 # Now the wavelength range
 w1 = 1.0
@@ -163,7 +136,7 @@ press = pow(10,logfinePress)
 # Where are the cross sections?
 # give the full path
 xpath = "/beegfs/car/bb/Linelists/"
-xlist = 'gaslistRox.dat' #The gaslistR10k better. Rox is sampled at 10k (rather than interpolated to 10k), but they don’t fit the data as well
+xlist = 'gaslistRox.dat'
 
 # now the cross sections
 
@@ -252,11 +225,11 @@ if (fresh == 0):
     p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
     p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
     p0[:,9] = 0.1*np.random.randn(nwalkers).reshape(nwalkers) + 4.9  # gravity
-    p0[:,10] = r2d2 + (np.random.randn(nwalkers).reshape(nwalkers) * (0.1*r2d2))  # scale factor 1
-    p0[:,11] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1) # scale factor 2 (for second instrument)
+    p0[:,10] = r2d2 + (np.random.randn(nwalkers).reshape(nwalkers) * (0.1*r2d2))  # scale factor
+    p0[:,11] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1)
     p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001  # dlambda
-    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))  # tolerance parameter 1
-    p0[:,14] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2))) # tolerance parameter 2
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))  # tolerance parameter
+    p0[:,14] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
     # If you do Chemical Equilibrium you will have these parameters instead
     # p0[:, 0] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers)) - 0.5  # met
     # p0[:, 1] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers)) + 1  # CO
@@ -268,19 +241,19 @@ if (fresh == 0):
     # These parameters should be commented out or adjusted for
     # e.g grey cloud or power law cloud, or no cloud, or deck cloud
     # this example is a "real" cloud with Hansen a and b parameters
-    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers) # optical depth
-    p0[:,16] = -2. + 0.5 * np.random.randn(nwalkers).reshape(nwalkers) # cloud top pressure
-    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers) # cloud thickness in pressure
-    p0[:,18] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers) # Hansen a if "real" cloud or single scattering albedo between 0 and 1 (np.rand=uniform distribution) for 89/99 cloud
-    p0[:,19] = 0.1*np.random.rand(nwalkers).reshape(nwalkers) # Hansen b for "real" cloud or Power law for 89/99 cloud
+    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,16] = -2. + 0.5 * np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,18] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,19] = 0.1*np.random.rand(nwalkers).reshape(nwalkers)
     # Deck cloud params
     # These parameters should be commented out or adjusted for
     # e.g grey cloud or power law cloud, or no cloud, or deck cloud
     # this example is a "real" cloud with Hansen a and b parameters
-    p0[:,20] = 0.5+ 0.2* np.random.rand(nwalkers).reshape(nwalkers) # cloud top pressure
-    p0[:,21] = np.random.rand(nwalkers).reshape(nwalkers) # cloud thickness in pressure
-    p0[:,22] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers) # Hansen a if "real" cloud or single scattering albedo between 0 and 1 (np.rand=uniform distribution) for 89/99 cloud
-    p0[:,23] = np.abs(0.1+ 0.01*np.random.randn(nwalkers).reshape(nwalkers)) # Hansen b for "real" cloud or Power law for 89/99 cloud
+    p0[:,20] = 0.5+ 0.2* np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,21] = np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,22] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
+    p0[:,23] = np.abs(0.1+ 0.01*np.random.randn(nwalkers).reshape(nwalkers))
     # ------ And now the T-P params. --------
     # For profile type 1
     # p0[:, ndim-14] = 50. + (np.random.randn(nwalkers).reshape(nwalkers))  # gamma - removes wiggles unless necessary to profile

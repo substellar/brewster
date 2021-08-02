@@ -51,7 +51,7 @@ def lnprob(theta):
 
 def lnprior(theta):
 
-    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale,cov_matrix = settings.runargs
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     # set up the priors here
     if (chemeq != 0):
@@ -633,7 +633,7 @@ def lnprior(theta):
 
 def lnlike(theta):
 
-    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale,cov_matrix = settings.runargs
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     #intemp, invmr, pcover, cloudtype, cloudparams, r2d2, logg, dlam, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,logf,proftype,do_fudge,do_bff,bff_raw,ceTgrid):
 
@@ -902,26 +902,13 @@ def lnlike(theta):
                 s2 = obspec[2,:]**2
 
             lnLik=-0.5*np.sum((((obspec[1,:] - spec)**2) / s2) + np.log(2.*np.pi*s2))
-
-    # check if cov is an integer, if so do regular lnLik, else do covariance
-    if isinstance(cov_matrix, int):
-        if (do_fudge == 1):
-            s2 = obspec[2, ::3] ** 2 + 10. ** logf
-        else:
-            s2 = obspec[2, ::3] ** 2
-        lnLik = -0.5 * np.nansum((((obspec[1, ::3] - spec[::3]) ** 2) / s2) + np.log(2. * np.pi * s2))
-    else:
-        icov = np.linalg.inv(cov_matrix)
-        diff = obspec[1, :] - spec[:]
-        lnLik = -0.5 * np.sum(np.dot(diff.T, np.dot(icov, diff)))
-
-
+            
     return lnLik
 
 
 def modelspec(theta, args,gnostics):
 
-    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale, cov_matrix = args
+    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
     nlayers = press.size
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
