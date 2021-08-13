@@ -33,13 +33,18 @@ __status__ = "Development"
 
 
 def priormap(theta):
-    """This function translates sample points in the n-dimensional hypercube from PyMultiNest into a set of parameters
-    for lnlike (and with that the forward model). By default the priors are uniform, so the prior-map carries out a
-    relatively simple task in translating the values from the sampler’s live points that lie between 0 and 1.
-    For example, the sample points for uniform-with-altitude gas volume mixing ratios must simply be multiplied by -12
-    to translate them into log10(gas-fraction) values within our uniform prior range -12 to 0.  Similar translations
-    are carried out for all other parameters. If you wish to add a non-uniform prior, this is where you should do it.
-    Be careful not to mess up the counting that keeps track of unpacking the 1D state vector."""
+    """This function translates sample points in the n-dimensional hypercube
+    from PyMultiNest into a set of parameters for lnlike (and with that the 
+    forward model). By default the priors are uniform, so the prior-map carries 
+    out a relatively simple task in translating the values from the sampler’s
+    live points that lie between 0 and 1. 
+    For example, the sample points for uniform-with-altitude gas volume 
+    mixing ratios must simply be multiplied by -12 to translate them into 
+    log10(gas-fraction) values within our uniform prior range -12 to 0.  
+    Similar translations are carried out for all other parameters. 
+    If you wish to add a non-uniform prior, this is where you should do it.
+    Be careful not to mess up the counting that keeps track of unpacking 
+    the 1D state vector."""
 
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 

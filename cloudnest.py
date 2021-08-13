@@ -185,7 +185,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[0,:,:] = 0.
     cloudparams[1,:,:] = 0.0
     cloudparams[2,:,:] = 0.1
-    cloudparams[3,:,:] = 0.5
+    cloudparams[3,:,:] = 0.0
     cloudparams[4,:] = 0.0
 
     # THIS VERSION HARDCODES ALBEDO = 0.5. IT IS NOT IN THETA 
