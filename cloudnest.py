@@ -105,6 +105,9 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # We're sampling particle radius in log space        
                     if (cloudnum[i,j] < 50.):
                         cloudrad[i,:,j] = 10.**rad
+                    else:
+                        cloudrad[i,:,j] = rad
+
                     cloudsig[i,:,j] = sig        
 
                 if (cloudtype[i,j] == 2 or cloudtype[i,j] == 4):
@@ -147,6 +150,8 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # We're sampling particle radius in log space        
                     if (cloudnum[i,j] < 50.):
                         cloudrad[i,:,j] = 10.**rad
+                    else:
+                        cloudrad[i,:,j] = rad
                     cloudsig[i,:,j] = sig       
 
                 if (cloudtype[i,j] == 0):
@@ -188,7 +193,7 @@ def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[3,:,:] = 0.0
     cloudparams[4,:] = 0.0
 
-    # THIS VERSION HARDCODES ALBEDO = 0.5. IT IS NOT IN THETA 
+    # THIS VERSION HARDCODES ALBEDO = 0.0. IT IS NOT IN THETA 
     for i in range (0,npatches):
         if (do_clouds[i] != 0):
             for j in range (0, nclouds):
@@ -258,7 +263,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
     cloudparams[0,:,:] = 0.
     cloudparams[1,:,:] = 0.0
     cloudparams[2,:,:] = 0.1
-    cloudparams[3,:,:] = 0.5
+    cloudparams[3,:,:] = 0.0
     cloudparams[4,:] = 0.0
 
     # First patch
