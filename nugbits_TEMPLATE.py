@@ -173,7 +173,7 @@ def teffRM(theta,sigDist,sigPhot):
     #solar_V = 10**(3.93-solar_H)
     #solar_Cr = 10**(5.64-solar_H)
     #solar_Fe = 10**(7.50-solar_H)
-    solar_NaK = 10**(6.24-solar_H + 5.03-solar_H)
+    solar_NaK = 10**(6.24-solar_H) + 10**(5.03-solar_H)
     
     # Calculate the metallicity fraction in the star and the same for the sun and then make the ratio
     metallicity_target = (O/fH) + (C/fH) + (NaK/fH)
