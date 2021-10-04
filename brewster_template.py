@@ -50,8 +50,8 @@ runname = "2M2224_ESlabFeDeck"
 
 # get the observed spectrum
 # text file with columns:
-# wavelength/ microns
-# flux / W/m2/um
+# wavelength in microns
+# flux in W/m2/um
 # flux error
 obspec = np.asfortranarray(np.loadtxt("2M2224_multi1015.txt",dtype='d',unpack='true'))
 
@@ -136,7 +136,7 @@ press = pow(10,logfinePress)
 # Where are the cross sections?
 # give the full path
 xpath = "/beegfs/car/bb/Linelists/"
-xlist = 'gaslistRox.dat'
+xlist = 'gaslistRox.dat' #The gaslistR10k better. Rox is sampled at 10k (rather than interpolated to 10k), but they don’t fit the data as well
 
 # now the cross sections
 
@@ -225,11 +225,11 @@ if (fresh == 0):
     p0[:,7] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 8.0 # FeH
     p0[:,8] = (0.5*np.random.randn(nwalkers).reshape(nwalkers)) - 5.5 # Na+K
     p0[:,9] = 0.1*np.random.randn(nwalkers).reshape(nwalkers) + 4.9  # gravity
-    p0[:,10] = r2d2 + (np.random.randn(nwalkers).reshape(nwalkers) * (0.1*r2d2))  # scale factor
-    p0[:,11] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1)
+    p0[:,10] = r2d2 + (np.random.randn(nwalkers).reshape(nwalkers) * (0.1*r2d2))  # scale factor 1
+    p0[:,11] =  1.0 + (np.random.randn(nwalkers).reshape(nwalkers) * 0.1) # scale factor 2 (for second instrument relative to first)
     p0[:,12] = np.random.randn(nwalkers).reshape(nwalkers) * 0.001  # dlambda
-    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))  # tolerance parameter
-    p0[:,14] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))
+    p0[:,13] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2)))  # tolerance parameter 1
+    p0[:,14] = np.log10((np.random.rand(nwalkers).reshape(nwalkers) * (max(obspec[2,:]**2)*(0.1 - 0.01))) + (0.01*min(obspec[2,10::3]**2))) # tolerance parameter 2
     # If you do Chemical Equilibrium you will have these parameters instead
     # p0[:, 0] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers)) - 0.5  # met
     # p0[:, 1] = (0.1 * np.random.randn(nwalkers).reshape(nwalkers)) + 1  # CO
@@ -241,19 +241,19 @@ if (fresh == 0):
     # These parameters should be commented out or adjusted for
     # e.g grey cloud or power law cloud, or no cloud, or deck cloud
     # this example is a "real" cloud with Hansen a and b parameters
-    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,16] = -2. + 0.5 * np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,18] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,19] = 0.1*np.random.rand(nwalkers).reshape(nwalkers)
+    p0[:,15] = np.random.rand(nwalkers).reshape(nwalkers) # optical depth
+    p0[:,16] = -2. + 0.5 * np.random.randn(nwalkers).reshape(nwalkers) # cloud top pressure
+    p0[:,17] = np.random.rand(nwalkers).reshape(nwalkers) # cloud thickness in pressure
+    p0[:,18] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers) # Hansen a if "real" cloud or single scattering albedo between 0 and 1 (np.rand=uniform distribution) for 89/99 cloud
+    p0[:,19] = 0.1*np.random.rand(nwalkers).reshape(nwalkers) # Hansen b for "real" cloud or Power law for 89/99 cloud
     # Deck cloud params
     # These parameters should be commented out or adjusted for
     # e.g grey cloud or power law cloud, or no cloud, or deck cloud
     # this example is a "real" cloud with Hansen a and b parameters
-    p0[:,20] = 0.5+ 0.2* np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,21] = np.random.rand(nwalkers).reshape(nwalkers)
-    p0[:,22] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers)
-    p0[:,23] = np.abs(0.1+ 0.01*np.random.randn(nwalkers).reshape(nwalkers))
+    p0[:,20] = 0.5+ 0.2* np.random.rand(nwalkers).reshape(nwalkers) # cloud top pressure
+    p0[:,21] = np.random.rand(nwalkers).reshape(nwalkers) # cloud thickness in pressure
+    p0[:,22] = -1. + 0.1*np.random.randn(nwalkers).reshape(nwalkers) # Hansen a if "real" cloud or single scattering albedo between 0 and 1 (np.rand=uniform distribution) for 89/99 cloud
+    p0[:,23] = np.abs(0.1+ 0.01*np.random.randn(nwalkers).reshape(nwalkers)) # Hansen b for "real" cloud or Power law for 89/99 cloud
     # ------ And now the T-P params. --------
     # For profile type 1
     # p0[:, ndim-14] = 50. + (np.random.randn(nwalkers).reshape(nwalkers))  # gamma - removes wiggles unless necessary to profile
