@@ -37,7 +37,10 @@ def get_endchain(runname,fin,results_path='./'):
         print("Unfinished symphony. Number of successful iterations = ", niter)
         print("maximum likelihood = ", max_like)
         flatendchain = chain[:,(niter-2000):niter,:].reshape((-1,ndim))
-        flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
+        if (emcee.__version__ == '3.0rc2'):
+            flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
+        else:
+            flatendprobs = probs[:,(niter-2000):niter].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
