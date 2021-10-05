@@ -109,6 +109,8 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # We're sampling particle radius in log space        
                     if (cloudnum[i,j] < 50.):
                         cloudrad[i,:,j] = 10.**rad
+                    else:
+                        cloudrad[i,:,j] = rad
                     cloudsig[i,:,j] = sig        
 
                 if (cloudtype[i,j] == 2 or cloudtype[i,j] == 4):
@@ -151,6 +153,8 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                     # We're sampling particle radius in log space        
                     if (cloudnum[i,j] < 50.):
                         cloudrad[i,:,j] = 10.**rad
+                    else:
+                        cloudrad[i,:,j] = rad
                     cloudsig[i,:,j] = sig       
 
                 if (cloudtype[i,j] == 0):

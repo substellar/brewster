@@ -46,6 +46,7 @@ def priormap(theta):
     Be careful not to mess up the counting that keeps track of unpacking 
     the 1D state vector."""
 
+
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     phi = np.zeros_like(theta)
@@ -137,6 +138,21 @@ def priormap(theta):
                 pc = ng+6
             else:
                 pc = ng + 4
+        elif (fwhm == -6):
+            ##Geballe NIR CGS4 data
+            s1  = np.where(obspec[0,:] < 1.585)
+            s3  = np.where(obspec[0,:] > 1.585)
+            #not including relative scale factor since data is calibrated to the same photometry
+            #dlam:
+            phi[ng+2] = (theta[ng+2]*0.02)-0.01
+            #Tolerance parameter (only one):
+            if (do_fudge==1):
+                minerr = np.log10((0.01 *  np.min(obspec[2,:]))**2.)
+                maxerr = np.log10((100.*np.max(obspec[2,:]))**2.)
+                phi[ng+3] = (theta[ng+3] * (maxerr - minerr)) + minerr
+                pc = ng+4
+            else:
+                pc=ng+3
 
     else:
         # this just copes with normal, single instrument data
@@ -342,7 +358,12 @@ def lnlike(theta):
                 nb = 6
             else:
                 nb = 4
-
+        elif (fwhm == -6):
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                nb = 3
     else:
         if (do_fudge == 1):
             logf = theta[ng+3]
@@ -535,6 +556,34 @@ def lnlike(theta):
             lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
             lnLik = lnLik1 + lnLik2 + lnLik3
 
+        elif (fwhm == -6):
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts                                                    
+            # Second Order                                                                                               
+            # R ~ 780 x Lambda (linear increase across order)                                                            
+            # Order 2 (0.95 - 1.40 um)                                                                                               # FWHM ~ 1.175/780 = 0.001506                                                                                
+            dL1 = 0.001506
+            or1  = np.where(obspec[0,:] < 1.585) 
+            spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
+
+            # First Order                                                                                               
+            # R ~ 390 x Lambda (linear increase across order)                                                                        # Order 1 (1.30 - 5.50 um)                                                                                   
+            # FWHM ~ 3.4/390 = 0.008717                                                                                  
+            dL2 = 0.008717
+            or2 = np.where(obspec[0,:] > 1.585)                                                                          
+            spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
+
+            if (do_fudge == 1):
+                s1 = obspec[2,or1]**2 + 10.**logf
+                s3 = obspec[2,or2]**2 + 10.**logf
+            else:
+                s1 = obspec[2,or1]**2
+                s3 = obspec[2,or2]**2
+
+
+            lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1)**2) / s1) + np.log(2.*np.pi*s1))
+            lnLik3=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s3) + np.log(2.*np.pi*s3))
+            lnLik = lnLik1 + lnLik3
+            
     if np.isnan(lnLik):
         lnLik = -np.inf
         
@@ -586,7 +635,13 @@ def modelspec(theta, args,gnostics=0):
                 nb = 6
             else:
                 nb = 4
-
+        elif (fwhm == -6):
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                nb = 3
     else:
         dlam = theta[ng+2]
         if (do_fudge == 1):
@@ -900,7 +955,13 @@ def countdims(runargs,plist = False):
             else:
                 pnames.extend(['Scale1','dlam']) 
                 pc = ng + 4
-
+        elif (fwhm == -6):
+            if (do_fudge == 1):
+                pnames.extend(['dlam', 'logb1'])
+                pc = ng + 4
+            else:
+                pnames.extend('dlam')
+                pc = ng + 3
     else:
         if (do_fudge == 1):
             pnames.extend(['dlam','logb1'])

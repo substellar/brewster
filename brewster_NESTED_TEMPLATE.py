@@ -45,7 +45,7 @@ __status__ = "Development"
 runname = "G570D_NestTest"
 
 # get the observed spectrum
-obspec = np.asfortranarray(np.loadtxt("G570D_2MHcalib.dat",dtype='d',unpack='true'))
+obspec = np.asfortranarray(np.loadtxt("G570D_2MHcalib.dat",dtype='d',unpack=True))
 
 # Now the wavelength range
 w1 = 1.0
@@ -83,6 +83,7 @@ cloudtype =np.zeros([npatches,nclouds],dtype='i')
 # 4: deep thick cloud with fixed height log dP = 0.005
 # In both cases the cloud properties are density, rg, rsig for real clouds
 # and dtau, w0, and power law for cloudnum = 89 or 99 for grey
+# See cloudlist.dat for other cloudnum
 cloudnum[:,0] = 1
 cloudtype[:,0] = 1
 
@@ -118,7 +119,7 @@ press = pow(10,logfinePress)
 # Where are the cross sections?
 # give the full path
 xpath = "/nobackup/bburning/Linelists/"
-xlist = 'gaslistRox.dat'
+xlist = 'gaslistRox.dat' #The gaslistR10k better. Rox is sampled at 10k (rather than interpolated to 10k), but they don’t fit the data as well
 
 
 # now the cross sections
@@ -134,9 +135,11 @@ ngas = len(gaslist)
 
 # some switches for alternatives... 
 # Use Mike's (Burrows') alkali opacities?
+#Use Allard (=0), Burrow's(=1), and new Allard (=2)
 malk = 1
 
 # Is this a test or restart?
+# In the nested version there is no "test", so set =0 for the short run
 runtest = 0
 
 # Are we writing the arguments to a pickle?
@@ -185,9 +188,9 @@ settings.runargs = gases_myP,chemeq,dist,dist_err,cloudtype,do_clouds,gasnum,gas
 
 
 # Write the arguments to a pickle if needed
-if (make_arg_pickle > 0):
+if make_arg_pickle > 0:
     pickle.dump(settings.runargs,open(outdir+runname+"_runargs.pic","wb"))
-    if( make_arg_pickle == 1):
+    if make_arg_pickle == 1:
         sys.exit()
 
     
@@ -204,5 +207,5 @@ print('evidence: %(logZ).1f +- %(logZerr).1f' % result)
 print()
 print('parameter values:')
 for col in zip(result['samples'].transpose()):
-	print('%.3f +- %.3f' % (col.mean(), col.std()))
+    print('%.3f +- %.3f' % (col.mean(), col.std()))
 
