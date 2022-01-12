@@ -374,7 +374,7 @@ clock = np.empty(80000)
 k = 0
 times = open(rfile, "w")
 times.close()
-if runtest == 0:
+if runtest == 0 and fresh == 0:
     pos, prob, state = sampler.run_mcmc(p0, nburn)
     sampler.reset()
     p0 = pos

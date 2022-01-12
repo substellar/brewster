@@ -41,6 +41,7 @@ def priormap(theta):
     are carried out for all other parameters. If you wish to add a non-uniform prior, this is where you should do it.
     Be careful not to mess up the counting that keeps track of unpacking the 1D state vector."""
 
+
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
     phi = np.zeros_like(theta)
@@ -62,19 +63,19 @@ def priormap(theta):
             ng = gasnum.size - 1
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         elif (gasnum[gasnum.size-1] == 23):
             ng = gasnum.size - 2
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         else:
             ng = gasnum.size
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
 
             
@@ -582,6 +583,7 @@ def lnlike(theta):
             # Order 2 (0.95 - 1.40 um)                                                                                               # FWHM ~ 1.175/780 = 0.001506                                                                                
             dL1 = 0.001506
             or1  = np.where(obspec[0,:] < 1.585)
+
             spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
 
             # First Order                                                                                               
@@ -589,6 +591,7 @@ def lnlike(theta):
             # FWHM ~ 3.4/390 = 0.008717                                                                                  
             dL2 = 0.008717
             or2 = np.where(obspec[0,:] > 1.585)
+
             spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
 
             if (do_fudge == 1):
@@ -639,7 +642,8 @@ def lnlike(theta):
                 s1 = obspec[2, or1] ** 2
                 s2 = obspec[2, or2] ** 2
                 s3 = obspec[2, or3] ** 2
-
+                s4 = obspec[2, or4] ** 2  
+  
             lnLik1 = -0.5 * np.sum((((obspec[1, or1[0][::7]] - spec1[::7]) ** 2) / s1[0][::7]) + np.log(2. * np.pi * s1[0][::7]))
             lnLik2 = -0.5 * np.sum((((obspec[1, or2[0][::3]] - spec2[::3]) ** 2) / s2[0][::3]) + np.log(2. * np.pi * s2[0][::3]))
             lnLik3 = -0.5 * np.sum((((obspec[1, or3] - spec3) ** 2) / s3) + np.log(2. * np.pi * s3))
@@ -1001,7 +1005,7 @@ def countdims(runargs,plist = False):
             ng = gasnum.size
 
     pnames.extend(['Mass','Radius'])
-    
+
     # need to deal with options for multi instrument setups now
     if (fwhm < 0.0):
         if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
