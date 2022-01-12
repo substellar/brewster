@@ -33,18 +33,13 @@ __status__ = "Development"
 
 
 def priormap(theta):
-    """This function translates sample points in the n-dimensional hypercube
-    from PyMultiNest into a set of parameters for lnlike (and with that the 
-    forward model). By default the priors are uniform, so the prior-map carries 
-    out a relatively simple task in translating the values from the sampler’s
-    live points that lie between 0 and 1. 
-    For example, the sample points for uniform-with-altitude gas volume 
-    mixing ratios must simply be multiplied by -12 to translate them into 
-    log10(gas-fraction) values within our uniform prior range -12 to 0.  
-    Similar translations are carried out for all other parameters. 
-    If you wish to add a non-uniform prior, this is where you should do it.
-    Be careful not to mess up the counting that keeps track of unpacking 
-    the 1D state vector."""
+    """This function translates sample points in the n-dimensional hypercube from PyMultiNest into a set of parameters
+    for lnlike (and with that the forward model). By default the priors are uniform, so the prior-map carries out a
+    relatively simple task in translating the values from the sampler’s live points that lie between 0 and 1.
+    For example, the sample points for uniform-with-altitude gas volume mixing ratios must simply be multiplied by -12
+    to translate them into log10(gas-fraction) values within our uniform prior range -12 to 0.  Similar translations
+    are carried out for all other parameters. If you wish to add a non-uniform prior, this is where you should do it.
+    Be careful not to mess up the counting that keeps track of unpacking the 1D state vector."""
 
 
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
@@ -153,6 +148,30 @@ def priormap(theta):
                 pc = ng+4
             else:
                 pc=ng+3
+        elif (fwhm == -7): #Geballe NIR + NIRC + CGS4 MIR
+            s1 = np.where(obspec[0, :] < 1.585)
+            s2 = np.where(obspec[0, :] > 1.585)
+            s3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.2))  #NIRC
+            s4 = np.where(obspec[0, :] > 4.2) #CGS4
+            # scale parameter
+            phi[ng + 2] = (theta[ng + 2] * 1.5) + 0.5
+            phi[ng + 3] = (theta[ng + 3] * 1.5) + 0.5
+            #dlam
+            phi[ng + 4] = (theta[ng + 4] * 0.02) - 0.01
+            if (do_fudge == 1):
+                # These are tolerances for each band due to difference SNRs
+                minerr_s1 =np.log10((0.01 *  np.min(obspec[2,s1]))**2.)
+                maxerr_s1 =np.log10((100.*np.max(obspec[2,s1]))**2.)
+                phi[ng+5] = (theta[ng+5] * (maxerr_s1 - minerr_s1)) + minerr_s1
+                minerr_s2 =np.log10((0.01 *  np.min(obspec[2,s2]))**2.)
+                maxerr_s2 =np.log10((100.*np.max(obspec[2,s2]))**2.)
+                phi[ng+6] = (theta[ng+6] * (maxerr_s2 - minerr_s2)) + minerr_s2
+                minerr_s3 =np.log10((0.01 *  np.min(obspec[2,s3]))**2.)
+                maxerr_s3 = np.log10((100.*np.max(obspec[2,s3]))**2.)
+                phi[ng+7] = (theta[ng+7] * (maxerr_s3 - minerr_s3)) + minerr_s3
+                pc = ng+8
+            else:
+                pc = ng + 5
 
     else:
         # this just copes with normal, single instrument data
@@ -343,7 +362,7 @@ def lnlike(theta):
 
     # Get the scaling factors for the spectra. What is the FWHM? Negative number: preset combination of instruments
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
             if (do_fudge == 1):
@@ -407,6 +426,7 @@ def lnlike(theta):
         # -1: spex + akari + IRS
         # -2: spex + IRS
         # -3: spex + Lband + IRS
+        # -7: cgs4 nir + nirc l band + cgs4 m band
         if (fwhm == -1):
 
             # Spex
@@ -562,14 +582,16 @@ def lnlike(theta):
             # R ~ 780 x Lambda (linear increase across order)                                                            
             # Order 2 (0.95 - 1.40 um)                                                                                               # FWHM ~ 1.175/780 = 0.001506                                                                                
             dL1 = 0.001506
-            or1  = np.where(obspec[0,:] < 1.585) 
+            or1  = np.where(obspec[0,:] < 1.585)
+
             spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
 
             # First Order                                                                                               
             # R ~ 390 x Lambda (linear increase across order)                                                                        # Order 1 (1.30 - 5.50 um)                                                                                   
             # FWHM ~ 3.4/390 = 0.008717                                                                                  
             dL2 = 0.008717
-            or2 = np.where(obspec[0,:] > 1.585)                                                                          
+            or2 = np.where(obspec[0,:] > 1.585)
+
             spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
 
             if (do_fudge == 1):
@@ -580,10 +602,55 @@ def lnlike(theta):
                 s3 = obspec[2,or2]**2
 
 
-            lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1)**2) / s1) + np.log(2.*np.pi*s1))
-            lnLik3=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s3) + np.log(2.*np.pi*s3))
+            lnLik1=-0.5*np.sum((((obspec[1,or1[0][::7]] - spec1[::7])**2) / s1[0][::7]) + np.log(2.*np.pi*s1[0][::7]))
+            lnLik3=-0.5*np.sum((((obspec[1,or2[0][::3]] - spec2[::3])**2) / s3[0][::3]) + np.log(2.*np.pi*s3[0][::3]))
             lnLik = lnLik1 + lnLik3
-            
+
+        elif (fwhm == -7):
+            #This is CGS4 NIR + NIRC Lband * CGS4 Mband
+            # CGS4 Second order R = 780xLambda
+            dL1 = 0.001506
+            or1 = np.where(obspec[0, :] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:, or1], modspec, dL1)
+
+            # CGS4 First order R = 390xLambda
+            dL2 = 0.008717
+            or2 = np.where(np.logical_and(obspec[0, :] > 1.585, obspec[0, :] < 2.52))
+            spec2 = conv_uniform_FWHM(obspec[:, or2], modspec, dL2)
+
+            # Oppenheimer 1998 NIRC L band spectrum
+            ###EDIT### Central wavelength @ 3.492 with FWHM=1.490 for lw band
+            # Using R=164
+            #dL3 = 0.0213
+            R=164.0
+            or3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.15))
+            spec3 = scale1 * conv_uniform_R(obspec[:, or3], modspec, R)
+
+            # CGS4 M band
+            # Order 1 using 1".2 slit, 75 line/mm grating, 150 mm focal length camera
+            ###EDIT### R=400xLambda
+            dL4 = 0.0085
+            or4 = np.where(obspec[0, :] > 4.15)
+            spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
+
+            if (do_fudge == 1):
+                s1 = obspec[2, or1] ** 2 + 10. ** logf[0]
+                s2 = obspec[2, or2] ** 2 + 10. ** logf[0]
+                s3 = obspec[2, or3] ** 2 + 10. ** logf[1]
+                s4 = obspec[2, or4] ** 2 + 10. ** logf[2]
+            else:
+                s1 = obspec[2, or1] ** 2
+                s2 = obspec[2, or2] ** 2
+                s3 = obspec[2, or3] ** 2
+                s4 = obspec[2, or4] ** 2  
+  
+            lnLik1 = -0.5 * np.sum((((obspec[1, or1[0][::7]] - spec1[::7]) ** 2) / s1[0][::7]) + np.log(2. * np.pi * s1[0][::7]))
+            lnLik2 = -0.5 * np.sum((((obspec[1, or2[0][::3]] - spec2[::3]) ** 2) / s2[0][::3]) + np.log(2. * np.pi * s2[0][::3]))
+            lnLik3 = -0.5 * np.sum((((obspec[1, or3] - spec3) ** 2) / s3) + np.log(2. * np.pi * s3))
+            lnLik4 = -0.5 * np.sum((((obspec[1, or4] - spec4) ** 2) / s4) + np.log(2. * np.pi * s4))
+
+            lnLik = lnLik1 + lnLik2 + lnLik3 + lnLik4
+
     if np.isnan(lnLik):
         lnLik = -np.inf
         
@@ -621,7 +688,7 @@ def modelspec(theta, args,gnostics=0):
     R2D2 = R**2. / D**2.
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             dlam = theta[ng+4]
             if (do_fudge == 1):
                 logf = theta[ng+5:ng+8]
@@ -941,7 +1008,7 @@ def countdims(runargs,plist = False):
 
     # need to deal with options for multi instrument setups now
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             if (do_fudge == 1):
                 pnames.extend(['Scale1','Scale2','dlam','logb1','logb2','logb3'])
                 pc = ng+8

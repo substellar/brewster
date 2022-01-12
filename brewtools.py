@@ -37,10 +37,7 @@ def get_endchain(runname,fin,results_path='./'):
         print("Unfinished symphony. Number of successful iterations = ", niter)
         print("maximum likelihood = ", max_like)
         flatendchain = chain[:,(niter-2000):niter,:].reshape((-1,ndim))
-        if (emcee.__version__ == '3.0rc2'):
-            flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
-        else:
-            flatendprobs = probs[:,(niter-2000):niter].reshape((-1))
+        flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
@@ -71,12 +68,14 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         ng = 2
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
         elif (fwhm == -2):
             scale1 = theta[ng+2]
- 
+        elif (fwhm == -6):
+            scale1 = 1.0
+
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
 
     # If we've set a value for FWHM that we're using... 
@@ -232,8 +231,58 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
                 bit = np.where(np.logical_and(obspec[0,:] > join[i],obspec[0,:] < join[i+1]))
                 spec[bit] = prism_non_uniform(obspec[:,bit],modspec,pix[i])
 
-            outspec = spec 
+            outspec = spec
             
+
+        elif (fwhm == -6):
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts
+            # Second Order
+            # R ~ 780 x Lambda (linear increase across order)
+            # Order 2 (0.95 - 1.40 um)
+            # FWHM ~ 1.175/780 = 0.001506
+            dL1 = 0.001506
+            or1  = np.where(obspec[0,:] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
+
+            # First Order
+            # R ~ 390 x Lambda (linear increase across order)
+            # Order 1 (1.30 - 5.50 um)
+            # FWHM ~ 3.4/390 = 0.008717
+            dL2 = 0.008717
+            or2 = np.where(obspec[0,:] > 1.585)
+            spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
+
+            outspec =  np.array(np.concatenate((spec1,spec2),axis=0))
+
+        elif (fwhm == -7):
+            #This is CGS4 NIR + NIRC Lband + CGS4 Mband
+            # CGS4 Second order R = 780xLambda
+            dL1 = 0.001506
+            or1 = np.where(obspec[0, :] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:, or1], modspec, dL1)
+
+            # CGS4 First order R = 390xLambda
+            dL2 = 0.008717
+            or2 = np.where(np.logical_and(obspec[0, :] > 1.585, obspec[0, :] < 2.52))
+            spec2 = conv_uniform_FWHM(obspec[:, or2], modspec, dL2)
+
+            # Oppenheimer 1998 NIRC L band spectrum
+            ###EDIT### Central wavelength @ 3.492 with FWHM=1.490 for lw band
+            # Using R=164
+            # dL3 = 0.0213
+            R = 164.0
+            or3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.15))
+            spec3 = scale1 * conv_uniform_R(obspec[:, or3], modspec, R)
+
+            # CGS4 M band
+            # Order 1 using 1".2 slit, 75 line/mm grating, 150 mm focal length camera
+            ###EDIT### R=400xLambda
+            dL4 = 0.0085
+            or4 = np.where(obspec[0, :] > 4.15)
+            spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
+
+            outspec = np.array(np.concatenate((spec1, spec2, spec3, spec4), axis=0))
+
     return outspec
             
 
