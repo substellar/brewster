@@ -918,23 +918,23 @@ def lnlike(theta):
             lnLik=-0.5*np.sum((((obspec[1,:] - spec)**2) / s2) + np.log(2.*np.pi*s2))
 
         elif (fwhm == -6):
-            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts
-            # Second Order
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts 
+            # Second Order                           
             # R ~ 780 x Lambda (linear increase across order)
             # Order 2 (0.95 - 1.40 um)
-            # FWHM ~ 1.175/780 = 0.001506
+            # FWHM ~ 1.175/780 = 0.001506    
             dL1 = 0.001506
             or1  = np.where(obspec[0,:] < 1.585)
-            #R1 = np.array([i * 780 for i in or1])
+
             spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
 
-            # First Order
+            # First Order                            
             # R ~ 390 x Lambda (linear increase across order)
-            # Order 1 (1.30 - 5.50 um)
+            # Order 1 (1.30 - 5.50 um) 
             # FWHM ~ 3.4/390 = 0.008717
             dL2 = 0.008717
             or2 = np.where(obspec[0,:] > 1.585)
-            #R2 = np.array([i * 390 for i in or2])
+
             spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
 
             if (do_fudge == 1):
@@ -945,10 +945,58 @@ def lnlike(theta):
                 s3 = obspec[2,or2]**2
 
 
-            lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1)**2) / s1) + np.log(2.*np.pi*s1))
-            lnLik3=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s3) + np.log(2.*np.pi*s3))
+            lnLik1=-0.5*np.sum((((obspec[1,or1[0][::7]] - spec1[::7])**2) / s1[0][::7]) + np.log(2.*np.pi*s1[0][::7]))
+            lnLik3=-0.5*np.sum((((obspec[1,or2[0][::3]] - spec2[::3])**2) / s3[0][::3]) + np.log(2.*np.pi*s3[0][::3]))
             lnLik = lnLik1 + lnLik3
 
+        elif (fwhm == -7):
+            #This is CGS4 NIR + NIRC Lband * CGS4 Mband
+            # CGS4 Second order R = 780xLambda
+            dL1 = 0.001506
+            or1 = np.where(obspec[0, :] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:, or1], modspec, dL1)
+
+            # CGS4 First order R = 390xLambda
+            dL2 = 0.008717
+            or2 = np.where(np.logical_and(obspec[0, :] > 1.585, obspec[0, :] < 2.52))
+            spec2 = conv_uniform_FWHM(obspec[:, or2], modspec, dL2)
+
+            # Oppenheimer 1998 NIRC L band spectrum
+            ###EDIT### Central wavelength @ 3.492 with FWHM=1.490 for lw band
+            # Using R=164
+            #dL3 = 0.0213
+            R=164.0
+            or3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.15))
+            spec3 = scale1 * conv_uniform_R(obspec[:, or3], modspec, R)
+
+            # CGS4 M band
+            # Order 1 using 1".2 slit, 75 line/mm grating, 150 mm focal length camera
+            ###EDIT### R=400xLambda
+            dL4 = 0.0085
+            or4 = np.where(obspec[0, :] > 4.15)
+            spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
+
+            if (do_fudge == 1):
+                s1 = obspec[2, or1] ** 2 + 10. ** logf[0]
+                s2 = obspec[2, or2] ** 2 + 10. ** logf[0]
+                s3 = obspec[2, or3] ** 2 + 10. ** logf[1]
+                s4 = obspec[2, or4] ** 2 + 10. ** logf[2]
+            else:
+                s1 = obspec[2, or1] ** 2
+                s2 = obspec[2, or2] ** 2
+                s3 = obspec[2, or3] ** 2
+                s4 = obspec[2, or4] ** 2  
+  
+            lnLik1 = -0.5 * np.sum((((obspec[1, or1[0][::7]] - spec1[::7]) ** 2) / s1[0][::7]) + np.log(2. * np.pi * s1[0][::7]))
+            lnLik2 = -0.5 * np.sum((((obspec[1, or2[0][::3]] - spec2[::3]) ** 2) / s2[0][::3]) + np.log(2. * np.pi * s2[0][::3]))
+            lnLik3 = -0.5 * np.sum((((obspec[1, or3] - spec3) ** 2) / s3) + np.log(2. * np.pi * s3))
+            lnLik4 = -0.5 * np.sum((((obspec[1, or4] - spec4) ** 2) / s4) + np.log(2. * np.pi * s4))
+
+            lnLik = lnLik1 + lnLik2 + lnLik3 + lnLik4
+
+    if np.isnan(lnLik):
+        lnLik = -np.inf
+        
     return lnLik
 
 

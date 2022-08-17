@@ -615,18 +615,20 @@ def lnlike(theta):
             lnLik = lnLik1 + lnLik2 + lnLik3
 
         elif (fwhm == -6):
-            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts                                                    
-            # Second Order                                                                                               
-            # R ~ 780 x Lambda (linear increase across order)                                                            
-            # Order 2 (0.95 - 1.40 um)                                                                                               # FWHM ~ 1.175/780 = 0.001506                                                                                
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts 
+            # Second Order                           
+            # R ~ 780 x Lambda (linear increase across order)
+            # Order 2 (0.95 - 1.40 um)
+            # FWHM ~ 1.175/780 = 0.001506    
             dL1 = 0.001506
             or1  = np.where(obspec[0,:] < 1.585)
 
             spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
 
-            # First Order                                                                                               
-            # R ~ 390 x Lambda (linear increase across order)                                                                        # Order 1 (1.30 - 5.50 um)                                                                                   
-            # FWHM ~ 3.4/390 = 0.008717                                                                                  
+            # First Order                            
+            # R ~ 390 x Lambda (linear increase across order)
+            # Order 1 (1.30 - 5.50 um) 
+            # FWHM ~ 3.4/390 = 0.008717
             dL2 = 0.008717
             or2 = np.where(obspec[0,:] > 1.585)
 
