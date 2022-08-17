@@ -379,7 +379,7 @@ if runtest == 0 and fresh == 0:
     sampler.reset()
     p0 = pos
 for result in sampler.sample(p0, iterations=niter):
-    clock[k] = time.process_time()
+    clock[k] = time.perf_counter()
     if k > 1:
         tcycle = clock[k] - clock[k-1]
         times = open(rfile, "a")

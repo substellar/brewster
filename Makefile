@@ -23,7 +23,8 @@ FC = gfortran
 
 
 # Run version
-FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check 
+FCFLAGS = -O3 -fopenmp -fPIC -ffree-line-length-none -frecord-marker=4 -fbounds-check -fopenmp
+
 F77FLAGS = -O3 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
 
 # Intel compiler version
@@ -99,14 +100,14 @@ f77mods:
 
 
 libfile:
-	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
+	$(FC) -fPIC -shared -O3 -fopenmp *.o -o libmarvin.so
 #	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
 
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=gfortran --f90flags="-O3 -fopenmp" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 #	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 ciasig:

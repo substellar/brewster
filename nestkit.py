@@ -391,35 +391,73 @@ def lnlike(theta):
             nb = 3
 
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-    # If we've set a value for FWHM that we're using... 
+
+
+    # If we've set a value for FWHM that we're using...
     if (fwhm > 0.00 and fwhm < 1.00):
         # this is a uniform FWHM in microns
-        
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
 
-    elif (fwhm > 1.00):
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))       
+    elif (fwhm > 10.00):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
 
-        # Below is method for rebinning using conserve flux method
-        #    oblen = obspec.shape[1]
-        #    modspec = np.empty((2,oblen),dtype='d')
-        #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
-        # get log-likelihood
-        # We've lifted this from Mike's code, below is original from emcee docs
-        # Just taking every 3rd point to keep independence
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
     elif (fwhm == 0.0):
         # Use convolution for Spex
         spec = prism_non_uniform(obspec,modspec,3.3)
-    if (fwhm >= 0.0):
         if (do_fudge == 1):
             s2=obspec[2,::3]**2 + 10.**logf
         else:
             s2 = obspec[2,::3]**2
 
         lnLik=-0.5*np.sum((((obspec[1,::3] - spec[::3])**2) / s2) + np.log(2.*np.pi*s2))
-            
+    elif (fwhm == 1.0):
+        # Use convolution for JWST-NIRSpec PRISM
+        spec = prism_non_uniform(obspec,modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,::2]**2 + 10.**logf
+        else:
+            s2 = obspec[2,::2]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,::2] - spec[::2])**2) / s2) + np.log(2.*np.pi*s2))
+    elif (fwhm == 2.0):
+        # combo of JWST-NIRSpec PRISM + G395H grism
+        # single scaling & single fudge factor
+        spec = np.zeros_like(obspec[0,:])
+        # first convolution for JWST-NIRSpec PRISM
+        or1  = np.where(obspec[0,:] < 2.9)
+        spec[or1] = prism_non_uniform(obspec[:,or1],modspec,2.2)
+        # now 1st grism bit
+        dL = 0.0015
+        or2  = np.where(np.logical_and(obspec[0,:] > 2.9,obspec[0,:] < 3.69))
+        spec[or2] =  conv_uniform_FWHM(obspec[:,or2],modspec,dL)
+        # a bit more prism
+        or3 = np.where(np.logical_and(obspec[0,:] > 3.69,obspec[0,:] < 3.785))
+        spec[or3] = prism_non_uniform(obspec[:,or3],modspec,2.2)
+        # 2nd bit of grism
+        or4 = np.where(np.logical_and(obspec[0,:] > 3.785,obspec[0,:] < 5.14))
+        spec[or4] =  conv_uniform_FWHM(obspec[:,or4],modspec,dL)
+        # the rest of prism
+        or5 = np.where(obspec[0,:] > 5.14)
+        spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
+
     elif (fwhm < 0.0):
         lnLik = 0.0
         # This is for multi-instrument cases
