@@ -200,8 +200,13 @@ def priormap(theta):
 
     nc = 0
     # use correct unpack method depending on clouds situation
+    stop_cloud = 0
     for patch in range(0,npatches):
-        if (do_clouds[patch] != 0):
+    # only set up for two patches: cloud & clear, or slab + deck, deck
+    # so we stop reading cloud parameters after first pass through here.
+        if stop_cloud == 1:
+            break
+        elif (do_clouds[patch] != 0):
             for cloud in range(0,nclouds):
                 if (cloudtype[patch,cloud] == 1):
                     if (cloudnum[patch,cloud] == 89):
@@ -219,6 +224,7 @@ def priormap(theta):
                         # power law
                         phi[pc+nc+3] = (theta[pc+nc+3] * 20.) - 10.
                         nc = nc + 4
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] == 99):
                         # cloud tau
                         phi[pc+nc] = theta[pc+nc]*100.
@@ -231,6 +237,7 @@ def priormap(theta):
                         phi[pc+nc+2] = theta[pc+nc+2] *\
                             (phi[pc+nc+1] - np.log10(press[0]))
                         nc = nc + 3
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] < 80):
                         # cloud tau
                         phi[pc+nc] = theta[pc+nc]*100.
@@ -247,6 +254,7 @@ def priormap(theta):
                         # particle spread
                         phi[pc+nc+4] = theta[pc+nc+4]
                         nc = nc + 5
+                        stop_cloud == 1
                 elif (cloudtype[patch,cloud] == 2):
                     if (cloudnum[patch,cloud] == 89):
                         #cloud top
@@ -259,6 +267,7 @@ def priormap(theta):
                         # power law
                         phi[pc+nc+2] = (theta[pc+nc+2] * 20.) - 10.
                         nc = nc + 3
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] == 99):
                         #cloud top
                         phi[pc+nc] = \
@@ -268,6 +277,7 @@ def priormap(theta):
                         # cloud height
                         phi[pc+nc+1] = theta[pc+nc+1] * 7.
                         nc = nc + 2
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] < 80):
                         #cloud base
                         phi[pc+nc] = \
@@ -281,6 +291,7 @@ def priormap(theta):
                         # particle spread
                         phi[pc+nc+3] = theta[pc+nc+3]
                         nc = nc + 4
+                        stop_cloud == 1
                     # types 3 and 4 to be added
                 elif (cloudtype[patch,cloud] > 2):
                     print("cloudtypes 3 and 4 not yet implemented here")
@@ -1082,15 +1093,22 @@ def countdims(runargs,plist = False):
     # only really ready for 2 patches here
     if (npatches > 1):
         pc = pc + 1
+        pnames.append('Pcov')
     if (cloudtype.size > cloudtype.shape[0]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
 
     nc = 0
+    stop_cloud = 0
     # use correct unpack method depending on clouds situation
     for patch in range(0,npatches):
-        if (do_clouds[patch] != 0):
+        # only set up for two patches: cloud & clear, or slab + deck, deck
+        # so we stop reading cloud parameters after first pass through here.
+        if stop_cloud == 1:
+            break
+
+        elif (do_clouds[patch] != 0):
             for cloud in range(0,nclouds):
                 if (cloudtype[patch,cloud] == 1):
                     if (cloudnum[patch,cloud] == 89):
@@ -1099,11 +1117,13 @@ def countdims(runargs,plist = False):
                         pnames.append('dPC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PowC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 4
+                        stop_cloud = 1
                     elif (cloudnum[patch,cloud] == 99):
                         pnames.append('tauC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PbaseC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('dPC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 3
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] < 80):
                         pnames.append('tauC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PbaseC'+str(cloud+1)+'P'+str(patch+1))
@@ -1111,23 +1131,26 @@ def countdims(runargs,plist = False):
                         pnames.append('a_C'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('b_C'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 5
+                        stop_cloud = 1                        
                 elif (cloudtype[patch,cloud] == 2):
                     if (cloudnum[patch,cloud] == 89):
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PowC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 3
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] == 99):
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 2
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] < 80):
                         nc = nc + 4
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('a_C'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('b_C'+str(cloud+1)+'P'+str(patch+1))
-                        
+                        stop_cloud = 1
                     # types 3 and 4 to be added
                 elif (cloudtype[patch,cloud] > 2):
                     print("cloudtypes 3 and 4 not yet implemented here")
