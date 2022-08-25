@@ -128,6 +128,7 @@ contains
 
 
        upflux = 0.0
+       !$OMP PARALLEL DO default(SHARED) PRIVATE(iwave,ilayer,cldone,othdone,tau1,tau2,p1,p2,WVNMLO,DTAUC,SSALB,COSBAR,ALBEDO,gflup,fdi)
        do iwave = 1, nwave
        
        ! need PMOM
@@ -271,7 +272,7 @@ contains
           endif
           
        end do ! wave loop
-       
+       !$OMP END PARALLEL DO
        spectrum = spectrum + (upflux*patch(ipatch)%cover)
        
     end do ! patch loop

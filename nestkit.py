@@ -33,18 +33,14 @@ __status__ = "Development"
 
 
 def priormap(theta):
-    """This function translates sample points in the n-dimensional hypercube
-    from PyMultiNest into a set of parameters for lnlike (and with that the 
-    forward model). By default the priors are uniform, so the prior-map carries 
-    out a relatively simple task in translating the values from the sampler’s
-    live points that lie between 0 and 1. 
-    For example, the sample points for uniform-with-altitude gas volume 
-    mixing ratios must simply be multiplied by -12 to translate them into 
-    log10(gas-fraction) values within our uniform prior range -12 to 0.  
-    Similar translations are carried out for all other parameters. 
-    If you wish to add a non-uniform prior, this is where you should do it.
-    Be careful not to mess up the counting that keeps track of unpacking 
-    the 1D state vector."""
+    """This function translates sample points in the n-dimensional hypercube from PyMultiNest into a set of parameters
+    for lnlike (and with that the forward model). By default the priors are uniform, so the prior-map carries out a
+    relatively simple task in translating the values from the sampler’s live points that lie between 0 and 1.
+    For example, the sample points for uniform-with-altitude gas volume mixing ratios must simply be multiplied by -12
+    to translate them into log10(gas-fraction) values within our uniform prior range -12 to 0.  Similar translations
+    are carried out for all other parameters. If you wish to add a non-uniform prior, this is where you should do it.
+    Be careful not to mess up the counting that keeps track of unpacking the 1D state vector."""
+
 
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
@@ -67,19 +63,19 @@ def priormap(theta):
             ng = gasnum.size - 1
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         elif (gasnum[gasnum.size-1] == 23):
             ng = gasnum.size - 2
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         else:
             ng = gasnum.size
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 15.)
+                phi[i] = np.log(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
 
             
@@ -137,6 +133,45 @@ def priormap(theta):
                 pc = ng+6
             else:
                 pc = ng + 4
+        elif (fwhm == -6):
+            ##Geballe NIR CGS4 data
+            s1  = np.where(obspec[0,:] < 1.585)
+            s3  = np.where(obspec[0,:] > 1.585)
+            #not including relative scale factor since data is calibrated to the same photometry
+            #dlam:
+            phi[ng+2] = (theta[ng+2]*0.02)-0.01
+            #Tolerance parameter (only one):
+            if (do_fudge==1):
+                minerr = np.log10((0.01 *  np.min(obspec[2,:]))**2.)
+                maxerr = np.log10((100.*np.max(obspec[2,:]))**2.)
+                phi[ng+3] = (theta[ng+3] * (maxerr - minerr)) + minerr
+                pc = ng+4
+            else:
+                pc=ng+3
+        elif (fwhm == -7): #Geballe NIR + NIRC + CGS4 MIR
+            s1 = np.where(obspec[0, :] < 1.585)
+            s2 = np.where(obspec[0, :] > 1.585)
+            s3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.2))  #NIRC
+            s4 = np.where(obspec[0, :] > 4.2) #CGS4
+            # scale parameter
+            phi[ng + 2] = (theta[ng + 2] * 1.5) + 0.5
+            phi[ng + 3] = (theta[ng + 3] * 1.5) + 0.5
+            #dlam
+            phi[ng + 4] = (theta[ng + 4] * 0.02) - 0.01
+            if (do_fudge == 1):
+                # These are tolerances for each band due to difference SNRs
+                minerr_s1 =np.log10((0.01 *  np.min(obspec[2,s1]))**2.)
+                maxerr_s1 =np.log10((100.*np.max(obspec[2,s1]))**2.)
+                phi[ng+5] = (theta[ng+5] * (maxerr_s1 - minerr_s1)) + minerr_s1
+                minerr_s2 =np.log10((0.01 *  np.min(obspec[2,s2]))**2.)
+                maxerr_s2 =np.log10((100.*np.max(obspec[2,s2]))**2.)
+                phi[ng+6] = (theta[ng+6] * (maxerr_s2 - minerr_s2)) + minerr_s2
+                minerr_s3 =np.log10((0.01 *  np.min(obspec[2,s3]))**2.)
+                maxerr_s3 = np.log10((100.*np.max(obspec[2,s3]))**2.)
+                phi[ng+7] = (theta[ng+7] * (maxerr_s3 - minerr_s3)) + minerr_s3
+                pc = ng+8
+            else:
+                pc = ng + 5
 
     else:
         # this just copes with normal, single instrument data
@@ -165,8 +200,13 @@ def priormap(theta):
 
     nc = 0
     # use correct unpack method depending on clouds situation
+    stop_cloud = 0
     for patch in range(0,npatches):
-        if (do_clouds[patch] != 0):
+    # only set up for two patches: cloud & clear, or slab + deck, deck
+    # so we stop reading cloud parameters after first pass through here.
+        if stop_cloud == 1:
+            break
+        elif (do_clouds[patch] != 0):
             for cloud in range(0,nclouds):
                 if (cloudtype[patch,cloud] == 1):
                     if (cloudnum[patch,cloud] == 89):
@@ -184,6 +224,7 @@ def priormap(theta):
                         # power law
                         phi[pc+nc+3] = (theta[pc+nc+3] * 20.) - 10.
                         nc = nc + 4
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] == 99):
                         # cloud tau
                         phi[pc+nc] = theta[pc+nc]*100.
@@ -196,6 +237,7 @@ def priormap(theta):
                         phi[pc+nc+2] = theta[pc+nc+2] *\
                             (phi[pc+nc+1] - np.log10(press[0]))
                         nc = nc + 3
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] < 80):
                         # cloud tau
                         phi[pc+nc] = theta[pc+nc]*100.
@@ -212,6 +254,7 @@ def priormap(theta):
                         # particle spread
                         phi[pc+nc+4] = theta[pc+nc+4]
                         nc = nc + 5
+                        stop_cloud == 1
                 elif (cloudtype[patch,cloud] == 2):
                     if (cloudnum[patch,cloud] == 89):
                         #cloud top
@@ -224,6 +267,7 @@ def priormap(theta):
                         # power law
                         phi[pc+nc+2] = (theta[pc+nc+2] * 20.) - 10.
                         nc = nc + 3
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] == 99):
                         #cloud top
                         phi[pc+nc] = \
@@ -233,6 +277,7 @@ def priormap(theta):
                         # cloud height
                         phi[pc+nc+1] = theta[pc+nc+1] * 7.
                         nc = nc + 2
+                        stop_cloud == 1
                     elif (cloudnum[patch,cloud] < 80):
                         #cloud base
                         phi[pc+nc] = \
@@ -246,6 +291,7 @@ def priormap(theta):
                         # particle spread
                         phi[pc+nc+3] = theta[pc+nc+3]
                         nc = nc + 4
+                        stop_cloud == 1
                     # types 3 and 4 to be added
                 elif (cloudtype[patch,cloud] > 2):
                     print("cloudtypes 3 and 4 not yet implemented here")
@@ -327,7 +373,7 @@ def lnlike(theta):
 
     # Get the scaling factors for the spectra. What is the FWHM? Negative number: preset combination of instruments
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
             if (do_fudge == 1):
@@ -342,7 +388,12 @@ def lnlike(theta):
                 nb = 6
             else:
                 nb = 4
-
+        elif (fwhm == -6):
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                nb = 3
     else:
         if (do_fudge == 1):
             logf = theta[ng+3]
@@ -351,41 +402,80 @@ def lnlike(theta):
             nb = 3
 
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-    # If we've set a value for FWHM that we're using... 
+
+
+    # If we've set a value for FWHM that we're using...
     if (fwhm > 0.00 and fwhm < 1.00):
         # this is a uniform FWHM in microns
-        
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
 
-    elif (fwhm > 1.00):
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))       
+    elif (fwhm > 10.00):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
 
-        # Below is method for rebinning using conserve flux method
-        #    oblen = obspec.shape[1]
-        #    modspec = np.empty((2,oblen),dtype='d')
-        #    modspec[1,:] =  rebinspec(spec[0,:], spec[1,:], obspec[0,:])
-        # get log-likelihood
-        # We've lifted this from Mike's code, below is original from emcee docs
-        # Just taking every 3rd point to keep independence
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
     elif (fwhm == 0.0):
         # Use convolution for Spex
         spec = prism_non_uniform(obspec,modspec,3.3)
-    if (fwhm >= 0.0):
         if (do_fudge == 1):
             s2=obspec[2,::3]**2 + 10.**logf
         else:
             s2 = obspec[2,::3]**2
 
         lnLik=-0.5*np.sum((((obspec[1,::3] - spec[::3])**2) / s2) + np.log(2.*np.pi*s2))
-            
+    elif (fwhm == 1.0):
+        # Use convolution for JWST-NIRSpec PRISM
+        spec = prism_non_uniform(obspec,modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,::2]**2 + 10.**logf
+        else:
+            s2 = obspec[2,::2]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,::2] - spec[::2])**2) / s2) + np.log(2.*np.pi*s2))
+    elif (fwhm == 2.0):
+        # combo of JWST-NIRSpec PRISM + G395H grism
+        # single scaling & single fudge factor
+        spec = np.zeros_like(obspec[0,:])
+        # first convolution for JWST-NIRSpec PRISM
+        or1  = np.where(obspec[0,:] < 2.9)
+        spec[or1] = prism_non_uniform(obspec[:,or1],modspec,2.2)
+        # now 1st grism bit
+        dL = 0.0015
+        or2  = np.where(np.logical_and(obspec[0,:] > 2.9,obspec[0,:] < 3.69))
+        spec[or2] =  conv_uniform_FWHM(obspec[:,or2],modspec,dL)
+        # a bit more prism
+        or3 = np.where(np.logical_and(obspec[0,:] > 3.69,obspec[0,:] < 3.785))
+        spec[or3] = prism_non_uniform(obspec[:,or3],modspec,2.2)
+        # 2nd bit of grism
+        or4 = np.where(np.logical_and(obspec[0,:] > 3.785,obspec[0,:] < 5.14))
+        spec[or4] =  conv_uniform_FWHM(obspec[:,or4],modspec,dL)
+        # the rest of prism
+        or5 = np.where(obspec[0,:] > 5.14)
+        spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
+
     elif (fwhm < 0.0):
         lnLik = 0.0
         # This is for multi-instrument cases
         # -1: spex + akari + IRS
         # -2: spex + IRS
         # -3: spex + Lband + IRS
+        # -7: cgs4 nir + nirc l band + cgs4 m band
         if (fwhm == -1):
 
             # Spex
@@ -535,6 +625,83 @@ def lnlike(theta):
             lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
             lnLik = lnLik1 + lnLik2 + lnLik3
 
+        elif (fwhm == -6):
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts 
+            # Second Order                           
+            # R ~ 780 x Lambda (linear increase across order)
+            # Order 2 (0.95 - 1.40 um)
+            # FWHM ~ 1.175/780 = 0.001506    
+            dL1 = 0.001506
+            or1  = np.where(obspec[0,:] < 1.585)
+
+            spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
+
+            # First Order                            
+            # R ~ 390 x Lambda (linear increase across order)
+            # Order 1 (1.30 - 5.50 um) 
+            # FWHM ~ 3.4/390 = 0.008717
+            dL2 = 0.008717
+            or2 = np.where(obspec[0,:] > 1.585)
+
+            spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
+
+            if (do_fudge == 1):
+                s1 = obspec[2,or1]**2 + 10.**logf
+                s3 = obspec[2,or2]**2 + 10.**logf
+            else:
+                s1 = obspec[2,or1]**2
+                s3 = obspec[2,or2]**2
+
+
+            lnLik1=-0.5*np.sum((((obspec[1,or1[0][::7]] - spec1[::7])**2) / s1[0][::7]) + np.log(2.*np.pi*s1[0][::7]))
+            lnLik3=-0.5*np.sum((((obspec[1,or2[0][::3]] - spec2[::3])**2) / s3[0][::3]) + np.log(2.*np.pi*s3[0][::3]))
+            lnLik = lnLik1 + lnLik3
+
+        elif (fwhm == -7):
+            #This is CGS4 NIR + NIRC Lband * CGS4 Mband
+            # CGS4 Second order R = 780xLambda
+            dL1 = 0.001506
+            or1 = np.where(obspec[0, :] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:, or1], modspec, dL1)
+
+            # CGS4 First order R = 390xLambda
+            dL2 = 0.008717
+            or2 = np.where(np.logical_and(obspec[0, :] > 1.585, obspec[0, :] < 2.52))
+            spec2 = conv_uniform_FWHM(obspec[:, or2], modspec, dL2)
+
+            # Oppenheimer 1998 NIRC L band spectrum
+            ###EDIT### Central wavelength @ 3.492 with FWHM=1.490 for lw band
+            # Using R=164
+            #dL3 = 0.0213
+            R=164.0
+            or3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.15))
+            spec3 = scale1 * conv_uniform_R(obspec[:, or3], modspec, R)
+
+            # CGS4 M band
+            # Order 1 using 1".2 slit, 75 line/mm grating, 150 mm focal length camera
+            ###EDIT### R=400xLambda
+            dL4 = 0.0085
+            or4 = np.where(obspec[0, :] > 4.15)
+            spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
+
+            if (do_fudge == 1):
+                s1 = obspec[2, or1] ** 2 + 10. ** logf[0]
+                s2 = obspec[2, or2] ** 2 + 10. ** logf[0]
+                s3 = obspec[2, or3] ** 2 + 10. ** logf[1]
+                s4 = obspec[2, or4] ** 2 + 10. ** logf[2]
+            else:
+                s1 = obspec[2, or1] ** 2
+                s2 = obspec[2, or2] ** 2
+                s3 = obspec[2, or3] ** 2
+                s4 = obspec[2, or4] ** 2  
+  
+            lnLik1 = -0.5 * np.sum((((obspec[1, or1[0][::7]] - spec1[::7]) ** 2) / s1[0][::7]) + np.log(2. * np.pi * s1[0][::7]))
+            lnLik2 = -0.5 * np.sum((((obspec[1, or2[0][::3]] - spec2[::3]) ** 2) / s2[0][::3]) + np.log(2. * np.pi * s2[0][::3]))
+            lnLik3 = -0.5 * np.sum((((obspec[1, or3] - spec3) ** 2) / s3) + np.log(2. * np.pi * s3))
+            lnLik4 = -0.5 * np.sum((((obspec[1, or4] - spec4) ** 2) / s4) + np.log(2. * np.pi * s4))
+
+            lnLik = lnLik1 + lnLik2 + lnLik3 + lnLik4
+
     if np.isnan(lnLik):
         lnLik = -np.inf
         
@@ -572,7 +739,7 @@ def modelspec(theta, args,gnostics=0):
     R2D2 = R**2. / D**2.
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             dlam = theta[ng+4]
             if (do_fudge == 1):
                 logf = theta[ng+5:ng+8]
@@ -586,7 +753,13 @@ def modelspec(theta, args,gnostics=0):
                 nb = 6
             else:
                 nb = 4
-
+        elif (fwhm == -6):
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                nb = 3
     else:
         dlam = theta[ng+2]
         if (do_fudge == 1):
@@ -883,10 +1056,10 @@ def countdims(runargs,plist = False):
             ng = gasnum.size
 
     pnames.extend(['Mass','Radius'])
-    
+
     # need to deal with options for multi instrument setups now
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             if (do_fudge == 1):
                 pnames.extend(['Scale1','Scale2','dlam','logb1','logb2','logb3'])
                 pc = ng+8
@@ -900,7 +1073,13 @@ def countdims(runargs,plist = False):
             else:
                 pnames.extend(['Scale1','dlam']) 
                 pc = ng + 4
-
+        elif (fwhm == -6):
+            if (do_fudge == 1):
+                pnames.extend(['dlam', 'logb1'])
+                pc = ng + 4
+            else:
+                pnames.extend('dlam')
+                pc = ng + 3
     else:
         if (do_fudge == 1):
             pnames.extend(['dlam','logb1'])
@@ -914,15 +1093,22 @@ def countdims(runargs,plist = False):
     # only really ready for 2 patches here
     if (npatches > 1):
         pc = pc + 1
+        pnames.append('Pcov')
     if (cloudtype.size > cloudtype.shape[0]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
 
     nc = 0
+    stop_cloud = 0
     # use correct unpack method depending on clouds situation
     for patch in range(0,npatches):
-        if (do_clouds[patch] != 0):
+        # only set up for two patches: cloud & clear, or slab + deck, deck
+        # so we stop reading cloud parameters after first pass through here.
+        if stop_cloud == 1:
+            break
+
+        elif (do_clouds[patch] != 0):
             for cloud in range(0,nclouds):
                 if (cloudtype[patch,cloud] == 1):
                     if (cloudnum[patch,cloud] == 89):
@@ -931,11 +1117,13 @@ def countdims(runargs,plist = False):
                         pnames.append('dPC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PowC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 4
+                        stop_cloud = 1
                     elif (cloudnum[patch,cloud] == 99):
                         pnames.append('tauC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PbaseC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('dPC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 3
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] < 80):
                         pnames.append('tauC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PbaseC'+str(cloud+1)+'P'+str(patch+1))
@@ -943,23 +1131,26 @@ def countdims(runargs,plist = False):
                         pnames.append('a_C'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('b_C'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 5
+                        stop_cloud = 1                        
                 elif (cloudtype[patch,cloud] == 2):
                     if (cloudnum[patch,cloud] == 89):
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('PowC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 3
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] == 99):
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         nc = nc + 2
+                        stop_cloud = 1                        
                     elif (cloudnum[patch,cloud] < 80):
                         nc = nc + 4
                         pnames.append('PdeckC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('heightC'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('a_C'+str(cloud+1)+'P'+str(patch+1))
                         pnames.append('b_C'+str(cloud+1)+'P'+str(patch+1))
-                        
+                        stop_cloud = 1
                     # types 3 and 4 to be added
                 elif (cloudtype[patch,cloud] > 2):
                     print("cloudtypes 3 and 4 not yet implemented here")

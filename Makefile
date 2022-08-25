@@ -23,7 +23,8 @@ FC = gfortran
 
 
 # Run version
-FCFLAGS = -O3 -fPIC -frecord-marker=4 -fbounds-check 
+FCFLAGS = -O3 -fPIC -ffree-line-length-none -frecord-marker=4 -fbounds-check 
+
 F77FLAGS = -O3 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
 
 # Intel compiler version

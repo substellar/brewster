@@ -32,7 +32,7 @@ __email__ = "burninghamster@gmail.com"
 __status__ = "Development"
 
 
-    
+
 def lnprob(theta):
 
 
@@ -90,7 +90,7 @@ def lnprior(theta):
                 logf1 = theta[ng+5]
                 logf2 = theta[ng+6]
                 logf3 = theta[ng+7]
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 pc = ng+8
             else:
                 # This is a place holder value so the code doesn't break
@@ -111,7 +111,7 @@ def lnprior(theta):
                 logf1 = theta[ng+4]
                 logf2 = np.log10(0.1*(max(obspec[2,10::3]))**2) # dummy
                 logf3 = theta[ng+5]
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 pc = ng+6
             else:
                 # This is a place holder value so the code doesn't break
@@ -120,33 +120,27 @@ def lnprior(theta):
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
                 pc = ng + 4
-        elif (fwhm == -5):
-            # this is for JWST NIRSpec prism + MIRI MRS
-            # we assume that this is all scaled well
-            # as is currently just simulated data anyhow
-            # so this unpack is the same as a single instrument
-            s1 = np.where(obspec[0,:] > 0.0)
+        elif (fwhm == -6):  ### UKIRT first and second order (Geballe cuts)
+            s1  = np.where(obspec[0,:] < 1.585) ### wavelength less than 1.585um (second order)
             s2 = s1
-            s3 = s1
+            s3 =  np.where(obspec[0,:] > 1.585) ### wavelength greater than 1.585um (first order)
             r2d2 = theta[ng+1]
             dlam = theta[ng+2]
+            scale1 = 1.0
+            scale2 = 1.0
             if (do_fudge == 1):
                 logf = theta[ng+3]
                 logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
-                scale1 = 1.0
-                scale2 = 1.0
-                pc = ng + 4
+                pc = ng+4
             else:
                 # This is a place holder value so the code doesn't break
                 logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
-                scale1 = 1.0
-                scale2 = 1.0
-                pc = ng + 3
+                pc = ng+3
     
     else:
         # this just copes with normal, single instrument data
@@ -182,9 +176,9 @@ def lnprior(theta):
         pc = pc + 1
     else:
         pcover = np.array([0.5,0.5])
-        
+
     # use correct unpack method depending on situation
-    
+
     if ((npatches > 1) and np.all(do_clouds != 0)):
         cloudparams, nc = cloud.unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds)
     else:
@@ -195,7 +189,7 @@ def lnprior(theta):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
-    
+
     cloud_tau0 = np.empty([npatches,nclouds])
     cloud_top = np.empty_like(cloud_tau0)
     cloud_bot = np.empty_like(cloud_tau0)
@@ -205,7 +199,7 @@ def lnprior(theta):
     loga = np.empty_like(cloud_tau0)
     b = np.empty_like(cloud_tau0)
 
-    if (np.abs(sum(do_clouds)) >= 1):    
+    if (np.abs(sum(do_clouds)) >= 1):
         for i in range(0,npatches):
             if (do_clouds[i] != 0):
                 for j in range (0, nclouds):
@@ -356,35 +350,35 @@ def lnprior(theta):
         taupow[:,:] = 0.0
         loga[:,:] =  0.0
         b[:,:] = 0.5
-                
+
     junkP = np.ones([13])
     if (proftype == 1):
         gam = theta[pc+nc]
         T = theta[pc+nc+1:]
         diff=np.roll(T,-1)-2.*T+np.roll(T,1)
         pp=len(T)
-    
+
         #for mass prior
         D = 3.086e+16 * dist
         R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D 
+            R = np.sqrt(r2d2) * D
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-        Rj = R / 69911.e3 
+        Rj = R / 69911.e3
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <= mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
-            and  0.0 < logg < 6.0 
+            and  0.0 < logg < 6.0
             and 1.0 < M < 80
             and  0. < r2d2 < 1.
             and 0.1 < scale1 < 10.0
             and 0.1 < scale2 < 10.0
             and  0.5 < Rj < 2.0
-            and -0.01 < dlam < 0.01 
-            and (min(T) > 1.0) and (max(T) < 6000.) 
+            and -0.01 < dlam < 0.01
+            and (min(T) > 1.0) and (max(T) < 6000.)
             and (gam > 0.)
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
@@ -410,15 +404,15 @@ def lnprior(theta):
             and np.all (loga < 3.0)
             and np.all(b < 1.0)
             and np.all(b > 0.0)):
-                 
+
             logbeta = -5.0
             beta=10.**logbeta
             alpha=1.0
             x=gam
             invgamma=((beta**alpha)/math.gamma(alpha)) * (x**(-alpha-1)) * np.exp(-beta/x)
             prprob = (-0.5/gam)*np.sum(diff[1:-1]**2) - 0.5*pp*np.log(gam) + np.log(invgamma)
-            return prprob 
-        
+            return prprob
+
         return -np.inf
 
     elif (proftype == 2):
@@ -438,22 +432,22 @@ def lnprior(theta):
         D = 3.086e+16 * dist
         R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D 
+            R = np.sqrt(r2d2) * D
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-        Rj = R / 69911.e3 
+        Rj = R / 69911.e3
         #         and  and (-5. < logbeta < 0))
         if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <= mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
-            and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and  0.0 < logg < 6.0
+            and 1.0 < M < 80.
             and  0. < r2d2 < 1.
             and 0.1 < scale1 < 10.0
             and 0.1 < scale2 < 10.0
             and  0.5 < Rj < 2.0
-            and -0.01 < dlam < 0.01 
+            and -0.01 < dlam < 0.01
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
@@ -482,7 +476,7 @@ def lnprior(theta):
             and (max(T) < 6000.)):
             return 0.0
         return -np.inf
-        
+
     elif (proftype == 3):
         a1 = theta[pc+nc]
         a2 = theta[pc+1+nc]
@@ -498,27 +492,27 @@ def lnprior(theta):
              and P3 < 5.):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])
 
-            
+
         #for mass prior
         D = 3.086e+16 * dist
         R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D 
+            R = np.sqrt(r2d2) * D
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-        Rj = R / 69911.e3 
+        Rj = R / 69911.e3
         #         and  and (-5. < logbeta < 0))
-        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0) 
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <=  mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
-            and  0.0 < logg < 6.0 
-            and 1.0 < M < 80. 
+            and  0.0 < logg < 6.0
+            and 1.0 < M < 80.
             and  0. < r2d2 < 1.
             and 0.1 < scale1 < 10.0
             and 0.1 < scale2 < 10.0
             and  0.5 < Rj < 2.0
-            and -0.01 < dlam < 0.01 
+            and -0.01 < dlam < 0.01
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
@@ -543,19 +537,19 @@ def lnprior(theta):
             and np.all (loga < 3.0)
             and np.all(b < 1.0)
             and np.all(b > 0.0)
-            and  (min(T) > 1.0) and (max(T) < 6000.)):               
+            and  (min(T) > 1.0) and (max(T) < 6000.)):
             return 0.0
         return -np.inf
-    
+
     elif (proftype == 9):
         #for mass prior
         D = 3.086e+16 * dist
         R = -1.0
         if (r2d2 > 0.):
-            R = np.sqrt(r2d2) * D 
+            R = np.sqrt(r2d2) * D
         g = (10.**logg)/100.
         M = (R**2 * g/(6.67E-11))/1.898E27
-        Rj = R / 69911.e3 
+        Rj = R / 69911.e3
         #         and  and (-5. < logbeta < 0))
         print("Rj = ", Rj)
         print("M = ", M)
@@ -589,7 +583,7 @@ def lnprior(theta):
         print("metscale = ", metscale)
         print("coscale = ", coscale)
         print("press[press.size-1]  = ", press[press.size-1])
-        print("press[0] = ",press[0]) 
+        print("press[0] = ",press[0])
         if (all(invmr[0:ng] > -12.0)
             and all(invmr[0:ng] < 0.0)
             and (np.sum(10.**(invmr[0:ng])) < 1.0)
@@ -597,12 +591,12 @@ def lnprior(theta):
             and (metscale[0] <= mh <= metscale[-1])
             and (coscale[0] <= co <= coscale[-1])
             and (0.0 < logg < 6.0)
-            and (1.0 < M < 80.) 
+            and (1.0 < M < 80.)
             and (0. < r2d2 < 1.)
             and (0.1 < scale1 < 10.0)
             and (0.1 < scale2 < 10.0)
             and (0.5 < Rj < 2.0)
-            and (-0.01 < dlam < 0.01) 
+            and (-0.01 < dlam < 0.01)
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
             and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
@@ -664,7 +658,7 @@ def lnlike(theta):
                 nb = 8
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 5
         elif (fwhm == -2):
             scale1 = theta[ng+2]
@@ -673,45 +667,65 @@ def lnlike(theta):
                 nb = 6
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 4
-                
-        elif (fwhm == -5):
+        elif (fwhm == -6):
             if (do_fudge == 1):
                 logf = theta[ng+3]
                 nb = 4
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 3
-                
     else:
         if (do_fudge == 1):
             logf = theta[ng+3]
             nb = 4
         else:
             # This is a place holder value so the code doesn't break
-            logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
             nb = 3
 
-            
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-    # If we've set a value for FWHM that we're using... 
+
+    # If we've set a value for FWHM that we're using...
     if (fwhm > 0.00 and fwhm < 1.00):
         # this is a uniform FWHM in microns
-        
         spec = conv_uniform_FWHM(obspec,modspec,fwhm)
-        
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))       
     elif (fwhm > 10.00):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
     elif (fwhm == 0.0):
         # Use convolution for Spex
         spec = prism_non_uniform(obspec,modspec,3.3)
+        if (do_fudge == 1):
+            s2=obspec[2,::3]**2 + 10.**logf
+        else:
+            s2 = obspec[2,::3]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,::3] - spec[::3])**2) / s2) + np.log(2.*np.pi*s2))
     elif (fwhm == 1.0):
         # Use convolution for JWST-NIRSpec PRISM
         spec = prism_non_uniform(obspec,modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,::2]**2 + 10.**logf
+        else:
+            s2 = obspec[2,::2]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,::2] - spec[::2])**2) / s2) + np.log(2.*np.pi*s2))
     elif (fwhm == 2.0):
         # combo of JWST-NIRSpec PRISM + G395H grism
         # single scaling & single fudge factor
@@ -732,14 +746,14 @@ def lnlike(theta):
         # the rest of prism
         or5 = np.where(obspec[0,:] > 5.14)
         spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
-        
-    if (fwhm >= 0.0):
         if (do_fudge == 1):
-            s2=obspec[2,::3]**2 + 10.**logf
+            s2=obspec[2,:]**2 + 10.**logf
         else:
-            s2 = obspec[2,::3]**2
+            s2 = obspec[2,:]**2
 
-        lnLik=-0.5*np.sum((((obspec[1,::3] - spec[::3])**2) / s2) + np.log(2.*np.pi*s2))
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
+
+        
             
     elif (fwhm < 0.0):
         lnLik = 0.0
@@ -809,12 +823,12 @@ def lnlike(theta):
             lnLik = lnLik1 + lnLik3
             
         elif (fwhm == -3):
-            # This is spex + Mike Cushing's L band R = 425 + IRS 
+            # This is spex + Mike Cushing's L band R = 425 + IRS
             # Spex
             or1  = np.where(obspec[0,:] < 2.5)
             spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
 
-            # Mike Cushing supplied L band R = 425 
+            # Mike Cushing supplied L band R = 425
             # dispersion constant across order 0.0097um
             # R = 425
             R = 425
@@ -844,7 +858,7 @@ def lnlike(theta):
             lnLik = lnLik1 + lnLik2 + lnLik3
             
         elif (fwhm == -4):
-            # This is spex + GNIRS L band R = 600 + IRS 
+            # This is spex + GNIRS L band R = 600 + IRS
             # Spex
             or1  = np.where(obspec[0,:] < 2.5)
             spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
@@ -902,7 +916,87 @@ def lnlike(theta):
                 s2 = obspec[2,:]**2
 
             lnLik=-0.5*np.sum((((obspec[1,:] - spec)**2) / s2) + np.log(2.*np.pi*s2))
-            
+
+        elif (fwhm == -6):
+            # This is UKIRT orders 1 and 2 based on Geballe 1996 cuts 
+            # Second Order                           
+            # R ~ 780 x Lambda (linear increase across order)
+            # Order 2 (0.95 - 1.40 um)
+            # FWHM ~ 1.175/780 = 0.001506    
+            dL1 = 0.001506
+            or1  = np.where(obspec[0,:] < 1.585)
+
+            spec1 = conv_uniform_FWHM(obspec[:,or1],modspec,dL1)
+
+            # First Order                            
+            # R ~ 390 x Lambda (linear increase across order)
+            # Order 1 (1.30 - 5.50 um) 
+            # FWHM ~ 3.4/390 = 0.008717
+            dL2 = 0.008717
+            or2 = np.where(obspec[0,:] > 1.585)
+
+            spec2 = conv_uniform_FWHM(obspec[:,or2],modspec,dL2)
+
+            if (do_fudge == 1):
+                s1 = obspec[2,or1]**2 + 10.**logf
+                s3 = obspec[2,or2]**2 + 10.**logf
+            else:
+                s1 = obspec[2,or1]**2
+                s3 = obspec[2,or2]**2
+
+
+            lnLik1=-0.5*np.sum((((obspec[1,or1[0][::7]] - spec1[::7])**2) / s1[0][::7]) + np.log(2.*np.pi*s1[0][::7]))
+            lnLik3=-0.5*np.sum((((obspec[1,or2[0][::3]] - spec2[::3])**2) / s3[0][::3]) + np.log(2.*np.pi*s3[0][::3]))
+            lnLik = lnLik1 + lnLik3
+
+        elif (fwhm == -7):
+            #This is CGS4 NIR + NIRC Lband * CGS4 Mband
+            # CGS4 Second order R = 780xLambda
+            dL1 = 0.001506
+            or1 = np.where(obspec[0, :] < 1.585)
+            spec1 = conv_uniform_FWHM(obspec[:, or1], modspec, dL1)
+
+            # CGS4 First order R = 390xLambda
+            dL2 = 0.008717
+            or2 = np.where(np.logical_and(obspec[0, :] > 1.585, obspec[0, :] < 2.52))
+            spec2 = conv_uniform_FWHM(obspec[:, or2], modspec, dL2)
+
+            # Oppenheimer 1998 NIRC L band spectrum
+            ###EDIT### Central wavelength @ 3.492 with FWHM=1.490 for lw band
+            # Using R=164
+            #dL3 = 0.0213
+            R=164.0
+            or3 = np.where(np.logical_and(obspec[0, :] > 2.52, obspec[0, :] < 4.15))
+            spec3 = scale1 * conv_uniform_R(obspec[:, or3], modspec, R)
+
+            # CGS4 M band
+            # Order 1 using 1".2 slit, 75 line/mm grating, 150 mm focal length camera
+            ###EDIT### R=400xLambda
+            dL4 = 0.0085
+            or4 = np.where(obspec[0, :] > 4.15)
+            spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
+
+            if (do_fudge == 1):
+                s1 = obspec[2, or1] ** 2 + 10. ** logf[0]
+                s2 = obspec[2, or2] ** 2 + 10. ** logf[0]
+                s3 = obspec[2, or3] ** 2 + 10. ** logf[1]
+                s4 = obspec[2, or4] ** 2 + 10. ** logf[2]
+            else:
+                s1 = obspec[2, or1] ** 2
+                s2 = obspec[2, or2] ** 2
+                s3 = obspec[2, or3] ** 2
+                s4 = obspec[2, or4] ** 2  
+  
+            lnLik1 = -0.5 * np.sum((((obspec[1, or1[0][::7]] - spec1[::7]) ** 2) / s1[0][::7]) + np.log(2. * np.pi * s1[0][::7]))
+            lnLik2 = -0.5 * np.sum((((obspec[1, or2[0][::3]] - spec2[::3]) ** 2) / s2[0][::3]) + np.log(2. * np.pi * s2[0][::3]))
+            lnLik3 = -0.5 * np.sum((((obspec[1, or3] - spec3) ** 2) / s3) + np.log(2. * np.pi * s3))
+            lnLik4 = -0.5 * np.sum((((obspec[1, or4] - spec4) ** 2) / s4) + np.log(2. * np.pi * s4))
+
+            lnLik = lnLik1 + lnLik2 + lnLik3 + lnLik4
+
+    if np.isnan(lnLik):
+        lnLik = -np.inf
+        
     return lnLik
 
 
@@ -938,7 +1032,7 @@ def modelspec(theta, args,gnostics):
                 nb = 8
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 5
         elif (fwhm == -2):
             r2d2 = theta[ng+1:ng+3]
@@ -948,9 +1042,8 @@ def modelspec(theta, args,gnostics):
                 nb = 6
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 4
-
         elif (fwhm == -5):
             r2d2 = theta[ng+1]
             dlam = theta[ng+2]
@@ -959,7 +1052,17 @@ def modelspec(theta, args,gnostics):
                 nb = 4
             else:
                 # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+                nb = 3
+        elif (fwhm == -6):
+            r2d2 = theta[ng+1]
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                # This is a place holder value so the code doesn't break                                                                      
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 3
     else:
         r2d2 = theta[ng+1]
@@ -969,7 +1072,7 @@ def modelspec(theta, args,gnostics):
             nb = 4
         else:
             # This is a place holder value so the code doesn't break
-            logf = np.log10(0.1*(max(obspec[2,10::3]))**2) 
+            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
             nb = 3
 
         
@@ -979,7 +1082,7 @@ def modelspec(theta, args,gnostics):
         pcover = np.array([prat,(1.-prat)])
         pc = ng + nb + 1
     else:
-        pc = ng + nb 
+        pc = ng + nb
         pcover = 1.0
         
     # use correct unpack method depending on situation
@@ -1005,7 +1108,7 @@ def modelspec(theta, args,gnostics):
     ngas = gasnum.size
     bff = np.zeros([3,nlayers],dtype="float64")
 
-    # check if its a fixed VMR or a profile from chem equilibrium 
+    # check if its a fixed VMR or a profile from chem equilibrium
     # VMR is log10(VMR) !!!
     if chemeq == 1:
         # this case is a profile
@@ -1046,11 +1149,11 @@ def modelspec(theta, args,gnostics):
             tmpvmr[0:(ngas-3)] = invmr[0:(ngas-3)]
             tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-3] / ((f1+1)*(f2+1))) # Cs
             tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-3] * (f1 /(f1+1)) ) # Na
-            tmpvmr[ngas-3] = np.log10(10.**invmr[ngas-3] - 10.**tmpvmr[ngas-2] - 10.**tmpvmr[ngas-1]) #K   
+            tmpvmr[ngas-3] = np.log10(10.**invmr[ngas-3] - 10.**tmpvmr[ngas-2] - 10.**tmpvmr[ngas-1]) #K
         else:
             tmpvmr[0:ngas] = invmr[0:ngas]
             
-        for i in range(0,ngas):                              
+        for i in range(0,ngas):
             logVMR[i,:] = tmpvmr[i]
 
     # now need to translate cloudparams in to cloud profile even
@@ -1075,16 +1178,17 @@ def modelspec(theta, args,gnostics):
             scale1 = r2d2[1]
         elif (fwhm == -5):
             R2D2 = r2d2
+        elif (fwhm == -6):
+            R2D2 = r2d2
     else:
         R2D2 = r2d2
-    
 
-        
+
     # Now get the BFF stuff sorted
     if (chemeq == 0 and do_bff == 1):
         for gas in range(0,3):
             for i in range(0,nlayers):
-                tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1) 
+                tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1)
                 bff[gas,i] = tfit(temp[i])
 
     bff = np.asfortranarray(bff, dtype='float64')
@@ -1141,16 +1245,16 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
         for line_aa in fa.readlines()[1:totgas+1]:
             line_aa = line_aa.strip()
             gasdata.append(line_aa.split())
-    
-    
-    list1 = []    
+
+
+    list1 = []
     for i in range(0,ngas):
         for j in range(0,totgas):
             if (gasdata[j][1].lower() == gaslist[i].lower()):
                 list1.append(gasdata[j])
 
     if (malk == 1):
-        for i in range (0,ngas):    
+        for i in range (0,ngas):
             list1[i] = [w.replace('K_', 'K_Mike_') for w in list1[i]]
             list1[i] = [w.replace('Na_', 'Na_Mike_') for w in list1[i]]
 
@@ -1159,7 +1263,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
             list1[i] = [w.replace('K_', 'K_2021_') for w in list1[i]]
             list1[i] = [w.replace('Na_', 'Na_2021_') for w in list1[i]]
 
-     
+
 
     lists = [xpath+i[3] for i in list1[0:ngas]]
     gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
@@ -1176,7 +1280,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
     nwave = inwavenum.size
     r1 = np.amin(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
     r2 = np.amax(np.where(np.logical_not(np.logical_or(rawwavenum[:] > wn2, rawwavenum[:] < wn1))))
-    
+
     # Here we are interpolating the linelist onto our fine pressure scale.
     # pickles have linelist as 4th entry....
     linelist = (np.zeros([ngas,npress,ntemps,nwave],order='F')).astype('float64', order='F')
@@ -1187,7 +1291,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
                 pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
                 linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(press)))
     linelist[np.isnan(linelist)] = -50.0
-    
+
     return inlinetemps,inwavenum,linelist,gasnum,nwave
 
 
@@ -1219,7 +1323,7 @@ def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
             for i in range (0,nabtemp):
                 pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(abunds[i1[0],i2[0],i,:,gas]),k=1)
                 ab_myP[i,:,gas] = pfit(np.log10(press))
-            
+
                 bff_raw = np.zeros([nabtemp,nlayers,3])
                 bff_raw[:,:,0] = ab_myP[:,:,0]
                 bff_raw[:,:,1] = ab_myP[:,:,2]
@@ -1230,7 +1334,7 @@ def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
         gases[:,:,:,:,0] = abunds[:,:,:,:,0]
         gases[:,:,:,:,1] = abunds[:,:,:,:,2]
         gases[:,:,:,:,2] = abunds[:,:,:,:,4]
-        nmatch = 0 
+        nmatch = 0
         for i in range(0,ngas):
             for j in range(0,nabgas):
                 if (gasnames[j].lower() == gaslist[i].lower()):
@@ -1239,14 +1343,14 @@ def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
         if (nmatch != ngas):
             print("you've requested a gas that isn't in the Vischer table. Please check and try again.")
             sys.exit()
-    
+
         for i in range(0,nmet):
             for j in range(0,nco):
                 for k in range(0,ngas+3):
                     for l in range(0,nabtemp):
                         pfit = InterpolatedUnivariateSpline(Pgrid,np.log10(gases[i,j,l,:,k]),k=1)
                         gases_myP[i,j,l,:,k] = pfit(np.log10(press))
-    
+
 
     return bff_raw,Tgrid,metscale,coscale,gases_myP
 

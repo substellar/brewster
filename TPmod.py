@@ -32,7 +32,9 @@ def set_prof(proftype, coarsePress,press,intemp):
         # interp temp onto finer grid coarsePress => press
         # spline fit with max smoothing
         tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
-        temp = np.asfortranarray(sp.interpolate.splev(np.log10(press),tfit,der=0),dtype='d')
+        # we'll take the abs value to avoid negative T
+        temp = np.asfortranarray(np.abs(sp.interpolate.splev(np.log10(press),tfit,der=0)),dtype='d')
+        
         #tfit = sp.interpolate.UnivariateSpline(np.log10(coarsePress),intemp,k=2,s=0)
         #temp = tfit(np.log10(press))
                     
@@ -96,7 +98,7 @@ def set_prof(proftype, coarsePress,press,intemp):
             elif (press[i] >= P3):
                 temp[i] = T3
 
-        # then smooth with 5 layer box car
+        # then smooth with 5 layer box car 
         temp1 = convolve(temp,Gaussian1DKernel(5),boundary='extend')
         temp = temp1
 
