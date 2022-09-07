@@ -120,6 +120,33 @@ def lnprior(theta):
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
                 pc = ng + 4
+        elif (fwhm == -5):
+            # this is for JWST NIRSpec prism + MIRI MRS
+            # we assume that this is all scaled well
+            # as is currently just simulated data anyhow
+            # so this unpack is the same as a single instrument
+            s1 = np.where(obspec[0,:] > 0.0)
+            s2 = s1
+            s3 = s1
+            r2d2 = theta[ng+1]
+            dlam = theta[ng+2]
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                scale1 = 1.0
+                scale2 = 1.0
+                pc = ng + 4
+            else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                scale1 = 1.0
+                scale2 = 1.0
+                pc = ng + 3
         elif (fwhm == -6):  ### UKIRT first and second order (Geballe cuts)
             s1  = np.where(obspec[0,:] < 1.585) ### wavelength less than 1.585um (second order)
             s2 = s1
@@ -669,6 +696,14 @@ def lnlike(theta):
                 # This is a place holder value so the code doesn't break
                 logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
                 nb = 4
+        elif (fwhm == -5):
+            if (do_fudge == 1):
+                logf = theta[ng+3]
+                nb = 4
+            else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+                nb = 3
         elif (fwhm == -6):
             if (do_fudge == 1):
                 logf = theta[ng+3]
