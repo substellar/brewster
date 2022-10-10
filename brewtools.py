@@ -27,7 +27,7 @@ def get_endchain(runname,fin,results_path='./'):
 
     elif(fin ==0):
         pic = results_path+runname+"_snapshot.pic"
-        chain,probs = pickle_load(pic) 
+        chain,probs = pickle_load(pic)
         nwalkers = chain.shape[0]
         ntot = chain.shape[1]
         ndim = chain.shape[2]
@@ -37,7 +37,10 @@ def get_endchain(runname,fin,results_path='./'):
         print("Unfinished symphony. Number of successful iterations = ", niter)
         print("maximum likelihood = ", max_like)
         flatendchain = chain[:,(niter-2000):niter,:].reshape((-1,ndim))
-        flatendprobs = probs[(niter-2000):niter,:].reshape((-1))
+        if (emcee.__version__ == '3.0rc2'):
+            flatendprobs = probs[niter-2000:,:].reshape((-1))
+        else:
+            flatendprobs = probs[:, niter-2000:].reshape((-1))
         theta_max_end = flatendchain[np.argmax(flatendprobs)]
         max_end_like = np.amax(flatendprobs)
         print("maximum likelihood in final 2K iterations= ", max_end_like)
@@ -71,7 +74,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
-        elif (fwhm == -2):
+        elif (fwhm == -2 or fwhm == -8):
             scale1 = theta[ng+2]
         elif (fwhm == -6):
             scale1 = 1.0
@@ -282,6 +285,21 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
             spec4 = scale2 * conv_uniform_FWHM(obspec[:, or4], modspec, dL4)
 
             outspec = np.array(np.concatenate((spec1, spec2, spec3, spec4), axis=0))
+
+        elif (fwhm == -8):
+            # This is NIRSpec + MIRI, no order shifts, just instrument
+            # NIRSpec
+            R = 2700
+            or1  = np.where(obspec[0,:] < 5.0)
+            spec1 = conv_uniform_R(obspec[:,or1],modspec,R)
+
+            #MIRI MRS roughly constant R = 2700
+            R = 2700
+            or3 = np.where(obspec[0,:] > 5.0)
+            spec3 = scale1 * conv_uniform_R(obspec[:,or3],modspec,R)
+
+            outspec = np.array(np.concatenate((spec1,spec3),axis=0))
+            
 
     return outspec
             
