@@ -304,15 +304,12 @@ def priormap(theta):
         # then two quartile points
         # These define T at define pressure points
         # This does not allow reversals
+        knots = len(coarsePress)
         phi[ndim-1] = theta[ndim-1] * 5000.
-        # now top of atmosphere temp, defined as being less than bottom
-        phi[ndim-5] = theta[ndim-5] * phi[ndim-1]
-        # now middle of atmosphere
-        phi[ndim-3] = phi[ndim-5] + (theta[ndim-3] * (phi[ndim-1] - phi[ndim-5]))
-        # now deep quartile
-        phi[ndim-2] = phi[ndim-3] + (theta[ndim-2] * (phi[ndim-1] - phi[ndim-3]))
-        # and bottom shallow quartile
-        phi[ndim-4] = phi[ndim-5] + (theta[ndim-4] * (phi[ndim-3] - phi[ndim-5]))
+        # now bottom up for all the knots
+        for i in range(2,knots+1):
+            phi[ndim - i] = theta[ndim - i] * phi[(ndim - i) + 1]
+        
         return phi
         
     if (proftype == 2):
@@ -1034,6 +1031,7 @@ def sort_bff_and_CE(chemeq,ce_table,press,gaslist):
 def countdims(runargs,plist = False):
     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = runargs
 
+    knots = len(coarsePress)
     pnames = list() 
     # first the gases
     if (chemeq != 0):
@@ -1157,8 +1155,9 @@ def countdims(runargs,plist = False):
                     sys.exit()
     # now add the proftype params...
     if (proftype == 1):
-        pnames.extend(['T_toa','T_q1','T_mid','T_q3','T_bot'])
-        ndim = pc+nc+5
+        for i in range(0,knots):
+            pnames.extend(['T_'+str(round(np.log10(coarsePress[i]),1))])
+        ndim = pc+nc+knots
     
     elif (proftype == 2):
         pnames.extend(['a1','a2','P1','P3','T3'])

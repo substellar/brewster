@@ -106,9 +106,11 @@ do_bff = 0
 proftype = 1
 pfile = "t1700g1000f3.dat"
 
+# how many knots for the spline in type 1?
+knots = 5
 
 # set up pressure grids in bar cos its intuitive
-logcoarsePress = np.linspace(-4.0, 2.4, 5)
+logcoarsePress = np.linspace(-4.0, 2.4, knots)
 logfinePress = np.arange(-4.0, 2.4, 0.1)
 # forward model wants pressure in bar
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
