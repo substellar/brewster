@@ -212,7 +212,7 @@ def lnprior(theta):
         cloudparams, nc = cloud.unpack_default(theta,pc,cloudtype,cloudnum,do_clouds)
 
 
-    if (cloudtype.size > cloudtype.shape[0]):
+    if (cloudtype.size > cloudtype.shape[1]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
