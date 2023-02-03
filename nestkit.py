@@ -63,19 +63,19 @@ def priormap(theta):
             ng = gasnum.size - 1
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 12.)
+                phi[i] = np.log10(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         elif (gasnum[gasnum.size-1] == 23):
             ng = gasnum.size - 2
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 12.)
+                phi[i] = np.log10(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
         else:
             ng = gasnum.size
             rem = 1.0
             for i in range(0, ng):
-                phi[i] = np.log(rem) -  (theta[i] * 12.)
+                phi[i] = np.log10(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
 
             
@@ -92,7 +92,7 @@ def priormap(theta):
 
     # need to deal with options for multi instrument setups now
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -8):
             s1  = np.where(obspec[0,:] < 2.5)
             s2  = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.0))
             s3 =  np.where(obspec[0,:] > 5.)
@@ -354,7 +354,7 @@ def lnlike(theta):
     # get the spectrum
     # for MCMC runs we don't want diagnostics
     gnostics = 0
-    shiftspec, photspec,tauspec,cfunc = modelspec(theta,settings.runargs,gnostics)
+    shiftspec, photspec,tauspec,cfunc = modelspec(theta)
     # Check if CE or VMR methods
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
@@ -370,7 +370,7 @@ def lnlike(theta):
 
     # Get the scaling factors for the spectra. What is the FWHM? Negative number: preset combination of instruments
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7 or fwhm == -8):
             scale1 = theta[ng+2]
             scale2 = theta[ng+3]
             if (do_fudge == 1):
@@ -699,15 +699,58 @@ def lnlike(theta):
 
             lnLik = lnLik1 + lnLik2 + lnLik3 + lnLik4
 
+        elif (fwhm == -8):
+            # This is spex + JWST G395H R 2700 + IRS 
+            # Spex
+            mr1 = np.where(shiftspec[0,:] < 2.5)
+            or1  = np.where(obspec[0,:] < 2.5)
+            wno = 1e4 / shiftspec[0,mr1]
+            spec1 = prism_non_uniform(obspec[:,or1],modspec,3.3)
+
+            modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
+            # JWST G395H
+            R = 2700
+            or2 = np.where(np.logical_and(obspec[0,:] > 2.5,obspec[0,:] < 5.2))
+            spec2 = scale1 * conv_uniform_R(obspec[:,or2],modspec,R)
+
+            # Spitzer IRS
+            # R roughly constant within orders, and orders both appear to
+            # have R ~ 100
+            R = 100.0
+            #mr3 = np.where(modspec[0,:] > 5.0)
+            or3 = np.where(obspec[0,:] > 5.2)
+            spec3 = scale2 * conv_uniform_R(obspec[:,or3],modspec,R)
+
+            if (do_fudge == 1):
+                s1 = obspec[2,or1]**2 + 10.**logf[0]
+                s2 = obspec[2,or2]**2 + 10.**logf[1]
+                s3 = obspec[2,or3]**2 + 10.**logf[2]
+            else:
+                s1 = obspec[2,or1]**2
+                s2 = obspec[2,or2]**2
+                s3 = obspec[2,or3]**2
+
+
+            lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1)**2) / s1) + np.log(2.*np.pi*s1))
+            lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2)**2) / s2) + np.log(2.*np.pi*s2))
+            lnLik3=-0.5*np.sum((((obspec[1,or3] - spec3)**2) / s3) + np.log(2.*np.pi*s3))
+            lnLik = lnLik1 + lnLik2 + lnLik3
+
+
     if np.isnan(lnLik):
         lnLik = -np.inf
         
     return lnLik
 
 
-def modelspec(theta, args,gnostics=0):
+def modelspec(theta,args=None, gnostics=0):
 
-    gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
+    if args is None:
+     gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
+    else:
+        gases_myP,chemeq,dist,dist_err,cloudtype, do_clouds,gasnum,gaslist,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
+
+        
     nlayers = press.size
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 21):
@@ -736,7 +779,7 @@ def modelspec(theta, args,gnostics=0):
     R2D2 = R**2. / D**2.
 
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7 or fwhm == -8):
             dlam = theta[ng+4]
             if (do_fudge == 1):
                 logf = theta[ng+5:ng+8]
@@ -1057,7 +1100,7 @@ def countdims(runargs,plist = False):
 
     # need to deal with options for multi instrument setups now
     if (fwhm < 0.0):
-        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7):
+        if (fwhm == -1 or fwhm == -3 or fwhm == -4 or fwhm == -7 or fwhm == -8):
             if (do_fudge == 1):
                 pnames.extend(['Scale1','Scale2','dlam','logb1','logb2','logb3'])
                 pc = ng+8
