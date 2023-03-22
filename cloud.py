@@ -248,10 +248,6 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
         nclouds = cloudtype.size
         
 
-    print(nclouds)
-    print(cloudtype.shape)
-    print(cloudtype.size)
-    
     npatches = 2
 
     cloudparams = np.ones([5,npatches,nclouds],dtype='d')

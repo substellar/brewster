@@ -368,6 +368,18 @@ def lnprior(theta):
                             taupow[i,j] = 0.0
                             loga[i,j] =  0.0
                             b[i,j] = 0.5
+            else:
+                cloud_tau0[i,:] = 1.0
+                cloud_bot[i,:] = np.log10(press[-1])
+                cloud_top[i,:] = np.log10(press[0])
+                cloud_height[i,:] = 0.1
+                w0[i,:] = +0.5
+                taupow[i,:] = 0.0
+                loga[i,:] =  0.0
+                b[i,:] = 0.5
+
+                
+                    
     else:
         cloud_tau0[:,:] = 1.0
         cloud_bot[:,:] = np.log10(press[-1])

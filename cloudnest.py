@@ -179,7 +179,7 @@ def atlev(l0,press):
 
 def unpack_default(theta,pc,cloudtype,cloudnum,do_clouds):
     nc =0
-    if (cloudtype.size > cloudtype.shape[0]):
+    if (cloudtype.size > cloudtype.shape[1]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
@@ -250,7 +250,7 @@ def unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds):
     # This is achieved by equated patch 2 to patch 1, but one cloud in patch 2
     # is set to cloudtype = 0 (empty)
     nc =0 
-    if (cloudtype.size > cloudtype.shape[0]):
+    if (cloudtype.size > cloudtype.shape[1]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
