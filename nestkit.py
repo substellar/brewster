@@ -193,7 +193,7 @@ def priormap(theta):
     if (npatches > 1):
         phi[pc] = theta[pc]
         pc = pc + 1
-    if (cloudtype.size > cloudtype.shape[0]):
+    if (cloudtype.size > cloudtype.shape[1]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
@@ -316,7 +316,7 @@ def priormap(theta):
         # a1
         phi[pc+nc] = 0.25 + (theta[pc+nc]*0.25)
         # a2
-        phi[pc+nc+1] = 0.1 * (theta[pc+1+nc] * 0.1)
+        phi[pc+nc+1] = 0.1 + (theta[pc+1+nc] * 0.1)
         #P1
         phi[pc+nc+2] = (theta[pc+2+nc]* \
                              (np.log10(press[-1]) - np.log10(press[0]))) + np.log10(press[0])
@@ -1135,7 +1135,7 @@ def countdims(runargs,plist = False):
     if (npatches > 1):
         pc = pc + 1
         pnames.append('Pcov')
-    if (cloudtype.size > cloudtype.shape[0]):
+    if (cloudtype.size > cloudtype.shape[1]):
         nclouds = cloudtype.shape[1]
     else:
         nclouds = cloudtype.size
