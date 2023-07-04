@@ -343,6 +343,27 @@ def priormap(theta):
         phi[pc+nc+5] = (theta[pc+4+n5] * 3000.) + 1500.
         return phi
     
+    elif (proftype == 7):
+        # Tint - prior following Molliere+2020
+        phi[pc+nc] = 300 + (theta[pc+nc] * 2000)
+        # alpha, between 1 and 2
+        phi[pc+nc+1] = theta[pc+nc+1] + 1. 
+        # delta
+        plen = np.log10(press[-1]) - np.log10(press[0])
+        logPphot = np.log10(press[0]+(theta[pc+nc+2]*plen))
+        phi[pc+nc+2] = 10**(-phi[pc+nc+1]*logPphot)
+
+        # get Tconnect from Tint get prior range following Molliere+2020
+        Tint = phi[pc+nc]    
+        Tconnect = (((3/4) * Tint**4) * ((2/3) + (0.1)))**(1/4)
+        # now get T3
+        phi[pc+nc+5] = 10. + (theta[pc+nc+5] * Tconnect)
+        # T2
+        phi[pc+nc+4] = 10. + (theta[pc+nc+4] * phi[pc+nc+5])
+        # T1
+        phi[pc+nc+3] = 10.+ (theta[pc+nc+3] * phi[pc+nc+4])
+        return phi
+        
     elif (proftype == 9):
         return phi
 
@@ -1209,7 +1230,12 @@ def countdims(runargs,plist = False):
     elif (proftype == 3):
         pnames.extend(['a1','a2','P1','P2','P3','T3'])
         ndim = pc+nc+6
-     
+
+    elif (proftype == 7):
+        pnames.extend(['Tint','alpha','delta','T1','T2','T3'])
+        ndim = pc+nc+6
+
+        
     elif (proftype == 9):
         ndim = pc+nc
 
