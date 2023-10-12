@@ -6,8 +6,7 @@ from __future__ import print_function
 import numpy as np
 import scipy as sp
 from scipy import interpolate
-from astropy.convolution import convolve, convolve_fft
-from astropy.convolution import Gaussian1DKernel
+
 
 
 __author__ = "Ben Burningham"
