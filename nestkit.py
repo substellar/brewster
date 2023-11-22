@@ -340,9 +340,17 @@ def priormap(theta):
         #P3 must be greater than or equal P2
         phi[pc+nc+4] = (theta[pc+nc+4] * (np.log10(press[-1]) - phi[pc+nc+2])) + phi[pc+nc+3]
         #T3
-        phi[pc+nc+5] = (theta[pc+4+n5] * 3000.) + 1500.
+        phi[pc+nc+5] = (theta[pc+nc5+5] * 3000.) + 1500.
         return phi
-    
+
+    elif (proftype == 6):
+        # This is not Mike Line's profile. This is a simple n point spline.
+        # each layer is completely free, does not have to be declining in T.
+        knots = len(coarsePress)
+        phi[ndim-knots:] = theta[ndim-knots:] * 4000.
+        
+        return phi
+
     elif (proftype == 9):
         return phi
 
@@ -466,6 +474,17 @@ def lnlike(theta):
 
         lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
 
+    elif (fwhm == 3.0):
+        # JWST NIRSpec G395H data with 2.2 pixels per resolving element
+        # Use convolution for Spex
+        spec = prism_non_uniform(obspec,modspec,2.2)
+        if (do_fudge == 1):
+            s2=obspec[2,::3]**2 + 10.**logf
+        else:
+            s2 = obspec[2,::3]**2
+            
+        lnLik=-0.5*np.sum((((obspec[1,::3] - spec[::3])**2) / s2) + np.log(2.*np.pi*s2))  
+        
     elif (fwhm < 0.0):
         lnLik = 0.0
         # This is for multi-instrument cases
@@ -954,13 +973,15 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
-    totgas = 24
+    totgas = 0
     gasdata = []
     with open(xlist) as fa:
-        for line_aa in fa.readlines()[1:totgas+1]:
+        for line_aa in fa.readlines():
+            if len(line_aa) == 0:
+                break
+            totgas = totgas +1 
             line_aa = line_aa.strip()
             gasdata.append(line_aa.split())
-
     
     list1 = []    
     for i in range(0,ngas):
@@ -980,7 +1001,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
      
 
     lists = [xpath+i[3] for i in list1[0:ngas]]
-    gasmass = [xpath+i[2] for i in list1[0:ngas]]
+    gasmass = [i[2] for i in list1[0:ngas]]
     gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
 
 
@@ -1197,7 +1218,7 @@ def countdims(runargs,plist = False):
                     print("cloudtypes 3 and 4 not yet implemented here")
                     sys.exit()
     # now add the proftype params...
-    if (proftype == 1):
+    if (proftype == 1 or proftype == 6):
         for i in range(0,knots):
             pnames.extend(['T_'+str(round(np.log10(coarsePress[i]),1))])
         ndim = pc+nc+knots

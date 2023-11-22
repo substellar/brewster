@@ -1,14 +1,9 @@
 # This script tests the forward model in the context of cloudless T8 dwarf
 # parameters a drawn from a retrieval on G570D
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import matplotlib.image as mgimg
-import matplotlib.colors as colors
 import scipy as sp
 import numpy as np
 import emcee
 import testkit
-import corner
 import pickle as pickle
 import forwardmodel
 import ciamod

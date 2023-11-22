@@ -3,6 +3,8 @@ import pickle
 import numpy as np
 import emcee
 import os
+from rotBroadInt import rot_int_cmj as rotBroad
+
 
 def get_endchain(runname,fin,results_path='./'):
     if (fin == 1):
@@ -79,6 +81,10 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         elif (fwhm == -6):
             scale1 = 1.0
 
+    elif (fwhm == 3.0):
+        vrad = theta[ng+2]
+        vsini = theta[ng+3]
+        
     modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
 
     # If we've set a value for FWHM that we're using... 
@@ -119,6 +125,16 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         or5 = np.where(obspec[0,:] > 5.14)
         spec[or5] = prism_non_uniform(obspec[:,or5],modspec,2.2)
         outspec = spec
+
+    elif (fwhm == 3.0):
+        # JWST NIRSpec G395H data can resolve vsini, so we do it here
+        rotspec = rotBroad(modspec[0],modspec[1],vsini)
+        modspec[1,:] = rotspec
+
+        # JWST NIRSpec G395H data with 2.2 pixels per resolving element
+        # Use convolution for Spex
+        outspec = prism_non_uniform(obspec,modspec,2.2)
+
         
     elif (fwhm < 0.0):
         # This is for multi-instrument cases

@@ -28,7 +28,7 @@ __status__ = "Development"
 
 def set_prof(proftype, coarsePress,press,intemp):
 
-    if (proftype == 1 or proftype == 9):
+    if (proftype == 1 or proftype == 9 or proftype == 6):
         # interp temp onto finer grid coarsePress => press
         # spline fit with max smoothing
         tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)

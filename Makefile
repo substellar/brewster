@@ -23,13 +23,13 @@ FC = gfortran
 
 
 # Run version
-FCFLAGS = -O3 -fPIC -ffree-line-length-none -frecord-marker=4 -fbounds-check 
+FCFLAGS = -O2 -fPIC -ffree-line-length-none -frecord-marker=4 -fbounds-check 
 
-F77FLAGS = -O3 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
+F77FLAGS = -O2 -fPIC -fbounds-check -frecord-marker=4 -fdefault-real-8 -fdefault-double-8 -std=legacy
 
 # Intel compiler version
-# FCFLAGS = -O3 -fPIC
-# F77FLAGS = -O3 -fPIC -autodouble
+# FCFLAGS = -O2 -fPIC
+# F77FLAGS = -O2 -fPIC -autodouble
 
 
 # F77FLAGS =  -ffixed-line-length-132 -fdefault-double-8 -fdefault-real-8 -g -Og -fbounds-check -fbacktrace
@@ -100,28 +100,28 @@ f77mods:
 
 
 libfile:
-	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
-#	$(FC) -fPIC -shared -O3 *.o -o libmarvin.so
+	$(FC) -fPIC -shared -O2 *.o -o libmarvin.so
+#	$(FC) -fPIC -shared -O2 *.o -o libmarvin.so
 
 pysig:
 	f2py -m forwardmodel -h forwardmodel.pyf sizes_mod.f90 marv.f90
 
 pymod:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
-#	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+	f2py --fcompiler=gfortran --f90flags="-O2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
+#	f2py --fcompiler=intelem --f90flags="-O2" -I/usr/include -L/usr/local/lib -c libmarvin.so forwardmodel.pyf marv.f90
 
 ciasig:
 	f2py -m ciamod -h ciamod.pyf sizes_mod.f90 read_cia.f90
 
 ciamod:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
-#	f2py --fcompiler=intelem --f90flags="-O3" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
+	f2py --fcompiler=gfortran --f90flags="-O2" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
+#	f2py --fcompiler=intelem --f90flags="-O2" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 
 bbconvsig:
 	f2py -m bbconv -h bbconv.pyf bbconv.f90
 
 bbconv:
-	f2py --fcompiler=gfortran --f90flags="-O3" -I/usr/include -L/usr/local/lib -c bbconv.pyf bbconv.f90
+	f2py --fcompiler=gfortran --f90flags="-O2" -I/usr/include -L/usr/local/lib -c bbconv.pyf bbconv.f90
 
 cloudpostsig:
 	f2py -m cloudpost -h cloudpost.pyf cloudpost.f90
