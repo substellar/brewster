@@ -61,9 +61,9 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
     from bensconv import conv_uniform_FWHM
 
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size -2
         else:
             ng = gasnum.size

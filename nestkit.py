@@ -59,13 +59,13 @@ def priormap(theta):
         phi[1] = (theta[1] * (coscale[-1] - coscale[0])) + coscale[0]
         ng = 2
     else:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
             rem = 1.0
             for i in range(0, ng):
                 phi[i] = np.log10(rem) -  (theta[i] * 12.)
                 rem = rem - (10**phi[i])    
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size - 2
             rem = 1.0
             for i in range(0, ng):
@@ -386,9 +386,9 @@ def lnlike(theta):
     shiftspec, photspec,tauspec,cfunc = modelspec(theta)
     # Check if CE or VMR methods
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size -2
         else:
             ng = gasnum.size
@@ -793,9 +793,9 @@ def modelspec(theta,args=None, gnostics=0):
         
     nlayers = press.size
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size -2
         else:
             ng = gasnum.size
@@ -900,19 +900,19 @@ def modelspec(theta,args=None, gnostics=0):
 
         # now sort Na and K
         # get the ngas for forward model (ngas, not ng
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ngas = invmr.shape[0] + 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ngas = invmr.shape[0] + 2
         else:
             ngas = invmr.shape[0]
 
         tmpvmr = np.empty(ngas,dtype='d')
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
             tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.)) # K
             tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.))) # Na
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             #f values are ratios between Na and (K+Cs) and K and Cs respectively
             f1 = 1.348
             f2 = 8912.5
@@ -1123,12 +1123,12 @@ def countdims(runargs,plist = False):
         pnames = ['[M/H]','(C/O)']
         ng = 2
     else:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             for i in range(0,gasnum.size-2):
                 pnames.append(gaslist[i])
             pnames.append('Na+K')
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             for i in range(0,gasnum.size-3):
                 pnames.append(gaslist[i])
             pnames.append('Cs+Na+K')

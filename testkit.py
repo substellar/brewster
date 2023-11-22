@@ -61,12 +61,12 @@ def lnprior(theta):
         co = theta[1]
         ng = 2
     else:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
             mh = 0.0
             co = 1.0
             invmr = theta[0:ng]
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             mh = 0.0
             co = 1.0
             ng = gasnum.size - 2
@@ -713,9 +713,9 @@ def lnlike(theta):
     gnostics = 0
     shiftspec, photspec,tauspec,cfunc = modelspec(theta,settings.runargs,gnostics)
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size -2
         else:
             ng = gasnum.size
@@ -1113,9 +1113,9 @@ def modelspec(theta, args,gnostics):
     gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
     nlayers = press.size
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ng = gasnum.size -2
         else:
             ng = gasnum.size
@@ -1251,19 +1251,19 @@ def modelspec(theta, args,gnostics):
 
         # now sort Na and K
         # get the ngas for forward model (ngas, not ng
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             ngas = invmr.shape[0] + 1
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             ngas = invmr.shape[0] + 2
         else:
             ngas = invmr.shape[0]
 
         tmpvmr = np.empty(ngas,dtype='d')
-        if (gasnum[gasnum.size-1] == 21):
+        if (gasnum[gasnum.size-1] == 22):
             tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
             tmpvmr[ngas-2] = np.log10(10.**invmr[ngas-2] / (alkratio+1.)) # K
             tmpvmr[ngas-1] = np.log10(10.**invmr[ngas-2] * (alkratio / (alkratio+1.))) # Na
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gasnum[gasnum.size-1] == 24):
             #f values are ratios between Na and (K+Cs) and K and Cs respectively
             f1 = 1.348
             f2 = 8912.5
