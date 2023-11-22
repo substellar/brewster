@@ -160,7 +160,7 @@ def NoCloud_Tdwarf(xpath,xlist):
                          bff[g,p] = tfit(temp[p])
                     else:
                          logVMR[g-3,p]= tfit(temp[p])
-     elif (gasnum[gasnum.size-1] == 21):
+     elif (gasnum[gasnum.size-1] == 22):
           tmpvmr = np.empty(ngas,dtype='d')
           alkratio = 16.2 # from asplund et al (2009)
           tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
