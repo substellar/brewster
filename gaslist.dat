@@ -1,4 +1,4 @@
-28
+30
 1   h2o      18.01528  h2o_UCL2017_xsecs_R30K.pic
 2   ch4      16.04276  ch4_hitemp_xsecs_R30K.pic
 3   h2s      65.13994  h2s_xsecs_R30K.pic
@@ -27,3 +27,5 @@
 26  H3+	      3.02400  H3+_xsecs_R30K.pic
 27  13co      29.003   13co_xsecs_R30K.pic
 28  12co      28.01    12co_xsecs_R30K.pic
+29  12ch3D    17.049   12C1H3D_xsecs_R30K.pic
+30  12C1H4    16.04    12C1H4_xsecs_R30K.pic
