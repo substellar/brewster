@@ -125,8 +125,8 @@ pfile = "t1700g1000f3.dat"
 
 
 # set up pressure grids in log(bar) cos its intuitive
-logcoarsePress = np.arange(-4.0, 2.5, 0.53)
-logfinePress = np.arange(-4.0, 2.4, 0.1)
+logcoarsePress = np.linspace(-4.0, 2.4, knots)
+logfinePress = np.linspace(-4.0, 2.4, 64)
 
 # but forward model wants pressure in bar
 coarsePress = pow(10,logcoarsePress)

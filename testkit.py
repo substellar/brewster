@@ -54,6 +54,7 @@ def lnprior(theta):
 
     gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
 
+    knots = len(coarsePress)
     # set up the priors here
     if (chemeq != 0):
         invmr = np.array([-3.,-3.])
@@ -423,7 +424,7 @@ def lnprior(theta):
         loga[:,:] =  0.0
         b[:,:] = 0.5
 
-    junkP = np.ones([13])
+    junkP = np.ones([knots])
     if (proftype == 1):
         gam = theta[pc+nc]
         T = theta[pc+nc+1:]
@@ -616,6 +617,78 @@ def lnprior(theta):
             return 0.0
         return -np.inf
 
+    
+    elif (proftype == 7):
+        Tint = theta[pc+nc]
+        alpha = theta[pc+1+nc]
+        delta = theta[pc+2+nc]    #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
+        T1 = theta[pc+3+nc]
+        T2 = theta[pc+4+nc]
+        T3 = theta[pc+5+nc]
+
+        delta= 10**delta
+        Tconnect = (((3/4) * Tint**4) * ((2/3) + (0.1)))**(1/4)
+
+        T = np.empty([press.size])
+        T[:] = -100.
+
+         #if  (1 < alpha  < 2. and 0. < delta < 0.1
+          #   and T1 > 0.0 and T1 < T2 and T2 < T3 and T3 < Tconnect and Tint >0.0):
+           #  T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])  # no inversion 
+
+        if  (1 < alpha  < 2. and 0. < delta < 0.1
+             and T1 > 0.0 and T2 > 0.0 and T3 > 0.0 and Tint >0.0):
+            T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:]) # allow inversion 
+
+        #for mass prior
+        D = 3.086e+16 * dist
+        R = -1.0
+        if (r2d2 > 0.):
+            R = np.sqrt(r2d2) * D
+        g = (10.**logg)/100.
+        M = (R**2 * g/(6.67E-11))/1.898E27
+        Rj = R / 69911.e3
+        #         and  and (-5. < logbeta < 0))
+        if (all(invmr[0:ng] > -12.0) and all(invmr[0:ng] < 0.0) and (np.sum(10.**(invmr[0:ng])) < 1.0)
+            and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
+            and  metscale[0] <=  mh <= metscale[-1]
+            and  coscale[0] <= co <= coscale[-1]
+            and  0.0 < logg < 6.0
+            and 1.0 < M < 80.
+            and  0. < r2d2 < 1.
+            and 0.1 < scale1 < 10.0
+            and 0.1 < scale2 < 10.0
+            and  0.5 < Rj < 2.0
+             and -250 < vrad < 250
+            and 0. < vsini < 100.0
+            and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
+                 < (100.*np.max(obspec[2,:]**2)))
+            and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
+                 < (100.*np.max(obspec[2,s1]**2)))
+            and ((0.01*np.min(obspec[2,s2]**2)) < 10.**logf2
+                 < (100.*np.max(obspec[2,s2]**2)))
+            and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
+                 < (100.*np.max(obspec[2,s3]**2)))
+            and (np.all(cloud_tau0 >= 0.0))
+            and (np.all(cloud_tau0 <= 100.0))
+            and np.all(cloud_top < cloud_bot)
+            and np.all(cloud_bot <= np.log10(press[-1]))
+            and np.all(np.log10(press[0]) <= cloud_top)
+            and np.all(cloud_top < cloud_bot)
+            and np.all(0. < cloud_height)
+            and np.all(cloud_height < 7.0)
+            and np.all(0.0 < w0)
+            and np.all(w0 <= 1.0)
+            and np.all(-10.0 < taupow)
+            and np.all(taupow < +10.0)
+            and np.all( -3.0 < loga)
+            and np.all (loga < 3.0)
+            and np.all(b < 1.0)
+            and np.all(b > 0.0)
+            and  (min(T) > 1.0) and (max(T) < 6000.)):
+            return 0.0
+        return -np.inf
+
     elif (proftype == 9):
         #for mass prior
         D = 3.086e+16 * dist
@@ -711,7 +784,7 @@ def lnlike(theta):
     # get the spectrum
     # for MCMC runs we don't want diagnostics
     gnostics = 0
-    shiftspec, photspec,tauspec,cfunc = modelspec(theta,settings.runargs,gnostics)
+    shiftspec, photspec,tauspec,cfunc = modelspec(theta)
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 22):
             ng = gasnum.size - 1
@@ -1108,9 +1181,13 @@ def lnlike(theta):
     return lnLik
 
 
-def modelspec(theta, args,gnostics):
+def modelspec(theta, args=None,gnostics=0):
 
-    gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
+    if args==None:
+        gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = settings.runargs
+    else:
+        gases_myP,chemeq,dist,cloudtype, do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,obspec,proftype,do_fudge,prof,do_bff,bff_raw,ceTgrid,metscale,coscale = args
+
     nlayers = press.size
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 22):
@@ -1196,7 +1273,7 @@ def modelspec(theta, args,gnostics):
             nb = 3
 
             
-        
+   
     npatches = do_clouds.size
     if (npatches > 1):
         prat = theta[ng+nb]
@@ -1212,11 +1289,13 @@ def modelspec(theta, args,gnostics):
         cloudparams, nc = cloud.unpack_patchy(theta,pc,cloudtype,cloudnum,do_clouds)
     else:
         cloudparams, nc = cloud.unpack_default(theta,pc,cloudtype,cloudnum,do_clouds)
-    
+
+    ndim = len(theta)
     if (proftype == 1):
-        gam = theta[pc+nc]
-        intemp = theta[pc+1+nc:]
-    elif (proftype == 2 or proftype ==3):
+        ntemp = len(coarsePress)
+        gam = theta[ndim - (ntemp+1)]
+        intemp = theta[ndim - ntemp:]
+    elif (proftype == 2 or proftype ==3 or proftype==7):
         intemp = theta[pc+nc:]
     elif (proftype == 9):
         intemp = prof

@@ -285,7 +285,6 @@ contains
 
     
     call run_RT(specflux,clphotspec,othphotspec,cf,disorting,clphot,othphot,do_cf)
-
     allocate(out_spec(2,nwave))
     out_spec(1,:) = wavelen
     out_spec(2,:) = specflux * R2D2

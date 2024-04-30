@@ -359,7 +359,7 @@ def priormap(theta):
         # delta
         plen = np.log10(press[-1]) - np.log10(press[0])
         logPphot = np.log10(press[0]+(theta[pc+nc+2]*plen))
-        phi[pc+nc+2] = 10**(-phi[pc+nc+1]*logPphot)
+        phi[pc+nc+2] = (-phi[pc+nc+1]*logPphot)
 
         # get Tconnect from Tint get prior range following Molliere+2020
         Tint = phi[pc+nc]    

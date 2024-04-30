@@ -7,7 +7,7 @@ subroutine prism(obspec, modspec,resel,Fratio_int)
   !f2py intent(in) resel
   !f2py intent(out) Fratio_int
   
-  integer, parameter:: maxwave = 40000  
+  integer, parameter:: maxwave = 130000  
   double precision,intent(inout) :: obspec(:,:),modspec(:,:)
   double precision,dimension(maxwave),intent(out) :: Fratio_int
   double precision,allocatable,dimension(:):: delta1,delta2,delta
@@ -56,7 +56,7 @@ subroutine convFWHM(obspec,modspec,fwhm,Fratio_int)
   !f2py intent(in) fwhm
   !f2py intent(out) Fratio_int
   
-  integer, parameter:: maxwave = 40000  
+  integer, parameter:: maxwave = 130000  
   double precision,intent(inout) :: modspec(:,:),obspec(:,:) 
   double precision,dimension(maxwave),intent(out) :: Fratio_int
   double precision,allocatable,dimension(:):: wlobs,gauss,wlmod,Fmod
@@ -100,7 +100,7 @@ subroutine convR(obspec,modspec,R,Fratio_int)
   !f2py intent(in) R
   !f2py intent(out) Fratio_int
   
-  integer, parameter:: maxwave = 40000  
+  integer, parameter:: maxwave = 130000  
   double precision,intent(inout) :: modspec(:,:),obspec(:,:) 
   double precision,dimension(maxwave),intent(out) :: Fratio_int
   double precision,allocatable,dimension(:):: wlobs,gauss,wlmod,Fmod
