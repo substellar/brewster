@@ -71,12 +71,12 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
 
 
                     tau = cloudparams[0,i,j]
-                    p1 = 10.**cloudparams[1,i,j]
+                    p2 = 10.**cloudparams[1,i,j]
                     if (cloudtype[i,j] == 1):
                         dP = cloudparams[2,i,j]
                     else:
                         dP = 0.005
-                    p2 = p1 * 10.**dP
+                    p1 = p2 / 10.**dP
                     rad = cloudparams[3,i,j]
                     sig = cloudparams[4,i,j]
                     pdiff = np.empty(nlayers,dtype='f')

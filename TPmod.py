@@ -100,11 +100,11 @@ def set_prof(proftype, coarsePress,press,intemp):
         # then smooth with 5 layer box car 
         temp1 = convolve(temp,Gaussian1DKernel(5),boundary='extend')
  
-    elif (proftype == 7):
+    elif (proftype == 7 or proftype == 77):
         # this is Molliere's hybrid profile, hacked by Michelle Colantoni from
         # petitRadTran. But, using dry adiabat for H2/He atmosphere
         # a few variable names changed by BB, and a bit of restructuring
-
+        # 77 is the same, but has a smoothing prior as for Line+2015 profile
         # https://gitlab.com/mauricemolli/petitRADTRANS/-/blob/master/petitRADTRANS/physics.py ref:PT_ret_model
 
         """
@@ -118,9 +118,9 @@ def set_prof(proftype, coarsePress,press,intemp):
         tint : float                 internal temperature of the Eddington model
         """
         # unpack the intemp parameters
-        Tint,alpha,delta,T1,T2,T3 = intemp[0:6]
+        Tint,alpha,lndelta,T1,T2,T3 = intemp[0:6]
 
-        delta=10**delta
+        delta=np.exp(lndelta)
         
         n=len(press)
 
@@ -173,8 +173,7 @@ def set_prof(proftype, coarsePress,press,intemp):
         temp1 = convolve(temp2,Gaussian1DKernel(5),boundary='extend')
 
     # weed out any negative temperatures
-    # temp = np.where(temp1 > 10., temp1, 10.)
-    temp = np.where(temp1 > 100, temp1, 100)
+    temp = np.where(temp1 > 10., temp1, 10.)
     temp = np.where(temp < 4000., temp, 4000.)
 
     return temp
