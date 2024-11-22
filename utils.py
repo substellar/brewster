@@ -538,6 +538,22 @@ class Retrieval_params:
                              'range':None,
                              'prior': None}    
                            }}
+        elif gastype=='H':
+            dictionary[gasname]={
+                'gastype':gastype,
+                'params':{'log_abund':
+                           {'initialization':None,
+                            'distribution':['normal',-4.0,0.5],
+                            'range':None,
+                            'prior': None},
+                            
+                           "p_ref": 
+                            {'initialization':None,
+                              'distribution':['normal',-1,0.2],
+                              'range':None,
+                              'prior': None}
+
+                           }}
 
         return dictionary
             
@@ -833,22 +849,22 @@ class Retrieval_params:
                         'cloudnum': cloudnum,
                         'cloudtype':2,
                         "particle_dis":"hansan",
-                        'params':{'logp_mcd':
+                        'params':{'logp_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['normal',1,0.1],
                                     'range':None,
                                     'prior':None},
-                                   'dp_mcd':
+                                   'dp_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['customized',dp_customized_distribution], #lambda x: np.abs(0.1 * np.random.randn(x))
                                     'range':None, 
                                     'prior':None},
-                                    'hansan_a_mcd':
+                                    'hansan_a_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['normal',-1.4,0.1],
                                     'range':None,
                                     'prior':None},
-                                    'hansan_b_mcd':
+                                    'hansan_b_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['customized',hansan_b_customized_distribution], #lambda x: np.abs(0.2+0.05 * np.random.randn(x))
                                     'range':None,
@@ -860,22 +876,22 @@ class Retrieval_params:
                         'cloudnum': cloudnum,
                         'cloudtype':1,
                         "particle_dis":"log_normal",
-                        'params':{'logp_mcd':
+                        'params':{'logp_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['normal',1,0.1],
                                     'range':None,
                                     'prior':None},
-                                    'dp_mcd':
+                                    'dp_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['customized',dp_customized_distribution], #lambda x: np.abs(0.1 * np.random.randn(x))
                                     'range':None,
                                     'prior':None},
-                                    'mu_mcd':
+                                    'mu_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['normal',0,1],
                                     'range':None,
                                     'prior':None},
-                                    'sigma_mcd':
+                                    'sigma_mcd_%s'%cloudspecies:
                                     {'initialization':None,
                                     'distribution':['normal',0,1],
                                     'range':None,
@@ -925,27 +941,27 @@ class Retrieval_params:
                         'cloudnum': cloudnum,
                         'cloudtype':1,
                         'particle_dis':"hansan",
-                        'params':{'tau_mcs':
+                        'params':{'tau_mcs_%s'%cloudspecies:
                                    {'initialization':None,
                                     'distribution':['normal',10,1],
                                     'range':None,
                                     'prior':None},
-                                  'logp_mcs':
+                                  'logp_mcs_%s'%cloudspecies:
                                    {'initialization':None,
                                     'distribution':['normal',-0.2,0.5],
                                     'range':None,
                                     'prior':None},
-                                  'dp_mcs':
+                                  'dp_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['customized',dp_customized_distribution], # lambda x: np.abs(0.1 * np.random.randn(x))
                                    'range':None,
                                     'prior':None},
-                                  'hansan_a_mcs':
+                                  'hansan_a_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['normal',-1.4,0.1],
                                    'range':None,
                                     'prior':None},
-                                  'hansan_b_mcs':
+                                  'hansan_b_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['customized',hansan_b_customized_distribution], #lambda x: np.abs(0.2+0.05 * np.random.randn(x))
                                    'range':None,
@@ -957,27 +973,27 @@ class Retrieval_params:
                         'cloudnum': cloudnum,
                         'cloudtype':1,
                         'particle_dis':"log_normal",
-                        'params':{'tau_mcs':
+                        'params':{'tau_mcs_%s'%cloudspecies:
                                    {'initialization':None,
                                     'distribution':['normal',10,1],
                                     'range':None,
                                     'prior':None},
-                                  'logp_mcs':
+                                  'logp_mcs_%s'%cloudspecies:
                                    {'initialization':None,
                                     'distribution':['normal',-0.2,0.5],
                                     'range':None,
                                     'prior':None},
-                                  'dp_mcs':
+                                  'dp_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['customized',dp_customized_distribution], #lambda x: np.abs(0.1 * np.random.randn(x))
                                    'range':None,
                                     'prior':None},
-                                  'mu_mcs':
+                                  'mu_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['normal',0,1],
                                    'range':None,
                                     'prior':None},
-                                  'sigma_mcs':
+                                  'sigma_mcs_%s'%cloudspecies:
                                   {'initialization':None,
                                    'distribution':['normal',0,1],
                                    'range':None,
@@ -985,7 +1001,7 @@ class Retrieval_params:
                                      }}
 
             elif cloudname=='clear':
-                dictionary["patch"]={}
+                dictionary["patch"]={'params':{}}
 
 
             return dictionary
@@ -1152,7 +1168,11 @@ class Retrieval_params:
                             cloud_dic[patch_key] = {}
 
                         cloud_dic[patch_key][cloudname[j]] = dic["patch"]
-                        
+
+                # if i+1 > len(cloudpatch_index):
+                #     patch_key = f"patch {i + 1}"
+                #     cloud_dic[patch_key] = {}
+
             return cloud_dic
         else:
             return {}
@@ -1238,6 +1258,12 @@ def get_all_parametres(dic):
             gas.append("alpha_%s"%gaslist[i])
             gas_values.append(dic['gas'][gaslist[i]]['params']['p_ref']['initialization'])
             gas_values.append(dic['gas'][gaslist[i]]['params']['alpha']['initialization'])    
+
+        elif gastype_values[i]=='H':
+            gas.append("p_ref_%s"%gaslist[i])
+            gas_values.append(dic['gas'][gaslist[i]]['params']['p_ref']['initialization'])
+       
+
             
 
     refinement_params = list(dic['refinement_params']['params'].keys())
@@ -1291,6 +1317,10 @@ def update_dictionary(dic, params_instance):
         if gastype_values[i]=='N':
             dic['gas'][gaslist[i]]['params']['p_ref']['initialization'] = getattr(params_instance, "p_ref_%s"%gaslist[i])
             dic['gas'][gaslist[i]]['params']['alpha']['initialization'] = getattr(params_instance, "alpha_%s"%gaslist[i])
+
+        if gastype_values[i]=='H':
+            dic['gas'][gaslist[i]]['params']['p_ref']['initialization'] = getattr(params_instance, "p_ref_%s"%gaslist[i])
+
     
     # Update refinement parameters
     for param in dic['refinement_params']['params'].keys():
@@ -1416,8 +1446,9 @@ def cloud_para_gen(dic):
             if 'cloudnum' in cloud_info:
                 cloudnum_list.append(cloud_info['cloudnum'])
             
-        if len(cloudnum_list) ==2: #and len(set(cloudnum_list)) == len(cloudnum_list):
-            nclouds = 2
+        # if len(cloudnum_list) ==2: #and len(set(cloudnum_list)) == len(cloudnum_list):
+        #     nclouds = 2
+        nclouds= len(cloudnum_list)
 
     # Initialize arrays
     do_clouds = np.zeros([npatches], dtype='i')
@@ -1513,10 +1544,13 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
-    totgas = 25  #add H_mins
+    totgas = 0
     gasdata = []
     with open(xlist) as fa:
-        for line_aa in fa.readlines()[1:totgas+1]:
+        for line_aa in fa.readlines():
+            if len(line_aa) == 0:
+                break
+            totgas = totgas +1 
             line_aa = line_aa.strip()
             gasdata.append(line_aa.split())
 

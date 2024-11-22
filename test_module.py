@@ -465,6 +465,7 @@ def lnprior(theta,re_params):
         pp=len(T)
 
         gas_profile=-1
+        P_hgas=0
         if count_N>0:
             gas_profile = np.full((count_N, press.size), -1.0)
             gas_profile_index =0
@@ -475,8 +476,13 @@ def lnprior(theta,re_params):
                     t_gas= getattr(params_instance, gas_keys[i])
                     if (0. < gas_alpha < 1. and -12.0 < t_gas < 0.0  and np.log10(press[0]) <= P_gas <= 2.4):
                         gas_profile[gas_profile_index,:]=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
+                    else:
+                        gas_profile[gas_profile_index,:]=-30
                     gas_profile_index+=1
-    
+
+                if  gastype_values[i]=="H":
+                      P_hgas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
+
 
         #for mass prior
         D = 3.086e+16 * dist
@@ -487,8 +493,10 @@ def lnprior(theta,re_params):
         M = (R**2 * g/(6.67E-11))/1.898E27
         Rj = R / 69911.e3
         #         and  and (-5. < logbeta < 0))
+
         if (all(invmr > -12.0) and all(invmr < 0.0) and (np.sum(10.**(invmr)) < 1.0)
             and np.all(gas_profile > -25.0) and np.all(gas_profile < 0.0)
+            and np.log10(press[0]) <= P_hgas <= 2.4
             and all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <= mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
@@ -542,6 +550,7 @@ def lnprior(theta,re_params):
         T[:] = -100.
 
         gas_profile=-1
+        P_hgas=0
         if count_N>0:
             gas_profile = np.full((count_N, press.size), -1.0)
             gas_profile_index =0
@@ -552,7 +561,12 @@ def lnprior(theta,re_params):
                     t_gas= getattr(params_instance, gas_keys[i])
                     if (0. < gas_alpha < 1. and -12.0 < t_gas < 0.0  and np.log10(press[0]) <= P_gas <= 2.4):
                         gas_profile[gas_profile_index,:]=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
+                    else:
+                        gas_profile[gas_profile_index,:]=-30
                     gas_profile_index+=1
+
+                if  gastype_values[i]=="H":
+                      P_hgas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
     
 
         if (0. < a1 < 1. and 0. < a2 < 1.0
@@ -570,6 +584,7 @@ def lnprior(theta,re_params):
         #         and  and (-5. < logbeta < 0))
         if (all(invmr > -12.0) and all(invmr < 0.0) and (np.sum(10.**(invmr)) < 1.0)
             and np.all(gas_profile > -25.0) and np.all(gas_profile < 0.0)
+            and np.log10(press[0]) <= P_hgas <= 2.4
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <= mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
@@ -613,6 +628,7 @@ def lnprior(theta,re_params):
         a1,a2,P1,P2,P3,T3=intemp[:]
 
         gas_profile=-1
+        P_hgas=0
         if count_N>0:
             gas_profile = np.full((count_N, press.size), -1.0)
             gas_profile_index =0
@@ -623,10 +639,13 @@ def lnprior(theta,re_params):
                     t_gas= getattr(params_instance, gas_keys[i])
                     if (0. < gas_alpha < 1. and -12.0 < t_gas < 0.0  and np.log10(press[0]) <= P_gas <= 2.4):
                         gas_profile[gas_profile_index,:]=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
+                    else:
+                        gas_profile[gas_profile_index,:]=-30
                     gas_profile_index+=1
+
+                if  gastype_values[i]=="H":
+                      P_hgas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
     
-
-
 
         T = np.empty([press.size])
         T[:] = -100.
@@ -647,6 +666,7 @@ def lnprior(theta,re_params):
         #         and  and (-5. < logbeta < 0))
         if (all(invmr > -12.0) and all(invmr < 0.0) and (np.sum(10.**(invmr)) < 1.0)
             and np.all(gas_profile > -25.0) and np.all(gas_profile < 0.0)
+            and np.log10(press[0]) <= P_hgas <= 2.4
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <=  mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
@@ -689,6 +709,7 @@ def lnprior(theta,re_params):
         Tint,alpha,lndelta,T1,T2,T3=intemp[:] #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
 
         gas_profile=-1
+        P_hgas=0
         if count_N>0:
             gas_profile = np.full((count_N, press.size), -1.0)
             gas_profile_index =0
@@ -699,7 +720,12 @@ def lnprior(theta,re_params):
                     t_gas= getattr(params_instance, gas_keys[i])
                     if (0. < gas_alpha < 1. and -12.0 < t_gas < 0.0  and np.log10(press[0]) <= P_gas <= 2.4):
                         gas_profile[gas_profile_index,:]=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
+                    else:
+                        gas_profile[gas_profile_index,:]=-30
                     gas_profile_index+=1
+
+                if  gastype_values[i]=="H":
+                      P_hgas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
     
         delta=np.exp(lndelta)
         Tconnect = (((3/4) * Tint**4) * ((2/3) + (0.1)))**(1/4)
@@ -725,6 +751,7 @@ def lnprior(theta,re_params):
         #         and  and (-5. < logbeta < 0))
         if (all(invmr > -12.0) and all(invmr < 0.0) and (np.sum(10.**(invmr)) < 1.0)
             and np.all(gas_profile > -25.0) and np.all(gas_profile < 0.0)
+            and np.log10(press[0]) <= P_hgas <= 2.4
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <=  mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
@@ -767,6 +794,7 @@ def lnprior(theta,re_params):
         Tint,alpha,lndelta,T1,T2,T3=intemp[1:] #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
 
         gas_profile=-1
+        P_hgas=0
         if count_N>0:
             gas_profile = np.full((count_N, press.size), -1.0)
             gas_profile_index =0
@@ -777,7 +805,12 @@ def lnprior(theta,re_params):
                     t_gas= getattr(params_instance, gas_keys[i])
                     if (0. < gas_alpha < 1. and -12.0 < t_gas < 0.0  and np.log10(press[0]) <= P_gas <= 2.4):
                         gas_profile[gas_profile_index,:]=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
+                    else:
+                        gas_profile[gas_profile_index,:]=-30
                     gas_profile_index+=1
+
+                if  gastype_values[i]=="H":
+                      P_hgas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
     
 
         delta= np.exp(lndelta)
@@ -812,6 +845,7 @@ def lnprior(theta,re_params):
 
         if (all(invmr > -12.0) and all(invmr < 0.0) and (np.sum(10.**(invmr)) < 1.0)
             and  np.all(gas_profile > -25.0) and np.all(gas_profile < 0.0)
+            and np.log10(press[0]) <= P_hgas <= 2.4
             and  all(pcover > 0.) and (np.sum(pcover) == 1.0)
             and  metscale[0] <=  mh <= metscale[-1]
             and  coscale[0] <= co <= coscale[-1]
@@ -1017,6 +1051,9 @@ def priormap_dic(theta,re_params):
         if  gastype_values[i]=='N':
             gaspara.append("p_ref_%s"%gaslist[i])
             gaspara.append("alpha_%s"%gaslist[i])
+
+        if  gastype_values[i]=='H':
+            gaspara.append("p_ref_%s"%gaslist[i])
              
     ng=len(gaspara)
     
@@ -1351,9 +1388,10 @@ def priormap_dic(theta,re_params):
 
             elif 'Mie scattering cloud deck' in cloudname:
             #   'cloudnum': cloudnum,'cloudtype':2,
-                        
-                logp_pcd_index=params_instance._fields.index('logp_mcd')
-                dp_pcd_index=params_instance._fields.index('dp_mcd')
+
+                cloudspecies=cloudname.split('--')[1].strip()
+                logp_pcd_index=params_instance._fields.index('logp_mcd_%s'%cloudspecies)
+                dp_pcd_index=params_instance._fields.index('dp_mcd_%s'%cloudspecies)
                 #cloud base
                 phi[logp_pcd_index] = \
                     (theta[logp_pcd_index] *(np.log10(press[-1]) \
@@ -1366,15 +1404,15 @@ def priormap_dic(theta,re_params):
 
                 particle_dis=re_params.dictionary["cloud"]["patch 1"]["particle_dis"]
                 if  particle_dis=="hansan": 
-                    hansan_a_mcd_index=params_instance._fields.index('hansan_a_mcd')
-                    hansan_b_mcd_index=params_instance._fields.index('hansan_b_mcd')                                               
+                    hansan_a_mcd_index=params_instance._fields.index('hansan_a_mcd_%s'%cloudspecies)
+                    hansan_b_mcd_index=params_instance._fields.index('hansan_b_mcd_%s'%cloudspecies)                                               
                     # particle effective radius
                     phi[hansan_a_mcd_index] = (theta[hansan_a_mcd_index] * 6.) - 3.
                     # particle spread
                     phi[hansan_b_mcd_index] = theta[hansan_b_mcd_index]
                 elif particle_dis=="log_normal":
-                    mu_mcd_index=params_instance._fields.index('mu_mcd')
-                    sigma_mcd_index=params_instance._fields.index('sigma_mcd')
+                    mu_mcd_index=params_instance._fields.index('mu_mcd_%s'%cloudspecies)
+                    sigma_mcd_index=params_instance._fields.index('sigma_mcd_%s'%cloudspecies)
                     # particle effective radius
                     phi[mu_mcd_index] = (theta[mu_mcd_index] * 6.) - 3.
                     # particle spread
@@ -1404,9 +1442,11 @@ def priormap_dic(theta,re_params):
 
             elif 'Mie scattering cloud slab' in cloudname:
 
-                tau_mcs_index=params_instance._fields.index('tau_mcs')
-                logp_mcs_index=params_instance._fields.index('logp_mcs')
-                dp_mcs_index=params_instance._fields.index('dp_mcs')
+                cloudspecies=cloudname.split('--')[1].strip()
+
+                tau_mcs_index=params_instance._fields.index('tau_mcs_%s'%cloudspecies)
+                logp_mcs_index=params_instance._fields.index('logp_mcs_%s'%cloudspecies)
+                dp_mcs_index=params_instance._fields.index('dp_mcs_%s'%cloudspecies)
                 # cloud tau
                 phi[tau_mcs_index] = theta[tau_mcs_index]*100.
                 #cloud base
@@ -1421,15 +1461,15 @@ def priormap_dic(theta,re_params):
                 particle_dis=re_params.dictionary["cloud"]["patch 1"]["particle_dis"]
                                                                         
                 if particle_dis=="hansan": 
-                    hansan_a_mcs_index=params_instance._fields.index('hansan_a_mcs')
-                    hansan_b_mcs_index=params_instance._fields.index('hansan_b_mcs')                                               
+                    hansan_a_mcs_index=params_instance._fields.index('hansan_a_mcs_%s'%cloudspecies)
+                    hansan_b_mcs_index=params_instance._fields.index('hansan_b_mcs_%s'%cloudspecies)                                               
                     # particle effective radius
                     phi[hansan_a_mcs_index] = (theta[hansan_a_mcs_index] * 6.) - 3.
                     # particle spread
                     phi[hansan_b_mcs_index] = theta[hansan_b_mcs_index]
                 elif particle_dis=="log_normal":
-                    mu_mcs_index=params_instance._fields.index('mu_mcs')
-                    sigma_mcs_index=params_instance._fields.index('sigma_mcs')
+                    mu_mcs_index=params_instance._fields.index('mu_mcs_%s'%cloudspecies)
+                    sigma_mcs_index=params_instance._fields.index('sigma_mcs_%s'%cloudspecies)
                     # particle effective radius
                     phi[mu_mcs_index] = (theta[mu_mcs_index] * 6.) - 3.
                     # particle spread
@@ -2131,6 +2171,22 @@ def modelspec(theta,re_params,args_instance,gnostics):
                 gas_profile=gas_nonuniform.non_uniform_gas(press,P_gas,t_gas,gas_alpha)
                 logVMR[i]=gas_profile
 
+            elif gastype_values[i]=="H":
+
+                p_gas= getattr(params_instance, "p_ref_%s"%gas_keys[i])
+                P_gas = 10**p_gas
+
+                if np.size(np.where((press>=P_gas))[0])==0:   #may return null array
+                    p_gas_index=np.size(press)-1
+                else:
+                    p_gas_index=np.where((press>=P_gas))[0][0] 
+
+                logVMR[i,0:p_gas_index]=tmpvmr[i]
+                logVMR[i,p_gas_index:]=-100
+
+
+
+
 
     # now need to translate cloudparams in to cloud profile even
     # if do_clouds is zero..
@@ -2168,6 +2224,9 @@ def modelspec(theta,re_params,args_instance,gnostics):
             for i in range(0,nlayers):
                 tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1)
                 bff[gas,i] = tfit(temp[i])
+
+        if (gasnum[gasnum.size-1] == 25):
+            bff[2,0:p_gas_index] = -50
 
     bff = np.asfortranarray(bff, dtype='float64')
     press = np.asfortranarray(press,dtype='float32')
