@@ -3,7 +3,7 @@ module main
   implicit none
 
 contains 
-  subroutine forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,&
+  subroutine forward(temp,logg,R2D2,gasname,molmass,logVMR,&
        pcover,do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,linelist,cia,ciatemp,use_disort,clphot,&
        othphot,do_cf,do_bff,bff,out_spec,clphotspec,othphotspec,cf)
@@ -26,7 +26,7 @@ contains
     real,dimension(npatch) :: pcover
     integer,dimension(npatch):: do_clouds
     character(len=15),intent(inout) :: gasname(:)
-    double precision, intent(inout) :: molmass(:)
+    real, intent(inout) :: molmass(:)
     double precision, intent(inout) :: logVMR(:,:)
     character(len=15),INTENT(INOUT) :: cloudname(:,:)
 
@@ -42,7 +42,6 @@ contains
     double precision,intent(inout):: bff(:,:)
     real, dimension(nciatemps), intent(in):: ciatemp
     real, intent(inout) :: cia(:,:,:)
-    integer,intent(inout) :: ingasnum(:)
     double precision,allocatable, dimension(:,:),INTENT(OUT) :: out_spec
     double precision,allocatable, dimension(:,:),INTENT(INOUT) :: clphotspec, othphotspec
     double precision,allocatable, dimension(:,:,:),INTENT(INOUT) :: cf
@@ -76,7 +75,6 @@ contains
     wavenum = inwavenum
     linetemps = inlinetemps
     press = inpress
-    gasnum = ingasnum
     cloudnum = incloudnum
 
     call set_pressure_scale
@@ -90,12 +88,11 @@ contains
     do igas = 1, ngas
        do ilayer = 1, nlayers
           
-          patch(1)%atm(ilayer)%gas(igas)%name = gasname(igas)
-          patch(1)%atm(ilayer)%gas(igas)%num = gasnum(igas)       
+          patch(1)%atm(ilayer)%gas(igas)%name = trim(gasname(igas))
           patch(1)%atm(ilayer)%gas(igas)%VMR = 10.**(logVMR(igas,ilayer))
           patch(1)%atm(ilayer)%gas(igas)%molmass = molmass(igas)
        end do
-       if (trim(patch(1)%atm(1)%gas(igas)%name) .eq. "ch4") then
+       if ((trim(patch(1)%atm(1)%gas(igas)%name) .eq. "ch4") .or. (trim(patch(1)%atm(1)%gas(igas)%name) .eq. "12C1H4")) then
           ch4index = igas
        end if
 

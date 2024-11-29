@@ -53,7 +53,7 @@ def get_endchain(runname,fin,results_path='./'):
     return flatendchain, flatendprobs,ndim
 
 
-def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
+def proc_spec(shiftspec,theta,fwhm,chemeq,gaslist,obspec):
     import numpy as np
     import scipy as sp
     from bensconv import prism_non_uniform
@@ -61,12 +61,12 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
     from bensconv import conv_uniform_FWHM
 
     if chemeq == 0:
-        if (gasnum[gasnum.size-1] == 22):
-            ng = gasnum.size - 1
-        elif (gasnum[gasnum.size-1] == 24):
-            ng = gasnum.size -2
+        if (gaslist[len(gaslist)-1] == 'Na'):
+            ng = len(gaslist) - 1
+        elif (gaslist[len(gaslist)-1] == 'Cs'):
+            ng = len(gaslist) -2
         else:
-            ng = gasnum.size
+            ng = len(gaslist)
             invmr = theta[0:ng]
         
     else:

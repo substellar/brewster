@@ -3,7 +3,8 @@
 import scipy as sp
 import numpy as np
 import emcee
-import testkit
+import test_module
+import utils
 import pickle as pickle
 import forwardmodel
 import ciamod
@@ -133,7 +134,7 @@ def NoCloud_Tdwarf(xpath,xlist):
 
 
      # Now we'll get the opacity files into an array
-     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
+     inlinetemps,inwavenum,linelist,gasnames,molmass,nwave = utils.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
  
 
      # Get the cia bits
@@ -144,7 +145,7 @@ def NoCloud_Tdwarf(xpath,xlist):
 
 
      # grab BFF and Chemical grids
-     bff_raw,ceTgrid,metscale,coscale,gases_myP = testkit.sort_bff_and_CE(chemeq,"chem_eq_tables_P3K.pic",press,gaslist)
+     bff_raw,ceTgrid,metscale,coscale,gases_myP = utils.sort_bff_and_CE(chemeq,"chem_eq_tables_P3K.pic",press,gaslist)
      
 
      logVMR = np.empty((ngas,nlayers),dtype='d')
@@ -160,7 +161,7 @@ def NoCloud_Tdwarf(xpath,xlist):
                          bff[g,p] = tfit(temp[p])
                     else:
                          logVMR[g-3,p]= tfit(temp[p])
-     elif (gasnum[gasnum.size-1] == 22):
+     elif (gaslist[len(gaslist)-1] == 'Na'):
           tmpvmr = np.empty(ngas,dtype='d')
           alkratio = 16.2 # from asplund et al (2009)
           tmpvmr[0:(ngas-2)] = invmr[0:(ngas-2)]
@@ -189,6 +190,12 @@ def NoCloud_Tdwarf(xpath,xlist):
      logVMR = np.asfortranarray(logVMR,dtype='float64')
 
 
+     gasnames = np.empty((len(gaslist), 10), dtype='c')
+     for i in range(0,len(gaslist)):
+          gasnames[i,0:len(gaslist[i])] = gaslist[i]
+
+     gasnames = np.asfortranarray(gasnames,dtype='c')
+     
      # switches for tau spec, phot spec and contribution function
      ophot = 0
      clphot = 0
@@ -196,7 +203,7 @@ def NoCloud_Tdwarf(xpath,xlist):
      # other switches; ignore
      use_disort = 0
      # now we can call the forward model
-     tmpoutspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,r2d2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
+     tmpoutspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,r2d2,gasnames,molmass,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
 
      # This bit trims off the unused portion of the array
      trimspec = np.zeros((2,nwave),dtype='d')
@@ -333,7 +340,7 @@ def MieClouds_Ldwarf(xpath,xlist):
 
 
      # Now we'll get the opacity files into an array
-     inlinetemps,inwavenum,linelist,gasnum,nwave = testkit.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
+     inlinetemps,inwavenum,linelist,gasnames,molmass,nwave = utils.get_opacities(gaslist,w1,w2,press,xpath,xlist,malk)
       
      # Get the cia bits
      tmpcia, ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat",inwavenum)
@@ -342,7 +349,7 @@ def MieClouds_Ldwarf(xpath,xlist):
      ciatemps = np.asfortranarray(ciatemps, dtype='float32')
      
      # grab BFF and Chemical grids
-     bff_raw,ceTgrid,metscale,coscale,gases_myP = testkit.sort_bff_and_CE(chemeq,"chem_eq_tables_P3K.pic",press,gaslist)
+     bff_raw,ceTgrid,metscale,coscale,gases_myP = utils.sort_bff_and_CE(chemeq,"chem_eq_tables_P3K.pic",press,gaslist)
      
      
      
@@ -352,12 +359,12 @@ def MieClouds_Ldwarf(xpath,xlist):
 
      benchspec = np.loadtxt('Mie_cloud_1800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
       
-     runargs = gases_myP,chemeq,dist, cloudtype,do_clouds,gasnum,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,benchspec,proftype,do_fudge, prof,do_bff,bff_raw,ceTgrid,metscale,coscale
+     runargs = gases_myP,chemeq,dist, cloudtype,do_clouds,gasnames,molmass,cloudnum,inlinetemps,coarsePress,press,inwavenum,linelist,cia,ciatemps,use_disort,fwhm,benchspec,proftype,do_fudge, prof,do_bff,bff_raw,ceTgrid,metscale,coscale
 
      gnostics = 0
-     shiftspec, clphotspec, ophotspec,cfunc = testkit.modelspec(theta,runargs,gnostics)
+     shiftspec, clphotspec, ophotspec,cfunc = test_module.modelspec(theta,runargs,gnostics)
 
-     modspec = brewtools.proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,benchspec) 
+     modspec = brewtools.proc_spec(shiftspec,theta,fwhm,chemeq,gaslist,benchspec) 
 
 
       

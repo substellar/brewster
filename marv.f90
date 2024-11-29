@@ -1,4 +1,4 @@
-subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
+subroutine marv(temp,logg,R2D2,ingasname,molmass,logVMR,pcover,&
      do_clouds,incloudnum,cloudrad,cloudsig,cloudprof,&
      inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,&
      use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff,bff,outspec,&
@@ -9,14 +9,14 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   
 
   !f2py integer, parameter :: nlinetemps
-  !f2py intent(in) logg,R2D2
+  !f2py intent(in) logg,R2D2,gasname
   !f2py intent(inout) temp,logVMR,inpress
   !f2py intent(in) use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff
   !f2py intent(inout) inlinetemps
   !f2py intent(inout) cloudrad,cloudsig,cloudprof
   !f2py intent(inout) cia, ciatemps
   !f2py intent(inout) inlinelist, inwavenum,bff
-  !f2py intent(inout) do_clouds,pcover,ingasnum,incloudnum
+  !f2py intent(inout) do_clouds,pcover,molmass,incloudnum
   !f2py intent(out) out_spec, cl_phot_press,oth_phot_press,cfunc
 
   real,intent(inout) :: cia(:,:,:)
@@ -25,13 +25,10 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   double precision,intent(inout):: temp(:)
   real :: R2D2,logg
   double precision,intent(inout):: bff(:,:)
-  real,intent(inout) :: pcover(:)
+  real,intent(inout) :: pcover(:),molmass(:)
   integer,intent(inout) ::do_clouds(:)
-  character(len=15),dimension(:),allocatable :: gasname
-  double precision,dimension(:),allocatable :: molmass
-  integer,intent(inout) :: ingasnum(:)
-  character(len=15),dimension(:),allocatable::gaslist,cloudlist
-  double precision,dimension(:),allocatable:: masslist
+  character(len=15),intent(in) :: ingasname(:)
+  character(len=15),dimension(:),allocatable::cloudlist,gasname
   double precision,intent(inout) :: logVMR(:,:)
   integer,intent(inout) :: incloudnum(:,:)
   character(len=15),dimension(:,:),allocatable :: cloudname
@@ -53,12 +50,12 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   
   call initlayers(size(inpress))
   call initwave(size(inwavenum))
-  call initgas(size(ingasnum))
+  call initgas(size(molmass))
   call initpatch(size(do_clouds))
   call initcloud(size(cloudprof(1,1,:)))
   call inittemps(size(inlinetemps))
 
-  allocate(molmass(ngas),gasname(ngas))
+! allocate(molmass(ngas),gasname(ngas))
   allocate(cloudname(npatch,nclouds))
 
   allocate(out_spec(2,nwave))
@@ -67,20 +64,9 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   othphot = make_oth_pspec
   do_cf = make_cf
   
-  open(10,file="gaslist.dat", status='old')
-  read(10,*) maxgas
-  allocate(gaslist(maxgas), masslist(maxgas))
-  do igas = 1, maxgas
-     read(10,"(I4,A8,F9.5)") idum1,gaslist(igas),masslist(igas)
-  end do
-  close(10)
-  
-  
-  do igas = 1, ngas
-     gasname(igas) = adjustl(trim(gaslist(ingasnum(igas))))
-     molmass(igas) = masslist(ingasnum(igas))
-  end do
-
+  allocate(gasname(size(ingasname)))
+  gasname = ingasname
+ 
   open(10,file="cloudlist.dat", status='old')
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
@@ -101,8 +87,8 @@ subroutine marv(temp,logg,R2D2,ingasnum,logVMR,pcover,&
   end do
 
   
-  deallocate(cloudlist,gaslist,masslist)  
-  call forward(temp,logg,R2D2,gasname,ingasnum,molmass,logVMR,pcover,&
+  deallocate(cloudlist)  
+  call forward(temp,logg,R2D2,gasname,molmass,logVMR,pcover,&
        do_clouds,incloudnum,cloudname,cloudrad,cloudsig,cloudprof,&
        inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,&
        clphot,othphot,do_cf,do_bff,bff,out_spec,clphotspec,othphotspec,cf)

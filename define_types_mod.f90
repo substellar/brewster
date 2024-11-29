@@ -6,7 +6,6 @@ module define_types
 
   type a_gas
      character(len=10):: name
-     integer :: num
      double precision:: VMR
      double precision :: molmass
   end type a_gas
