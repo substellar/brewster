@@ -1574,7 +1574,7 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
 
 
     lists = [xpath+i[3] for i in list1[0:ngas]]
-    gasnum = np.asfortranarray(np.array([i[0] for i in list1[0:ngas]],dtype='i'))
+    gasmass = np.asfortranarray(np.array([i[2] for i in list1[0:ngas]],dtype='float32'))
 
 
     # get the basic framework from water list
@@ -1599,8 +1599,15 @@ def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.da
                 pfit = interp1d(np.log10(inpress),np.log10(inlinelist[:,i,j]))
                 linelist[gas,:,i,(j-r1)] = np.asfortranarray(pfit(np.log10(press)))
     linelist[np.isnan(linelist)] = -50.0
+    
+    # convert gaslist into fortran array of ascii strings for fortran code 
+    gasnames = np.empty((len(gaslist), 10), dtype='c')
+    for i in range(0,len(gaslist)):
+        gasnames[i,0:len(gaslist[i])] = gaslist[i]
 
-    return inlinetemps,inwavenum,linelist,gasnum,nwave
+    gasnames = np.asfortranarray(gasnames,dtype='c')
+
+    return inlinetemps,inwavenum,linelist,gasnames,gasmass,nwave
 
 
 
@@ -1721,12 +1728,14 @@ class ArgsGen:
         Chemical equilibrium flag.
     dist : float
         Distance to the object.
+    gasnames: c
+        List of gasnames in fortran compatible character arrays
+    gasmass: float
+        List of molecular masses for gases
     cloudtype : str
         Type of cloud parameterization used.
     do_clouds : bool
         Whether clouds are considered.
-    gasnum : int
-        Number of gas species.
     cloudnum : int
         Number of cloud layers.
     inlinetemps : np.array
@@ -1803,15 +1812,13 @@ class ArgsGen:
         self.chemeq = self.re_params.chemeq
         
         # Process gas list
-        gaslist = list(self.re_params.dictionary['gas'].keys())
-        gaslist_lower = [gas.lower() for gas in gaslist]
+        self.gaslist = list(self.re_params.dictionary['gas'].keys())
+        gaslist_lower = [gas.lower() for gas in self.gaslist]
         
         if gaslist_lower[-1] == 'k_na':
-            gaslist = list(gaslist[:-1]) + ['k', 'na']
+            self.gaslist = list(self.gaslist[:-1]) + ['k', 'na']
         elif gaslist_lower[-1] == 'k_na_cs':
-            gaslist = list(gaslist[:-1]) + ['k', 'na', 'cs']
-        
-        self.gaslist = gaslist
+            self.gaslist = list(self.gaslist[:-1]) + ['k', 'na', 'cs']
         
         # Retrieve instrument parameters
         self.fwhm = self.instrument.fwhm
@@ -1829,7 +1836,7 @@ class ArgsGen:
             self.prof = tfit(np.log10(self.coarsePress))
         
         # Get opacities, CIA data
-        self.inlinetemps, self.inwavenum, self.linelist, self.gasnum, self.nwave = get_opacities(
+        self.inlinetemps, self.inwavenum, self.linelist,self.gasnames,self.gasmass, self.nwave = get_opacities(
             self.gaslist, self.w1, self.w2, self.press, self.xpath, self.xlist, self.malk)
 
         self.tmpcia, self.ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat", self.inwavenum)
@@ -1841,7 +1848,7 @@ class ArgsGen:
         self.bff_raw, self.ceTgrid, self.metscale, self.coscale, self.gases_myP = sort_bff_and_CE(
             self.chemeq, "chem_eq_tables_P3K.pic", self.press, self.gaslist)
 
-
+        
     def __str__(self):
         return f"""
         ArgsGen Model Parameters:
@@ -1858,9 +1865,8 @@ class ArgsGen:
         do_clouds: {self.do_clouds}
         Number of Clouds: {self.cloudnum}
         Cloud Type: {self.cloudtype} 
-        Number of Gases: {self.gasnum}
-        Metallicity Scaling: {self.metscale}
-        C/O Ratio Scaling: {self.coscale}
+        Metallicity Scale: {self.metscale}
+        C/O Ratio Scale: {self.coscale}
         Coarse Pressure Grid: {self.coarsePress}
         """
 

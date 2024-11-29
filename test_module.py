@@ -71,7 +71,9 @@ def lnprior(theta,re_params):
         dist,
         cloudtype,
         do_clouds,
-        gasnum,
+        gaslist,
+        gasnames,
+        gasmass,
         cloudnum,
         inlinetemps,
         coarsePress,
@@ -97,7 +99,9 @@ def lnprior(theta,re_params):
         args_instance.dist,
         args_instance.cloudtype,
         args_instance.do_clouds,
-        args_instance.gasnum,
+        args_instance.gaslist,
+        args_instance.gasnames,
+        args_instance.gasmass,
         args_instance.cloudnum,
         args_instance.inlinetemps,
         args_instance.coarsePress,
@@ -993,7 +997,9 @@ def priormap_dic(theta,re_params):
         dist,
         cloudtype,
         do_clouds,
-        gasnum,
+        gaslist,
+        gasnames,
+        gasmass,
         cloudnum,
         inlinetemps,
         coarsePress,
@@ -1019,7 +1025,9 @@ def priormap_dic(theta,re_params):
         args_instance.dist,
         args_instance.cloudtype,
         args_instance.do_clouds,
-        args_instance.gasnum,
+        args_instance.gaslist,
+        args_instance.gasnames,
+        args_instance.gasmass,
         args_instance.cloudnum,
         args_instance.inlinetemps,
         args_instance.coarsePress,
@@ -1493,7 +1501,9 @@ def lnlike(theta,re_params):
         dist,
         cloudtype,
         do_clouds,
-        gasnum,
+        gaslist,
+        gasnames,
+        gasmass,
         cloudnum,
         inlinetemps,
         coarsePress,
@@ -1519,7 +1529,9 @@ def lnlike(theta,re_params):
         args_instance.dist,
         args_instance.cloudtype,
         args_instance.do_clouds,
-        args_instance.gasnum,
+        args_instance.gaslist,
+        args_instance.gasnames,
+        args_instance.gasmass,
         args_instance.cloudnum,
         args_instance.inlinetemps,
         args_instance.coarsePress,
@@ -1943,7 +1955,9 @@ def modelspec(theta,re_params,args_instance,gnostics):
         dist,
         cloudtype,
         do_clouds,
-        gasnum,
+        gaslist,
+        gasnames,
+        gasmass,
         cloudnum,
         inlinetemps,
         coarsePress,
@@ -1969,7 +1983,9 @@ def modelspec(theta,re_params,args_instance,gnostics):
         args_instance.dist,
         args_instance.cloudtype,
         args_instance.do_clouds,
-        args_instance.gasnum,
+        args_instance.gaslist,
+        args_instance.gasnames,
+        args_instance.gasmass,
         args_instance.cloudnum,
         args_instance.inlinetemps,
         args_instance.coarsePress,
@@ -2109,7 +2125,7 @@ def modelspec(theta,re_params,args_instance,gnostics):
     # set the profile
     temp = TPmod.set_prof(proftype,coarsePress,press,intemp)
 
-    ngas = gasnum.size
+    ngas = len(gaslist)
     bff = np.zeros([3,nlayers],dtype="float64")
 
 
@@ -2136,11 +2152,11 @@ def modelspec(theta,re_params,args_instance,gnostics):
         alkratio = 16.2 #  from Asplund et al (2009)
 
         tmpvmr = np.empty(ngas,dtype='d')
-        if (gasnum[gasnum.size-1] == 21):
+        if (gaslist[len(gaslist)-1] == 'na' and gaslist[len(gaslist)-2] == 'k'):
             tmpvmr[0:(ngas-2)] = invmr[0:-1]
             tmpvmr[ngas-2] = np.log10(10.**invmr[-1] / (alkratio+1.)) # K
             tmpvmr[ngas-1] = np.log10(10.**invmr[-1] * (alkratio / (alkratio+1.))) # Na
-        elif (gasnum[gasnum.size-1] == 23):
+        elif (gaslist[len(gaslist)-1] == 'cs'):
             #f values are ratios between Na and (K+Cs) and K and Cs respectively
             f1 = 1.348
             f2 = 8912.5
@@ -2155,7 +2171,7 @@ def modelspec(theta,re_params,args_instance,gnostics):
             logVMR[i,:] = tmpvmr[i]
 
         # # set H- in the high atmosphere    
-        # if (gasnum[gasnum.size-1] == 25):
+        # if (gaslist[gasnum.size-1] == 'hmins'):
         #     logVMR[ngas-1,0:P_hmins_index]=tmpvmr[ngas-1]
         #     logVMR[ngas-1,P_hmins_index:]=-100
 
@@ -2225,15 +2241,15 @@ def modelspec(theta,re_params,args_instance,gnostics):
                 tfit = InterpolatedUnivariateSpline(ceTgrid,bff_raw[:,i,gas],k=1)
                 bff[gas,i] = tfit(temp[i])
 
-        if (gasnum[gasnum.size-1] == 25):
+        if (gaslist[len(gaslist)-1] == 'hmins'):
             bff[2,0:p_gas_index] = -50
 
     bff = np.asfortranarray(bff, dtype='float64')
     press = np.asfortranarray(press,dtype='float32')
     temp = np.asfortranarray(temp,dtype='float64')
     logVMR = np.asfortranarray(logVMR,dtype='float64')
-
-
+    
+    
     # print(invmr)
     # print(cloudprof,cloudrad,cloudsig)
     # print(temp)
@@ -2259,7 +2275,7 @@ def modelspec(theta,re_params,args_instance,gnostics):
 
 
     # now we can call the forward model
-    outspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnum,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
+    outspec,tmpclphotspec,tmpophotspec,cf = forwardmodel.marv(temp,logg,R2D2,gasnames,gasmass,logVMR,pcover,do_clouds,cloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,press,inwavenum,linelist,cia,ciatemps,use_disort,clphot,ophot,make_cf,do_bff,bff)
         
 
     # Trim to length where it is defined.
