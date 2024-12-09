@@ -1,0 +1,76 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module forwardmodel ! in 
+    interface  ! in :forwardmodel
+        module sizes ! in :forwardmodel:sizes_mod.f90
+            integer, protected :: nclouds
+            integer, protected :: ngas
+            integer, protected :: npatch
+            integer, protected :: nlayers
+            integer, parameter,optional :: maxlayers=100
+            integer, protected :: nlinetemps
+            integer, parameter,optional :: nciatemps=198
+            integer, parameter,optional :: ncwave=1000
+            integer, parameter,optional :: nrad=60
+            integer, parameter,optional :: nmiewave=196
+            integer, parameter,optional :: maxwave=40000
+            integer, parameter,optional :: maxpatch=4
+            integer, protected :: nwave
+            subroutine initwave(val) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: val
+            end subroutine initwave
+            subroutine initgas(gasval) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: gasval
+            end subroutine initgas
+            subroutine initpatch(pval) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: pval
+            end subroutine initpatch
+            subroutine initcloud(pval) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: pval
+            end subroutine initcloud
+            subroutine initlayers(pval) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: pval
+            end subroutine initlayers
+            subroutine inittemps(pval) ! in :forwardmodel:sizes_mod.f90:sizes
+                integer :: pval
+            end subroutine inittemps
+        end module sizes
+        subroutine marv(temp,logg,r2d2,ingasname,molmass,logvmr,pcover,do_clouds,incloudnum,cloudrad,cloudsig,cloudprof,inlinetemps,inpress,inwavenum,inlinelist,cia,ciatemps,use_disort,make_cl_pspec,make_oth_pspec,make_cf,do_bff,bff,outspec,cl_phot_press,oth_phot_press,cfunc) ! in :forwardmodel:marv.f90
+            use sizes
+            use main
+            double precision dimension(:),intent(inout) :: temp
+            real intent(in) :: logg
+            real intent(in) :: r2d2
+            character(len=15) dimension(:),intent(in) :: ingasname
+            real dimension(:),intent(inout) :: molmass
+            double precision dimension(:,:),intent(inout) :: logvmr
+            real dimension(:),intent(inout) :: pcover
+            integer dimension(:),intent(inout) :: do_clouds
+            integer dimension(:,:),intent(inout) :: incloudnum
+            double precision dimension(:,:,:),intent(inout) :: cloudrad
+            double precision dimension(:,:,:),intent(inout) :: cloudsig
+            double precision dimension(:,:,:),intent(inout) :: cloudprof
+            real dimension(:),intent(inout) :: inlinetemps
+            real dimension(:),intent(inout) :: inpress
+            double precision dimension(:),intent(inout) :: inwavenum
+            double precision dimension(:,:,:,:),intent(inout) :: inlinelist
+            real dimension(:,:,:),intent(inout) :: cia
+            real dimension(198),intent(inout) :: ciatemps
+            integer intent(in) :: use_disort
+            integer intent(in) :: make_cl_pspec
+            integer intent(in) :: make_oth_pspec
+            integer intent(in) :: make_cf
+            integer intent(in) :: do_bff
+            double precision dimension(:,:),intent(inout) :: bff
+            double precision dimension(2,40000),intent(out) :: outspec
+            double precision dimension(4,40000),intent(out) :: cl_phot_press
+            double precision dimension(4,40000),intent(out) :: oth_phot_press
+            double precision dimension(4,40000,100),intent(out) :: cfunc
+        end subroutine marv
+    end interface 
+end python module forwardmodel
+
+! This file was auto-generated with f2py (version:1.24.3).
+! See:
+! https://web.archive.org/web/20140822061353/http://cens.ioc.ee/projects/f2py2e

@@ -2039,51 +2039,51 @@ def modelspec(theta,re_params,args_instance,gnostics):
             if re_params.samplemode=='mcmc':
                 r2d2 = [params_instance.r2d2,params_instance.scale1,params_instance.scale2]  #theta[ng+1:ng+4]
             dlam = params_instance.dlambda
-            if (do_fudge == 1):
-                logf =[params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2,params_instance.tolerance_parameter_3] #theta[ng+5:ng+8]
-            else:
-                # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+            # if (do_fudge == 1):
+            #     logf =[params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2,params_instance.tolerance_parameter_3] #theta[ng+5:ng+8]
+            # else:
+            #     # This is a place holder value so the code doesn't break
+            #     logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
 
         elif (fwhm == -2):
             if re_params.samplemode=='mcmc':
                 r2d2 = [params_instance.r2d2,params_instance.scale1]  #theta[ng+1:ng+3]
             dlam = params_instance.dlambda
-            if (do_fudge == 1):
-                logf =[params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2] # theta[ng+4:ng+6]
-            else:
-                # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+            # if (do_fudge == 1):
+            #     logf =[params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2] # theta[ng+4:ng+6]
+            # else:
+            #     # This is a place holder value so the code doesn't break
+            #     logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
 
         elif (fwhm == -5):
             if re_params.samplemode=='mcmc':
                 r2d2 = params_instance.r2d2
             dlam = params_instance.dlambda
-            if (do_fudge == 1):
-                logf = params_instance.tolerance_parameter_1
-            else:
-                # This is a place holder value so the code doesn't break
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+            # if (do_fudge == 1):
+            #     logf = params_instance.tolerance_parameter_1
+            # else:
+            #     # This is a place holder value so the code doesn't break
+            #     logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
 
         elif (fwhm == -6):
             if re_params.samplemode=='mcmc':
                 r2d2 = params_instance.r2d2
             dlam = params_instance.dlambda
-            if (do_fudge == 1):
-                logf = params_instance.tolerance_parameter_1
-            else:
-                # This is a place holder value so the code doesn't break                                                                      
-                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+            # if (do_fudge == 1):
+            #     logf = params_instance.tolerance_parameter_1
+            # else:
+            #     # This is a place holder value so the code doesn't break                                                                      
+            #     logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
 
     else:
         if re_params.samplemode=='mcmc':
             r2d2 = params_instance.r2d2
         dlam = params_instance.dlambda
-        if (do_fudge == 1):
-            logf = params_instance.tolerance_parameter_1
-        else:
-            # This is a place holder value so the code doesn't break
-            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+        # if (do_fudge == 1):
+        #     logf = params_instance.tolerance_parameter_1
+        # else:
+        #     # This is a place holder value so the code doesn't break
+        #     logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
 
 
         

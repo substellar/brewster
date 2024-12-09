@@ -80,7 +80,7 @@ def brewster_reterieval_run(re_params,model_config_instance,io_config_instance):
             p0=pic
             if (model_config_instance.fresh == 2):
                 gaslist = list(re_params.dictionary['gas'].keys())
-                gastype_values = [info['gastype'] for key, info in dic['gas'].items() if 'gastype' in info]
+                gastype_values = [info['gastype'] for key, info in re_params.dictionary['gas'].items() if 'gastype' in info]
                 gas=[]
                 for i in range(len(gaslist)):
                     gas.append(gaslist[i])

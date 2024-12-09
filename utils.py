@@ -116,7 +116,7 @@ class ModelConfig:
         Update the model configuration dictionary with the current attributes.
     """
 
-    def __init__(self, samplemode, use_disort=0, do_fudge=1, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="gaslistRox.dat", dist=None, pfile="LSR1835_eqpt.dat"):
+    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="gaslistRox.dat", dist=None, pfile="LSR1835_eqpt.dat"):
         self.samplemode = samplemode
         self.use_disort = use_disort
         self.do_fudge = do_fudge
@@ -746,7 +746,8 @@ class Retrieval_params:
                          }}
 
         elif ptype==9:
-                dictionary={'ptype':ptype}
+                dictionary={'ptype':ptype,
+                'params':{}}
 
 
         return dictionary
@@ -1097,13 +1098,14 @@ class Retrieval_params:
             ndata=3
 
         # Add tolerance parameters after 'dlambda'
-        for i in range(ndata):
-            dictionary['params']["tolerance_parameter_%d" % (i+1)] = {
-                'initialization': None,
-                'distribution': ['customized', 0],
-                'range':None,
-                'prior': None
-            }
+        if self.do_fudge==1:
+            for i in range(ndata):
+                dictionary['params']["tolerance_parameter_%d" % (i+1)] = {
+                    'initialization': None,
+                    'distribution': ['customized', 0],
+                    'range':None,
+                    'prior': None
+                }
         return dictionary
 
 
@@ -1831,8 +1833,8 @@ class ArgsGen:
         # Generate temperature profile
         self.prof = np.full(13, 100.0)
         if self.proftype == 9:
-            modP, modT = np.loadtxt(self.pfile, skiprows=1, usecols=(1, 2), unpack=True)
-            tfit = InterpolatedUnivariateSpline(np.log10(modP), modT, k=1)
+            logmodP,modT = np.loadtxt(self.pfile,skiprows=0,usecols=(0,1),unpack=True)
+            tfit = InterpolatedUnivariateSpline(logmodP,modT,k=1)
             self.prof = tfit(np.log10(self.coarsePress))
         
         # Get opacities, CIA data
