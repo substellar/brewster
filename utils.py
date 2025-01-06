@@ -45,11 +45,12 @@ class Instrument:
     instrument_dic_gen()
     """
     
-    def __init__(self, fwhm=None, wavelength_range=None, ndata=None,wavpoints=None):
+    def __init__(self, fwhm=None, wavelength_range=None, ndata=None,R_file=None,wavpoints=None):
         self.fwhm  = fwhm 
         self.wavelength_range = wavelength_range
         self.ndata = ndata
         self.wavpoints = wavpoints
+        self.R_file = R_file
 
         self.dictionary = self.instrument_dic_gen()
 
@@ -63,7 +64,8 @@ class Instrument:
                 'fwhm': self.fwhm,
                 'wavelength_range': self.wavelength_range,
                 'ndata': self.ndata,
-                'wavpoints': self.wavpoints
+                'wavpoints': self.wavpoints,
+                'R_file': self.R_file
             }
         }
 
@@ -72,7 +74,8 @@ class Instrument:
             '- fwhm : ' + "%s" % (self.fwhm) + '\n' +\
             '- wavelength_range : ' + "%s" % (self.wavelength_range) + '\n' +\
             '- ndata : ' + "%s" % (self.ndata) + ' \n'  +\
-            '- wavpoints : ' + "%s" % (self.wavpoints) + ' \n'
+            '- wavpoints : ' + "%s" % (self.wavpoints) + ' \n' +\
+            '- R_file : ' + "%s" % (self.R_file) + ' \n'
         return string
 
 
