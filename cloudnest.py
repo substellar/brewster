@@ -62,7 +62,7 @@ def atlas(do_clouds,cloudnum,cloudtype,cloudparams,press):
                 if (cloudtype[i,j] == 1 or cloudtype[i,j] == 3):
                     # 5 entries for cloudparams are:
                     # 0) total tau for cloud at 1 micron
-                    # 1) log top pressure
+                    # 1) log base pressure
                     # 2) pressure thickness in dex
                     # 3) rg
                     # 4) rsig
