@@ -207,6 +207,8 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,fortran
-Linelists.tar.gz
 .DS_Store
-__pycache__/*
+Linelists.tar.gz
+data/Clouds
+data/Linelists
+.vscode/
