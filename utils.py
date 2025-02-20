@@ -101,9 +101,9 @@ class ModelConfig:
     fresh : int, optional
         Fresh start flag (default: 0)
     xpath : str, optional
-        Path to line lists (default: "../Linelists/")
+        Path to line lists (default: "data/Linelists/")
     xlist : str, optional
-        Line list file (default: "gaslistRox.dat")
+        Line list file (default: "data/gaslistRox.dat")
     dist : float, optional
         Distance parameter (default: None)
     pfile : str, optional
@@ -119,7 +119,7 @@ class ModelConfig:
         Update the model configuration dictionary with the current attributes.
     """
 
-    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="gaslistRox.dat", dist=None, pfile="LSR1835_eqpt.dat"):
+    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="data/Linelists/", xlist="data/gaslistRox.dat", dist=None, pfile="data/LSR1835_eqpt.dat"):
         self.samplemode = samplemode
         self.use_disort = use_disort
         self.do_fudge = do_fudge
@@ -1412,7 +1412,7 @@ def MC_P0_gen(updated_dic,model_config_instance,args_instance):
         params_instance = params_master(*all_params_values)
         T_1_index=params_instance._fields.index('T_1')
         T_13_index=params_instance._fields.index('T_13')
-        BTprof = np.loadtxt("BTtemp800_45_13.dat")
+        BTprof = np.loadtxt("data/BTtemp800_45_13.dat")
 
         for i in range(0, 13):  # 13 layer points ====> Total: 13 + 13 (gases+) +no cloud = 26
             p0[:,T_1_index+i] = (BTprof[i] - 200.) + (150. * np.random.randn(nwalkers).reshape(nwalkers))
@@ -1545,7 +1545,7 @@ def cloud_para_gen(dic):
 
 
 
-def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.dat',malk=0):
+def get_opacities(gaslist,w1,w2,press,xpath='data/Linelists',xlist='data/gaslistR10K.dat',malk=0):
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
@@ -1844,14 +1844,14 @@ class ArgsGen:
         self.inlinetemps, self.inwavenum, self.linelist,self.gasnames,self.gasmass, self.nwave = get_opacities(
             self.gaslist, self.w1, self.w2, self.press, self.xpath, self.xlist, self.malk)
 
-        self.tmpcia, self.ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat", self.inwavenum)
+        self.tmpcia, self.ciatemps = ciamod.read_cia("data/CIA_DS_aug_2015.dat", self.inwavenum)
         self.cia = np.asfortranarray(np.empty((4, self.ciatemps.size, self.nwave)), dtype='float32')
         self.cia[:, :, :] = self.tmpcia[:, :, :self.nwave]
         self.ciatemps = np.asfortranarray(self.ciatemps, dtype='float32')
         
         # BFF and Chemical grids
         self.bff_raw, self.ceTgrid, self.metscale, self.coscale, self.gases_myP = sort_bff_and_CE(
-            self.chemeq, "chem_eq_tables_P3K.pic", self.press, self.gaslist)
+            self.chemeq, "data/chem_eq_tables_P3K.pic", self.press, self.gaslist)
 
         
     def __str__(self):

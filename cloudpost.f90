@@ -62,7 +62,7 @@ subroutine properties(press,wavenum,nclouds,do_clouds,cloudnum,cloudprof,cloudra
   allocate(cldone(nclouds,nwave))
   allocate(dp(nlayers))
 
-  open(10,file="cloudlist.dat", status='old')
+  open(10,file="data/cloudlist.dat", status='old')
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
   do icloud = 1, maxcloud
@@ -122,9 +122,9 @@ subroutine properties(press,wavenum,nclouds,do_clouds,cloudnum,cloudprof,cloudra
         ! first get the mie or DHS  coefficients for the condensate
      
         if (sizdist .gt. 0) then
-           write(miefile,"(A,A,A)")"../Clouds/",trim(cloudname(ipatch,icloud)),".mieff"
+           write(miefile,"(A,A,A)")"data/Clouds/",trim(cloudname(ipatch,icloud)),".mieff"
         else if (sizdist .lt. 0) then
-           write(miefile,"(A,A,A)")"../Clouds/",trim(cloudname(ipatch,icloud)),".dhs"
+           write(miefile,"(A,A,A)")"data/Clouds/",trim(cloudname(ipatch,icloud)),".dhs"
         end if
      
      
