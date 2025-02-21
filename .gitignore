@@ -212,3 +212,4 @@ Linelists.tar.gz
 data/Clouds
 data/Linelists
 .vscode/
+*.pyf
