@@ -80,9 +80,9 @@ contains
        ! first get the mie or DHS  coefficients for the condensate
 
        if (sizdist .gt. 0) then
-          write(miefile,"(A,A,A)")"data/Clouds/",trim(column(1)%cloud(icloud)%name),".mieff"
+          write(miefile,"(A,A,A)")"../Clouds/",trim(column(1)%cloud(icloud)%name),".mieff"
        else if (sizdist .lt. 0) then
-          write(miefile,"(A,A,A)")"data/Clouds/",trim(column(1)%cloud(icloud)%name),".dhs"
+          write(miefile,"(A,A,A)")"../Clouds/",trim(column(1)%cloud(icloud)%name),".dhs"
        end if
           
        
