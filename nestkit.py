@@ -990,7 +990,7 @@ def modelspec(theta,args=None, gnostics=0):
 
 
 
-def get_opacities(gaslist,w1,w2,press,xpath='data/Linelists',xlist='data/gaslistR10K.dat',malk=0):
+def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='data/gaslistR10K.dat',malk=0):
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 

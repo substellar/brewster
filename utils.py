@@ -101,7 +101,7 @@ class ModelConfig:
     fresh : int, optional
         Fresh start flag (default: 0)
     xpath : str, optional
-        Path to line lists (default: "data/Linelists/")
+        Path to line lists (default: "../Linelists/")
     xlist : str, optional
         Line list file (default: "data/gaslistRox.dat")
     dist : float, optional
@@ -119,7 +119,7 @@ class ModelConfig:
         Update the model configuration dictionary with the current attributes.
     """
 
-    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="data/Linelists/", xlist="data/gaslistRox.dat", dist=None, pfile="data/LSR1835_eqpt.dat"):
+    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="data/gaslistRox.dat", dist=None, pfile="data/LSR1835_eqpt.dat"):
         self.samplemode = samplemode
         self.use_disort = use_disort
         self.do_fudge = do_fudge
@@ -1545,7 +1545,7 @@ def cloud_para_gen(dic):
 
 
 
-def get_opacities(gaslist,w1,w2,press,xpath='data/Linelists',xlist='data/gaslistR10K.dat',malk=0):
+def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='data/gaslistR10K.dat',malk=0):
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
