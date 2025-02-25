@@ -2,7 +2,7 @@ import code_test as ct
 import numpy as np
 
 xpath = '../Linelists/'
-xlist = 'gaslistR10K.dat'
+xlist = 'data/gaslistR10K.dat'
 results = [ct.NoCloud_Tdwarf(xpath,xlist),ct.MieClouds_Ldwarf(xpath,xlist)]
 
 if np.all(results):

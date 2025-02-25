@@ -62,7 +62,7 @@ subroutine properties(press,wavenum,nclouds,do_clouds,cloudnum,cloudprof,cloudra
   allocate(cldone(nclouds,nwave))
   allocate(dp(nlayers))
 
-  open(10,file="cloudlist.dat", status='old')
+  open(10,file="data/cloudlist.dat", status='old')
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
   do icloud = 1, maxcloud

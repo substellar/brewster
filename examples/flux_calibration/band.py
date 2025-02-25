@@ -37,33 +37,33 @@ Where not calculated WISE details are taken from Jarrett et al (2011)
 def getfilt(filtname):
     
     if filtname == "Jmko":
-        rawfilt = np.loadtxt("UKIRT-UKIDSS.J.dat", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/UKIRT-UKIDSS.J.dat", unpack=True, skiprows=0)
         tempfilt = rawfilt[1, :] * rawfilt[0, :]
         rawfilt[1, :] = tempfilt / np.amax(tempfilt)
     elif filtname == "Hmko":
-        rawfilt = np.loadtxt("UKIRT-UKIDSS.H.dat", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/UKIRT-UKIDSS.H.dat", unpack=True, skiprows=0)
         tempfilt = rawfilt[1, :] * rawfilt[0, :]
         rawfilt[1, :] = tempfilt / np.amax(tempfilt)
     elif filtname == "nirc_Lp":
-        rawfilt = np.loadtxt("nirc_Lp.txt", unpack=True, skiprows=1)
+        rawfilt = np.loadtxt("data/nirc_Lp.txt", unpack=True, skiprows=1)
         bw = 0.700
         isow = 3.776
         tempfilt = rawfilt[1, :] * rawfilt[0, :]
         rawfilt[1, :] = tempfilt / np.amax(tempfilt)
     elif filtname == "w1":
-        rawfilt = np.loadtxt("RSR-W1.EE.txt", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/RSR-W1.EE.txt", unpack=True, skiprows=0)
         bw = 6.6256e-01
         isow = 3.35
     elif filtname == "w2":
-        rawfilt = np.loadtxt("RSR-W2.EE.txt", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/RSR-W2.EE.txt", unpack=True, skiprows=0)
         bw = 1.0423
         isow = 4.60
     elif filtname == "w3":
-        rawfilt = np.loadtxt("RSR-W3.EE.txt", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/RSR-W3.EE.txt", unpack=True, skiprows=0)
         bw = 5.5069
         isow = 11.56
     elif filtname == "w4":
-        rawfilt = np.loadtxt("RSR-W4.EE.txt", unpack=True, skiprows=0)
+        rawfilt = np.loadtxt("data/RSR-W4.EE.txt", unpack=True, skiprows=0)
         bw = 4.1013
         isow = 22.08
     else:
@@ -79,7 +79,7 @@ def mag2flux(mag, magerr, filtname, iso=False):
     
     # First trim vega to match filter, and put filter on same wave grid as vega
 
-    rawvega = np.loadtxt("STSci_Vega.txt", unpack=True, skiprows=0)
+    rawvega = np.loadtxt("data/STSci_Vega.txt", unpack=True, skiprows=0)
 
     rawvega[0, :] = rawvega[0, :] / 10000.
     rawvega[1, :] = rawvega[1, :] * 10.  # erg/cm/s/A to W/m2/um

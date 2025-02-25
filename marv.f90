@@ -67,7 +67,7 @@ subroutine marv(temp,logg,R2D2,ingasname,molmass,logVMR,pcover,&
   allocate(gasname(size(ingasname)))
   gasname = ingasname
  
-  open(10,file="cloudlist.dat", status='old')
+  open(10,file="data/cloudlist.dat", status='old')
   read(10,*) maxcloud
   allocate(cloudlist(maxcloud))
   do icloud = 1, maxcloud
