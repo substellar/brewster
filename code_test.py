@@ -12,7 +12,6 @@ import pickle as pickle
 import forwardmodel
 import ciamod
 import TPmod
-import band
 import brewtools
 from astropy.convolution import convolve, convolve_fft
 from astropy.convolution import Gaussian1DKernel
@@ -67,7 +66,7 @@ def NoCloud_Tdwarf(xpath,xlist):
 
      model_config_instance.do_bff=0
      model_config_instance.malk=0
-     model_config_instance.pfile='data/G570D_model_benchmark_PROFILE.dat'
+     model_config_instance.pfile='data/test_data/G570D_model_benchmark_PROFILE.dat'
      model_config_instance.xlist=xlist #'gaslistR10K.dat'
      model_config_instance.xpath=xpath
      model_config_instance.update_dictionary()
@@ -90,7 +89,7 @@ def NoCloud_Tdwarf(xpath,xlist):
      shiftspec, cloud_phot_press,other_phot_press,cfunc=test_module.modelspec(params_instance,re_params,args_instance,gnostics)
 
      modspec = np.array([shiftspec[0,::-1],shiftspec[1,::-1]])
-     benchspec = np.loadtxt('data/No_cloud_800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
+     benchspec = np.loadtxt('data/test_data/No_cloud_800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
      outspec = prism_non_uniform(benchspec,modspec,3.3)
 
      difference_spectrum = outspec / benchspec[1,:]
@@ -154,7 +153,7 @@ def MieClouds_Ldwarf(xpath,xlist):
 
      # obspec = np.asfortranarray(np.loadtxt("LSR1835_data_realcalib_new_trimmed.dat",dtype='d',unpack='true'))
 
-     obspec= np.loadtxt('data/Mie_cloud_1800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
+     obspec= np.loadtxt('data/test_data/Mie_cloud_1800K_model_benchmark_SPEC.dat',skiprows=3,unpack=True)
      args_instance = utils.ArgsGen(re_params,model_config_instance,instrument_instance,obspec)
      settings.init(args_instance)
      args_instance=settings.runargs
