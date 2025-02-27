@@ -24,6 +24,7 @@ from astropy.convolution import Gaussian1DKernel
 from bensconv import prism_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
+from bensconv import conv_non_uniform_R
 from collections import namedtuple
 import utils
 import settings
@@ -92,7 +93,10 @@ def lnprior(theta,re_params):
         bff_raw,
         ceTgrid,
         metscale,
-        coscale
+        coscale,
+        R,
+        wl,
+        logf_flag
     ) = (
         args_instance.gases_myP,
         args_instance.chemeq,
@@ -120,7 +124,10 @@ def lnprior(theta,re_params):
         args_instance.bff_raw,
         args_instance.ceTgrid,
         args_instance.metscale,
-        args_instance.coscale
+        args_instance.coscale,
+        args_instance.R,
+        args_instance.wl,
+        args_instance.logf_flag
     )
 
     
@@ -227,6 +234,77 @@ def lnprior(theta,re_params):
                 logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                
+    elif (fwhm == 555):
+        log_f_param = args_instance.logf_flag
+        s2 = obspec[0,:]
+        s2 = np.where(log_f_param == 1.0)
+        s3 = obspec[0,:]
+        s3 = np.where(log_f_param == 2.0)
+        r2d2 = params_instance.r2d2
+        dlam = params_instance.dlambda
+        scale1 = 1.0
+        scale2 = 1.0
+        if (do_fudge == 1):
+                logf1 = params_instance.tolerance_parameter_1
+                logf2 = np.log10(0.1*(max(obspec[2,10::3]))**2) # dummy
+                logf3 = params_instance.tolerance_parameter_2
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+        else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+
+                
+    elif (fwhm == 888):
+        log_f_param = args_instance.logf_flag
+        s2 = obspec[0,:]
+        s2 = np.where(log_f_param == 1.0)
+        s3 = obspec[0,:]
+        s3 = np.where(log_f_param == 2.0)
+        r2d2 = params_instance.r2d2
+        dlam = params_instance.dlambda
+        scale1 = 1.0
+        scale2 = 1.0
+        if (do_fudge == 1):
+                logf1 = params_instance.tolerance_parameter_1
+                logf2 = np.log10(0.1*(max(obspec[2,10::3]))**2) # dummy
+                logf3 = params_instance.tolerance_parameter_2
+                logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+        else:
+                # This is a place holder value so the code doesn't break
+                logf = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+                logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+                
+    elif (fwhm == 777): ### 777 this ?????
+        
+        s1 = np.where(obspec[0,:] > 0.0)
+        s2 = s1
+        s3 = s1
+        
+        r2d2 = params_instance.r2d2
+        dlam = params_instance.dlambda
+        if (do_fudge == 1):
+            logf =  params_instance.tolerance_parameter_1
+            logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+            logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+            logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+            scale1 = 1.0
+            scale2 = 1.0
+
+        else:
+            # This is a place holder value so the code doesn't break
+            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+            logf1 = np.log10(0.1*(max(obspec[2,:]))**2)
+            logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
+            logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
+            scale1 = 1.0
+            scale2 = 1.0
+        
     
     else:
         # this just copes with normal, single instrument data
@@ -601,8 +679,8 @@ def lnprior(theta,re_params):
             and -0.01 < dlam < 0.01
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
-            and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
-                 < (100.*np.max(obspec[2,s1]**2)))
+          #  and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
+          #       < (100.*np.max(obspec[2,s1]**2)))
             and ((0.01*np.min(obspec[2,s2]**2)) < 10.**logf2
                  < (100.*np.max(obspec[2,s2]**2)))
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
@@ -683,8 +761,8 @@ def lnprior(theta,re_params):
             and -0.01 < dlam < 0.01
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
-            and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
-                 < (100.*np.max(obspec[2,s1]**2)))
+           # and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
+           #      < (100.*np.max(obspec[2,s1]**2)))
             and ((0.01*np.min(obspec[2,s2]**2)) < 10.**logf2
                  < (100.*np.max(obspec[2,s2]**2)))
             and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
@@ -764,16 +842,18 @@ def lnprior(theta,re_params):
             and  0. < r2d2 < 1.
             and 0.1 < scale1 < 10.0
             and 0.1 < scale2 < 10.0
+            and alpha > 0.0
+            and lndelta > 0.0
             and  0.5 < Rj < 2.0
             and -0.01 < dlam < 0.01
             and ((0.01*np.min(obspec[2,:]**2)) < 10.**logf
                  < (100.*np.max(obspec[2,:]**2)))
-            and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1
-                 < (100.*np.max(obspec[2,s1]**2)))
-            and ((0.01*np.min(obspec[2,s2]**2)) < 10.**logf2
-                 < (100.*np.max(obspec[2,s2]**2)))
-            and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
-                 < (100.*np.max(obspec[2,s3]**2)))
+            #and ((0.01*np.min(obspec[2,s1]**2)) < 10.**logf1   #!!!!!!
+            #     < (100.*np.max(obspec[2,s1]**2)))
+           # and ((0.01*np.min(obspec[2,s2]**2)) < 10.**logf2
+           #      < (100.*np.max(obspec[2,s2]**2)))
+           # and ((0.01*np.min(obspec[2,s3]**2)) < 10.**logf3
+           #      < (100.*np.max(obspec[2,s3]**2)))
             and (np.all(cloud_tau0 >= 0.0))
             and (np.all(cloud_tau0 <= 100.0))
             and np.all(cloud_top < cloud_bot)
@@ -949,6 +1029,7 @@ def lnprior(theta,re_params):
             and (0.0 < logg < 6.0)
             and (1.0 < M < 80.)
             and (0. < r2d2 < 1.)
+            and (0. < frac_param < 1.)
             and (0.1 < scale1 < 10.0)
             and (0.1 < scale2 < 10.0)
             and (0.5 < Rj < 2.0)
@@ -1018,7 +1099,10 @@ def priormap_dic(theta,re_params):
         bff_raw,
         ceTgrid,
         metscale,
-        coscale
+        coscale,
+        R,
+        wl,
+        logf_flag
     ) = (
         args_instance.gases_myP,
         args_instance.chemeq,
@@ -1046,7 +1130,10 @@ def priormap_dic(theta,re_params):
         args_instance.bff_raw,
         args_instance.ceTgrid,
         args_instance.metscale,
-        args_instance.coscale
+        args_instance.coscale,
+        args_instance.R,
+        args_instance.wl,
+        args_instance.logf_flag
     )
 
     phi = np.zeros_like(theta)
@@ -1491,6 +1578,8 @@ def lnlike(theta,re_params):
 
 
     all_params,all_params_values =utils.get_all_parametres(re_params.dictionary) 
+    #make instrument instance as input parameter
+    #arg_instance, save R-file into arg_instance
     params_master = namedtuple('params',all_params)
     params_instance = params_master(*theta)
     args_instance=settings.runargs
@@ -1522,7 +1611,10 @@ def lnlike(theta,re_params):
         bff_raw,
         ceTgrid,
         metscale,
-        coscale
+        coscale,
+        R,
+        wl,
+        logf_flag     
     ) = (
         args_instance.gases_myP,
         args_instance.chemeq,
@@ -1550,7 +1642,10 @@ def lnlike(theta,re_params):
         args_instance.bff_raw,
         args_instance.ceTgrid,
         args_instance.metscale,
-        args_instance.coscale
+        args_instance.coscale,
+        args_instance.R,
+        args_instance.wl,
+        args_instance.logf_flag
     )
 
     # get the spectrum
@@ -1588,6 +1683,19 @@ def lnlike(theta,re_params):
             else:
                 # This is a place holder value so the code doesn't break
                 logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+    elif (fwhm == 888):
+        if (do_fudge ==1):
+            logf = [params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2]
+        else:
+            # This is a place holder value so the code doesn't break
+            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+    elif (fwhm == 555):
+        if (do_fudge == 1):
+            logf = [params_instance.tolerance_parameter_1,params_instance.tolerance_parameter_2]
+        else:
+            # This is a place holder value so the code doesn't break
+            logf = np.log10(0.1*(max(obspec[2,10::3]))**2)
+                
     else:
         if (do_fudge == 1):
             logf = params_instance.tolerance_parameter_1
@@ -1607,7 +1715,7 @@ def lnlike(theta,re_params):
             s2 = obspec[2,:]**2
 
         lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))       
-    elif (fwhm > 10.00):
+    elif (fwhm > 10.00 and fwhm < 500):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
@@ -1661,8 +1769,109 @@ def lnlike(theta,re_params):
             s2 = obspec[2,:]**2
 
         lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
-
         
+        
+        
+
+ 
+ 
+    elif (fwhm == 888):
+        #Non-uniform R, NIRSpec + MIRI, two tolerance parameters
+        print(f"obspec shape: {obspec.shape}")
+        print(f"modspec shape: {modspec.shape}")
+        print(f"modspec[1] shape: {modspec[1].shape}") 
+        print(f"modspec[0] shape: {modspec[0].shape}")
+
+
+        or1 = np.where(obspec[0,:]<4.634)
+        #print('or1.shape', or1.shape)
+        or2 = np.where(obspec[0,:]>4.634)
+       # print('modspec[1, or2].shape: ',modspec[1, or2].shape
+        #print('or2.shape', or2.shape)
+        print('modspec[1,or2] shape: ',modspec[1, or2].shape)
+        print('obspec [0,or2] shape: ',obspec[0, or2].shape)
+        
+        spec1 = conv_non_uniform_R(modspec[1,or1], modspec[0,or1], args_instance.R, obspec[0,or1])
+        
+        spec2 = conv_non_uniform_R(modspec[1,or2], modspec[0,or2], args_instance.R, obspec[0,or2])
+
+
+        if (do_fudge == 1):
+            print(f"logf type: {type(logf)}, shape: {np.shape(logf)}")
+
+            s2 = obspec[2,or1]**2 + 10.**logf[0]
+            s3 = obspec[2,or2]**2 + 10.**logf[1]
+        else:
+            s2 = obspec[2,or1]**2
+            s3 = obspec[2,or2]**2 
+        
+        lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1[:])**2) / s2) + np.log(2.*np.pi*s2)) 
+        lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2[:])**2) / s3) + np.log(2.*np.pi*s3))
+        lnLik = lnLik1 + lnLik2
+        
+        
+        
+    elif(fwhm == 777): #STILL NEEDS TO BE TESTED
+        #Non_uniform R, tolerance parameter as a fraction of error,  so we are allowing the tolerance parameter to be different at each datapoint
+        #
+       # or1 = obspec[0,:]
+        
+        spec1 = conv_non_uniform_R(modspec[1,:], modspec[0,:], args_instance.R, obspec[0,:])
+        
+        if (do_fudge == 1):
+            s2 = obspec[2,:]**2 + (params_instance.frac_param*obspec[2,:])**2
+        else:
+            s2 = obspec[2,:]**2
+            
+        lnLik1=-0.5*np.sum((((obspec[1,:] - spec1[:])**2) / s2) + np.log(2.*np.pi*s2)) 
+        
+        
+    elif(fwhm == 555):
+        #Non-uniform R, the user provides the R file with conditions towards the tolerance parameter, so we are allowing the tolerance parameter to be different at each datapoint
+        
+        log_f_param = args_instance.logf_flag
+        
+        or1 = obspec[0,:]
+       # indices1 = np.where(log_f_param == 1.0)
+       # or1 = or1[indices1]
+        or1 = np.where(log_f_param == 1.0)
+        obs_wl1 = obspec[0,:]
+        indices1 = np.where(log_f_param == 1.0)
+        obs_wl1 = obs_wl1[indices1]
+        #print('or1', or1)
+        #print('obs_wl1',obs_wl1)
+        #print('modspec[1,or1]',modspec[1,or1])
+        #print('modspec[0,or1]',modspec[0,or1])
+        #print('args_instance.R[or1]',args_instance.R[or1])
+        spec1 = conv_non_uniform_R(modspec[1,:], modspec[0,:], args_instance.R[or1], obs_wl1)
+        
+        or2 = obspec[0,:]
+       
+       # indices2 = np.where(log_f_param == 2.0)
+       # or2 = or2[indices2]
+        or2 = np.where(log_f_param == 2.0)
+        obs_wl2 = obspec[0,:]
+        indices2 = np.where(log_f_param == 2.0)
+        obs_wl2 = obs_wl2[indices2]
+       # print('or2',or2)
+       # print('modspec[1,or2]',modspec[1,or2])
+       # print('modspec[0,or2]',modspec[0,or2])
+       # print('args_instance.R[or2]',args_instance.R[or2])
+        spec2 = conv_non_uniform_R(modspec[1,:], modspec[0,:], args_instance.R[or2], obs_wl2)
+        
+        if (do_fudge == 1):
+            s2 = obspec[2,or1]**2 + 10.**logf[0]
+            s3 = obspec[2,or2]**2 + 10.**logf[1]
+        else:
+            s2 = obspec[2,or1]**2
+            s3 = obspec[2,or2]**2 
+        
+        lnLik1=-0.5*np.sum((((obspec[1,or1] - spec1[:])**2) / s2) + np.log(2.*np.pi*s2)) 
+        lnLik2=-0.5*np.sum((((obspec[1,or2] - spec2[:])**2) / s3) + np.log(2.*np.pi*s3))
+        lnLik = lnLik1 + lnLik2
+        
+        
+         
             
     elif (fwhm < 0.0):
         lnLik = 0.0
@@ -1976,7 +2185,10 @@ def modelspec(theta,re_params,args_instance,gnostics):
         bff_raw,
         ceTgrid,
         metscale,
-        coscale
+        coscale,
+        R,
+        wl,
+        logf_flag
     ) = (
         args_instance.gases_myP,
         args_instance.chemeq,
@@ -2004,7 +2216,10 @@ def modelspec(theta,re_params,args_instance,gnostics):
         args_instance.bff_raw,
         args_instance.ceTgrid,
         args_instance.metscale,
-        args_instance.coscale
+        args_instance.coscale,
+        args_instance.R,
+        args_instance.wl,
+        args_instance.logf_flag
     )
         
     nlayers = press.size

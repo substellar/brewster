@@ -39,22 +39,45 @@ class Instrument:
         Maximum wavelength (um)
     ndata : float
         number of instruments
+    R_file : str
+        path to the R vs wl file
     
     Methods
     -------
     instrument_dic_gen()
+    load_R_file(): 
+        loads the R vs wl file
     """
     
-    def __init__(self, fwhm=None, wavelength_range=None, ndata=None,R_file=None,wavpoints=None):
+    def __init__(self, fwhm=None, wavelength_range=None, ndata=None,wavpoints=None, R_file=None):
         self.fwhm  = fwhm 
         self.wavelength_range = wavelength_range
         self.ndata = ndata
         self.wavpoints = wavpoints
         self.R_file = R_file
+        self.R_data = None
+        
+        # only load R if the user provides it
+        if R_file:
+            self.load_R_file()
 
         self.dictionary = self.instrument_dic_gen()
 
-#     @classmethod
+#     @classmethod 
+
+    def load_R_file(self):
+        """
+        loads the R(first column) vs wl (second column) vs flag for tolerance param (third column) txt file (if provided)
+        """
+        try:
+            data = np.loadtxt(self.R_file)
+            self.R = data[:,0]
+            self.wl = data[:,1]
+            self.logf_flag = data[:,2]
+            self.R_data = {'R': self.R, 'wl': self.wl, 'logf_flag': self.logf_flag}
+        except Exception as e:
+            print(f'no such file: {e}')
+
     def instrument_dic_gen(self):
         """
         Initialize telescope object using current parameters.
@@ -65,7 +88,8 @@ class Instrument:
                 'wavelength_range': self.wavelength_range,
                 'ndata': self.ndata,
                 'wavpoints': self.wavpoints,
-                'R_file': self.R_file
+                'R_file': self.R_file,
+                'R_data': self.R_data
             }
         }
 
@@ -75,7 +99,8 @@ class Instrument:
             '- wavelength_range : ' + "%s" % (self.wavelength_range) + '\n' +\
             '- ndata : ' + "%s" % (self.ndata) + ' \n'  +\
             '- wavpoints : ' + "%s" % (self.wavpoints) + ' \n' +\
-            '- R_file : ' + "%s" % (self.R_file) + ' \n'
+            '- R_file : ' + "%s" % (self.R_file) + '\n' +\
+            '- R_data : ' + "%s" % (self.R_data) + ' \n'
         return string
 
 
@@ -103,7 +128,7 @@ class ModelConfig:
     xpath : str, optional
         Path to line lists (default: "../Linelists/")
     xlist : str, optional
-        Line list file (default: "data/gaslistRox.dat")
+        Line list file (default: "gaslistRox.dat")
     dist : float, optional
         Distance parameter (default: None)
     pfile : str, optional
@@ -119,7 +144,7 @@ class ModelConfig:
         Update the model configuration dictionary with the current attributes.
     """
 
-    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="data/gaslistRox.dat", dist=None, pfile="data/LSR1835_eqpt.dat"):
+    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="gaslistRox.dat", dist=None, pfile="LSR1835_eqpt.dat"):
         self.samplemode = samplemode
         self.use_disort = use_disort
         self.do_fudge = do_fudge
@@ -1087,7 +1112,7 @@ class Retrieval_params:
             
         # Remove 'scale1' and 'scale2' if fwhm condition is not met
     
-        if self.fwhm >=0 or self.fwhm in [-5,-6] and self.do_fudge==1:
+        if (self.fwhm >=0 and self.fwhm <=500) or (self.fwhm in [-5,-6] and self.do_fudge==1):
 
             del dictionary['params']['scale1']
             del dictionary['params']['scale2']
@@ -1099,7 +1124,17 @@ class Retrieval_params:
 
         if self.fwhm in [-1, -3, -4] and self.do_fudge==1:
             ndata=3
-
+            
+        if self.fwhm in [555, 888] and self.do_fudge==1:
+            del dictionary['params']['scale1']
+            del dictionary['params']['scale2']
+            ndata=2
+            
+        if self.fwhm in [777] and self.do_fudgge==1:
+            del dictionary['params']['scale1']
+            del dictionary['params']['scale2']
+            ndata=0
+            
         # Add tolerance parameters after 'dlambda'
         if self.do_fudge==1:
             for i in range(ndata):
@@ -1412,7 +1447,7 @@ def MC_P0_gen(updated_dic,model_config_instance,args_instance):
         params_instance = params_master(*all_params_values)
         T_1_index=params_instance._fields.index('T_1')
         T_13_index=params_instance._fields.index('T_13')
-        BTprof = np.loadtxt("data/BTtemp800_45_13.dat")
+        BTprof = np.loadtxt("BTtemp800_45_13.dat")
 
         for i in range(0, 13):  # 13 layer points ====> Total: 13 + 13 (gases+) +no cloud = 26
             p0[:,T_1_index+i] = (BTprof[i] - 200.) + (150. * np.random.randn(nwalkers).reshape(nwalkers))
@@ -1545,7 +1580,7 @@ def cloud_para_gen(dic):
 
 
 
-def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='data/gaslistR10K.dat',malk=0):
+def get_opacities(gaslist,w1,w2,press,xpath='../Linelists',xlist='gaslistR10K.dat',malk=0):
     # Now we'll get the opacity files into an array
     ngas = len(gaslist)
 
@@ -1791,7 +1826,8 @@ class ArgsGen:
         self.model = model
         self.instrument = instrument
         self.obspec = obspec
-
+        #self.fwhm = self.instrument.fwhm
+        #self.logf = self.instrument.logf
         # Generate all necessary model arguments on initialization
         self.generate()
 
@@ -1815,7 +1851,6 @@ class ArgsGen:
         self.pfile = self.model.pfile
         self.do_bff = self.model.do_bff
         self.chemeq = self.re_params.chemeq
-        
         # Process gas list
         self.gaslist = list(self.re_params.dictionary['gas'].keys())
         gaslist_lower = [gas.lower() for gas in self.gaslist]
@@ -1828,6 +1863,9 @@ class ArgsGen:
         # Retrieve instrument parameters
         self.fwhm = self.instrument.fwhm
         self.w1, self.w2 = self.instrument.wavelength_range
+        self.R = self.instrument.R
+        self.wl = self.instrument.wl
+        self.logf_flag = self.instrument.logf_flag #!!!!!!!!!!!!!!!!
         
         # Profile type and cloud parameters
         self.proftype = self.re_params.ptype
@@ -1844,14 +1882,14 @@ class ArgsGen:
         self.inlinetemps, self.inwavenum, self.linelist,self.gasnames,self.gasmass, self.nwave = get_opacities(
             self.gaslist, self.w1, self.w2, self.press, self.xpath, self.xlist, self.malk)
 
-        self.tmpcia, self.ciatemps = ciamod.read_cia("data/CIA_DS_aug_2015.dat", self.inwavenum)
+        self.tmpcia, self.ciatemps = ciamod.read_cia("CIA_DS_aug_2015.dat", self.inwavenum)
         self.cia = np.asfortranarray(np.empty((4, self.ciatemps.size, self.nwave)), dtype='float32')
         self.cia[:, :, :] = self.tmpcia[:, :, :self.nwave]
         self.ciatemps = np.asfortranarray(self.ciatemps, dtype='float32')
         
         # BFF and Chemical grids
         self.bff_raw, self.ceTgrid, self.metscale, self.coscale, self.gases_myP = sort_bff_and_CE(
-            self.chemeq, "data/chem_eq_tables_P3K.pic", self.press, self.gaslist)
+            self.chemeq, "chem_eq_tables_P3K.pic", self.press, self.gaslist)
 
         
     def __str__(self):
