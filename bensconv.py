@@ -48,66 +48,7 @@ def conv_uniform_R(obspec,modspec,R):
 
 
 
-#### CONVOLVING THE MODEL SPECTRA WITH THE NON-UNIFORM RESOLVING POWER (NIRSPEC + MIRI)
-
-#wl =  obs_data[:, 0]  #np.arange(1,16,1)   lambda in microns
-
-
-
-def JWST_R(wl):
-    
-    '''Function that provides the Resolving Power (R) as a function of wavelength (wl) in micron,
-       depending on jwst instrument'''
-    
-    if slit_limited == 1.0 and source_limited == 0.0:
-        
-        R = wl/(d_wl * resel_slit_lim)
-        
-        return R, wl
-    
-    
-    elif source_limited == 1.0 and slit_limited == 0.0:
-        
-        theta_lambda = (648000/np.pi) * 1.028 * (wl/D) #FWHM in arcsec
-        
-        #resel = ((648000/np.pi) * 1.028 * (wl/D)) / theta_pix
-        
-        R = wl / (d_wl * (theta_lambda / theta_pix))
-        
-        return R, wl
-    
-    
-    elif source_limited == 1.0 and slit_limited == 1.0:
-        
-        ### nirspec
-        
-        nirspec_wl = wl[(wl >= nirspec_wl_range[0]) & (wl <= nirspec_wl_range[1])]
-        
-        nirspec_d_wl = d_wl[(wl >= nirspec_wl_range[0]) & (wl <= nirspec_wl_range[1])] 
-        
-        R_nirspec = nirspec_wl/(nirspec_d_wl * resel_slit_lim)
-        
-        ### miri
-        
-        miri_wl = wl[(wl >= miri_wl_range[0]) & (wl <= miri_wl_range[1])]
-        
-        miri_d_wl = d_wl[(wl >= miri_wl_range[0]) & (wl <= miri_wl_range[1])]
-        
-        #resel = ((648000/np.pi) * 1.028 * (miri_wl/D)) / theta_pix
-        
-        theta_lambda = (648000/np.pi) * 1.028 * (miri_wl/D)
-        
-        R_miri = miri_wl / (miri_d_wl * (theta_lambda / theta_pix))
-        
-        #plt.plot(nirspec_wl,R_nirspec)
-        #plt.plot(miri_wl,R_miri)
-        
-        return np.concatenate((R_nirspec, R_miri)), np.concatenate((nirspec_wl, miri_wl))
-    
-    else:
-        
-        print('Error: please check source_limited and slit_limited.')
-        
+#### CONVOLVING THE MODEL SPECTRA WITH THE NON-UNIFORM RESOLVING POWER 
 
 
 

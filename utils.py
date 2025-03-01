@@ -56,6 +56,9 @@ class Instrument:
         self.wavpoints = wavpoints
         self.R_file = R_file
         self.R_data = None
+        self.R = None
+        self.wl = None
+        self.logf_flag = None
         
         # only load R if the user provides it
         if R_file:
@@ -144,7 +147,7 @@ class ModelConfig:
         Update the model configuration dictionary with the current attributes.
     """
 
-    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="gaslistRox.dat", dist=None, pfile="LSR1835_eqpt.dat"):
+    def __init__(self, samplemode, do_fudge, use_disort=0, malk=0, mch4=0, do_bff=1, fresh=0, xpath="../Linelists/", xlist="data/gaslistRox.dat", dist=None, pfile="data/LSR1835_eqpt.dat"):
         self.samplemode = samplemode
         self.use_disort = use_disort
         self.do_fudge = do_fudge
@@ -1889,7 +1892,7 @@ class ArgsGen:
         
         # BFF and Chemical grids
         self.bff_raw, self.ceTgrid, self.metscale, self.coscale, self.gases_myP = sort_bff_and_CE(
-            self.chemeq, "chem_eq_tables_P3K.pic", self.press, self.gaslist)
+            self.chemeq, "data/chem_eq_tables_P3K.pic", self.press, self.gaslist)
 
         
     def __str__(self):

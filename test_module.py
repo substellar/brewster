@@ -235,7 +235,7 @@ def lnprior(theta,re_params):
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
                 
-    elif (fwhm == 555):
+    elif (fwhm == 555):  #non-uniform R with flags for tolerance parameters
         log_f_param = args_instance.logf_flag
         s2 = obspec[0,:]
         s2 = np.where(log_f_param == 1.0)
@@ -258,7 +258,7 @@ def lnprior(theta,re_params):
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
 
                 
-    elif (fwhm == 888):
+    elif (fwhm == 888): ### STILL NEEDS TO BE TESTED!!!
         log_f_param = args_instance.logf_flag
         s2 = obspec[0,:]
         s2 = np.where(log_f_param == 1.0)
@@ -280,7 +280,7 @@ def lnprior(theta,re_params):
                 logf2 = np.log10(0.1*(max(obspec[2,:]))**2)
                 logf3 = np.log10(0.1*(max(obspec[2,:]))**2)
                 
-    elif (fwhm == 777): ### 777 this ?????
+    elif (fwhm == 777): ### STILL NEEDS TO BE TESTED!!!
         
         s1 = np.where(obspec[0,:] > 0.0)
         s2 = s1
@@ -1775,7 +1775,7 @@ def lnlike(theta,re_params):
 
  
  
-    elif (fwhm == 888):
+    elif (fwhm == 888): #STILL NEEDS TO BE TESTED
         #Non-uniform R, NIRSpec + MIRI, two tolerance parameters
         print(f"obspec shape: {obspec.shape}")
         print(f"modspec shape: {modspec.shape}")
@@ -1812,9 +1812,9 @@ def lnlike(theta,re_params):
         
         
     elif(fwhm == 777): #STILL NEEDS TO BE TESTED
-        #Non_uniform R, tolerance parameter as a fraction of error,  so we are allowing the tolerance parameter to be different at each datapoint
-        #
-       # or1 = obspec[0,:]
+        #Convolving Non_uniform R, tolerance parameter as a fraction of error, 
+        #so we are allowing the tolerance parameter to be different at each datapoint
+
         
         spec1 = conv_non_uniform_R(modspec[1,:], modspec[0,:], args_instance.R, obspec[0,:])
         
@@ -1827,7 +1827,8 @@ def lnlike(theta,re_params):
         
         
     elif(fwhm == 555):
-        #Non-uniform R, the user provides the R file with conditions towards the tolerance parameter, so we are allowing the tolerance parameter to be different at each datapoint
+        #Convolving with Non-uniform R, the user provides the R file with conditions towards the tolerance parameter, 
+        #so we are allowing the tolerance parameter to be different at each datapoint
         
         log_f_param = args_instance.logf_flag
         
