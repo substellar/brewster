@@ -37,6 +37,8 @@ def NoCloud_Tdwarf(xpath,xlist):
      fwhm=0
      wavelength_range=[1,2.5]
      ndata=1
+     wavpoints=None
+     R_file=None
 
      ##gas
      chemeq=0

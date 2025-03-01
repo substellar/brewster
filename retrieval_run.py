@@ -134,7 +134,7 @@ def brewster_reterieval_run(re_params,model_config_instance,io_config_instance):
                 chain=sampler.chain
                 lnprob=sampler.lnprobability
                 output=[chain,lnprob]
-                pickle.dump(output,open(io_config_instance.outdir+io_config_instance.picdump,"wb"))
+                pickle.dump(output,open(io_config_instance.outdir+io_config_instance.picdump,"wb"),protocol=4)
                 pickle.dump(chain[:,k-1,:], open(io_config_instance.chaindump,'wb'))
 
 
