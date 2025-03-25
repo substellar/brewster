@@ -131,3 +131,43 @@ subroutine convR(obspec,modspec,R,Fratio_int)
 
 
 end subroutine convR
+
+
+subroutine convNONuniformR(obspec,modspec,R,Fratio_int)
+
+  implicit none
+
+
+  !f2py intent(inout) modspec,obspec, R
+  !f2py intent(out) Fratio_int
+
+  integer, parameter:: maxwave = 40000
+  double precision,intent(inout) :: modspec(:,:),obspec(:,:), R(:)
+  double precision,dimension(maxwave),intent(out) :: Fratio_int
+  double precision,allocatable,dimension(:):: wlobs,gauss,wlmod,Fmod
+  integer :: i, nwmod, nobs,nmod
+  double precision:: sigma
+
+  nobs = size(obspec(1,:))
+  nmod = size(modspec(1,:))
+
+  allocate(wlobs(nobs))
+  allocate(gauss(nmod),wlmod(nmod),Fmod(nmod))
+
+  Fmod = modspec(2,:)
+  wlmod = modspec(1,:)
+  wlobs = obspec(1,:)
+
+  do i = 1, nobs
+     sigma = (wlobs(i) / R(i)) / 2.355
+     gauss = exp(-(wlmod-wlobs(i))**2/(2*sigma**2))
+     gauss = gauss/ sum(gauss)
+     Fratio_int(i)= sum(gauss*Fmod)
+  end do
+
+  deallocate(wlobs)
+  deallocate(gauss,wlmod,Fmod)
+
+
+
+end subroutine convNONuniformR
