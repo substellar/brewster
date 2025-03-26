@@ -22,6 +22,7 @@ from rotBroadInt import rot_int_cmj as rotBroad
 from bensconv import prism_non_uniform
 from bensconv import conv_uniform_R
 from bensconv import conv_uniform_FWHM
+from bensconv import conv_non_uniform_R
 
 __author__ = "Ben Burningham"
 __copyright__ = "Copyright 2015 - Ben Burningham"
@@ -791,8 +792,9 @@ def lnlike(theta):
         else:
             s2 = obspec[2,:]**2
 
-        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))       
-    elif (fwhm > 10.00):
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))   
+
+    elif (fwhm > 10.00 and fwhm < 900.00):
         # this is a uniform resolving power R.
         Res = fwhm
         spec = conv_uniform_R(obspec,modspec,Res)
@@ -802,6 +804,18 @@ def lnlike(theta):
             s2 = obspec[2,:]**2
 
         lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
+
+    elif (fwhm == 999):
+        # this is a non-uniform resolving power R.
+        R = obspec[-1, :]
+        spec = conv_non_uniform_R(obspec,modspec,R)
+        if (do_fudge == 1):
+            s2=obspec[2,:]**2 + 10.**logf
+        else:
+            s2 = obspec[2,:]**2
+
+        lnLik=-0.5*np.sum((((obspec[1,:] - spec[:])**2) / s2) + np.log(2.*np.pi*s2))
+
     elif (fwhm == 0.0):
         # Use convolution for Spex
         spec = prism_non_uniform(obspec,modspec,3.3)
