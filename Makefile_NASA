@@ -124,6 +124,11 @@ ciamod:
 #	f2py --fcompiler=gfortran --f90flags="-O3 -m64" -I/usr/include -L/usr/local/lib -c ciamod.pyf read_cia.f90
 	f2py --fcompiler=intelem --f90flags="-O3 -axCORE-AVX2" -I/usr/include -L/usr/local/lib -c ciamod.pyf sizes_mod.f90 read_cia.f90
 
+cloudpostsig:
+	f2py -m cloudpost -h cloudpost.pyf cloudpost.f90
+
+cloudpost:
+	f2py --fcompiler=gfortran --f90flags="-O2 -fPIC -frecord-marker=4 -fbounds-check " -I/usr/include -L/usr/local/lib -c cloudpost.pyf cloudpost.f90
 
 bbconvsig:
 	f2py -m bbconv -h bbconv.pyf bbconv.f90

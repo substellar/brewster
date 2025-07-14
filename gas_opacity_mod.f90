@@ -45,10 +45,10 @@ contains
 
 
 
-    if (layer%temp .lt. linetemps(1)) then
+    if (layer%temp .le. linetemps(1)) then
        Tlay1 = 1
        Tlay2 = 2
-    else if (layer%temp .gt. linetemps(nlinetemps)) then
+    else if (layer%temp .ge. linetemps(nlinetemps)) then
        Tlay1 = nlinetemps - 1
        Tlay2 = nlinetemps
     endif
