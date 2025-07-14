@@ -620,12 +620,12 @@ def lnprior(theta):
 
     
     elif (proftype == 7):
-        Tint = theta[pc+nc]
-        alpha = theta[pc+1+nc]
-        lndelta = theta[pc+2+nc]    #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
-        T1 = theta[pc+3+nc]
-        T2 = theta[pc+4+nc]
-        T3 = theta[pc+5+nc]
+        Tint = theta[ndim - 6]
+        alpha = theta[ndim - 5]
+        lndelta = theta[ndim - 4]    #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
+        T1 = theta[ndim - 3]
+        T2 = theta[ndim - 2]
+        T3 = theta[ndim - 1]
 
         delta= np.exp(lndelta)
         Tconnect = (((3/4) * Tint**4) * ((2/3) + (0.1)))**(1/4)
@@ -636,9 +636,29 @@ def lnprior(theta):
          #if  (1 < alpha  < 2. and 0. < delta < 0.1
           #   and T1 > 0.0 and T1 < T2 and T2 < T3 and T3 < Tconnect and Tint >0.0):
            #  T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])  # no inversion 
+        # P1 - pressure where tau = 1 
         P1 = ((1/delta)**(1/alpha))
-        # put prior on P1 to put it shallower than 100 bar   
-        if  (1 < alpha  < 2. and P1 < 100. and P1 > press[0]
+        # Get the ratio of specific heats for the dry adiabat
+        cp = 0.84*14.32 + 0.16*5.19
+        cv = 0.84*10.16 + 0.16*3.12
+        gamma=cp/cv
+
+        tau=delta*(press)**alpha
+        T_edd=(((3/4)*Tint**4)*((2/3)+(tau)))**(1/4)
+        nabla_ad=(gamma-1)/gamma
+        nabla_rad = np.diff(np.log(T_edd))/np.diff(np.log(press))
+        convtest = np.any(np.where(nabla_rad >= nabla_ad))
+
+        # Now get temperatures on the adiabat from RC boundary downwards
+        if convtest:            
+            RCbound = np.where(nabla_rad >= nabla_ad)[0][0]        
+            P_RC = press[RCbound]
+        else:
+            P_RC = 1000.
+            
+        # put prior on P_RC to put it shallower than 100 bar   
+        if  (1 < alpha  < 2. and P_RC < 100 and P1 < P_RC
+             and P_RC > press[0] and  P1 > press[0]
              and T1 > 0.0 and T2 > 0.0 and T3 > 0.0 and Tint >0.0):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:]) # allow inversion 
 
@@ -708,9 +728,29 @@ def lnprior(theta):
          #if  (1 < alpha  < 2. and 0. < delta < 0.1
           #   and T1 > 0.0 and T1 < T2 and T2 < T3 and T3 < Tconnect and Tint >0.0):
            #  T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:])  # no inversion 
+        # P1 - pressure where tau = 1 
         P1 = ((1/delta)**(1/alpha))
-        # put prior on P1 to put it shallower than 100 bar   
-        if  (1 < alpha  < 2. and P1 < 100. and P1 > press[0]
+        # Get the ratio of specific heats for the dry adiabat
+        cp = 0.84*14.32 + 0.16*5.19
+        cv = 0.84*10.16 + 0.16*3.12
+        gamma=cp/cv
+
+        tau=delta*(press)**alpha
+        T_edd=(((3/4)*Tint**4)*((2/3)+(tau)))**(1/4)
+        nabla_ad=(gamma-1)/gamma
+        nabla_rad = np.diff(np.log(T_edd))/np.diff(np.log(press))
+        convtest = np.any(np.where(nabla_rad >= nabla_ad))
+
+        # Now get temperatures on the adiabat from RC boundary downwards
+        if convtest:            
+            RCbound = np.where(nabla_rad >= nabla_ad)[0][0]        
+            P_RC = press[RCbound]
+        else:
+            P_RC = 1000.
+            
+        # put prior on P_RC to put it shallower than 100 bar   
+        if  (1 < alpha  < 2. and P_RC < 100 and P1 < P_RC
+             and P_RC > press[0] and  P1 > press[0]
              and T1 > 0.0 and T2 > 0.0 and T3 > 0.0 and Tint >0.0):
             T = TPmod.set_prof(proftype,junkP,press,theta[pc+nc:]) # allow inversion 
 

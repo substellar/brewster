@@ -5,5 +5,6 @@ def init():
     global linelist
     global samples
     samples = []
-    runargs = 0
- 
+    runargs = []
+    linelist = []
+    cia = []

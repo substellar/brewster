@@ -164,6 +164,10 @@ def set_prof(proftype, coarsePress,press,intemp):
         if convtest:            
             RCbound = np.where(nabla_rad >= nabla_ad)[0][0]
             temp[RCbound:] = temp[RCbound]*(press[RCbound:]/press[RCbound])**((gamma-1)/gamma)
+        #   print(press[RCbound])
+        #else:
+        #    print("no RC bound")
+                
         # weed out any temperatures that are above our opacity tables 
         # temp2 = np.where(temp < 6000., temp, 6000.)
 
