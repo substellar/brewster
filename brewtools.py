@@ -59,6 +59,7 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
     from bensconv import prism_non_uniform
     from bensconv import conv_uniform_R
     from bensconv import conv_uniform_FWHM
+    from bensconv import conv_non_uniform_R
 
     if chemeq == 0:
         if (gasnum[gasnum.size-1] == 22):
@@ -93,10 +94,23 @@ def proc_spec(shiftspec,theta,fwhm,chemeq,gasnum,obspec):
         
         outspec = conv_uniform_FWHM(obspec,modspec,fwhm)
 
-    elif (fwhm > 10.00):
+    elif (fwhm > 10.00 and fwhm < 900.00):
         # this is a uniform resolving power R.
         Res = fwhm
         outspec = conv_uniform_R(obspec,modspec,Res)
+
+    elif (fwhm == 999):
+        R = obspec[-1, :]
+        mr_NIRSpec = np.where(modspec[0, :] < 5.2)[0]
+        or_NIRSpec = np.where(obspec[0, :] < 5.2)[0]
+
+        mr_MIRI = np.where(np.logical_and(modspec[0, :] > 5.2, modspec[0, :] <= obspec[0,-1]))[0]
+        or_MIRI = np.where(np.logical_and(obspec[0, :] > 5.2, obspec[0, :] <= obspec[0,-1]))[0]
+
+        NIRSpec = conv_non_uniform_R(obspec[:, or_NIRSpec], modspec[:, mr_NIRSpec], R[or_NIRSpec])
+        MIRI = conv_non_uniform_R(obspec[:, or_MIRI], modspec[:, mr_MIRI], R[or_MIRI])
+
+        outspec = np.array(np.concatenate((NIRSpec,MIRI),axis=0))
 
     elif (fwhm == 0.0):
         # Use Mike's convolution for Spex
