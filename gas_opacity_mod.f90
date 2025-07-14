@@ -198,7 +198,7 @@ contains
     real :: intfact, n_amg
     integer :: ilayer, idum1, idum2,tcia1,tcia2, icwaven,iciatemp
 
-    ! This code calculates the optical depth due to CIA from H2-H2, H2-He and H2-CH4, neglects H2-H
+    ! This code calculates the optical depth due to CIA from H2-H2, H2-He, H2-H and H2-CH4
     ! It also neglects the other bound-free opacity we might expect
     ! This version interpolates in low-res version of CIA table, then rebins to working resolution at end
     ! before optical depth is calculated

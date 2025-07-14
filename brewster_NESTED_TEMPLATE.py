@@ -111,7 +111,7 @@ knots = 5
 
 # set up pressure grids in bar cos its intuitive
 logcoarsePress = np.linspace(-4.0, 2.4, knots)
-logfinePress = np.arange(-4.0, 2.4, 0.1)
+logfinePress = np.linspace(-4.0, 2.4, 64)
 # forward model wants pressure in bar
 #logcoarsePress = np.arange(-4.0, 3.0, 0.5)
 coarsePress = pow(10,logcoarsePress)

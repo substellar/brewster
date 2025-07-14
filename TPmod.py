@@ -31,7 +31,7 @@ __status__ = "Development"
 def set_prof(proftype, coarsePress,press,intemp):
     temp = np.zeros_like(press)
 
-    if (proftype == 1 or proftype == 9 or proftype == 6):
+    if (proftype == 1 or proftype == 6 or proftype == 9):
         # interp temp onto finer grid coarsePress => press
         # spline fit with max smoothing
         tfit = sp.interpolate.splrep(np.log10(coarsePress),intemp,s=0)
@@ -100,13 +100,27 @@ def set_prof(proftype, coarsePress,press,intemp):
         # then smooth with 5 layer box car 
         temp1 = convolve(temp,Gaussian1DKernel(5),boundary='extend')
  
-    elif (proftype == 7):
+    elif (proftype == 7 or proftype == 77):
         # this is Molliere's hybrid profile, hacked by Michelle Colantoni from
         # petitRadTran. But, using dry adiabat for H2/He atmosphere
         # a few variable names changed by BB, and a bit of restructuring
+        # 77 is the same, but has a smoothing prior as for Line+2015 profile
+        # https://gitlab.com/mauricemolli/petitRADTRANS/-/blob/master/petitRADTRANS/physics.py ref:PT_ret_model
 
+        """
+        args:      
+        T3 : np.array([t1, t2, t3])           
+        temperature points to be added on top radiative Eddington structure (above tau = 0.1). 
+        Use spline interpolation, t1 < t2 < t3 < tconnect as prior.      
+        
+        delta : float  [0,0.1]       proportionality factor in tau = delta * press_cgs**alpha  #kappa/grav replaced by delta   kth ～(10^-2,10^-3) [cm^2g-1] g [cm s^-2] 1e4
+        alpha : float  [1,2]         power law index in tau = delta * press_cgs**alpha  For the tau model: use proximity to kappa_rosseland photosphere  as prior. parameters['alpha'] = Parameter('alpha', False, value = 1.70)
+        tint : float                 internal temperature of the Eddington model
+        """
         # unpack the intemp parameters
-        Tint,alpha,delta,T1,T2,T3 = intemp[0:6]
+        Tint,alpha,lndelta,T1,T2,T3 = intemp[0:6]
+
+        delta=np.exp(lndelta)
         
         n=len(press)
 
@@ -150,13 +164,20 @@ def set_prof(proftype, coarsePress,press,intemp):
         if convtest:            
             RCbound = np.where(nabla_rad >= nabla_ad)[0][0]
             temp[RCbound:] = temp[RCbound]*(press[RCbound:]/press[RCbound])**((gamma-1)/gamma)
+        #   print(press[RCbound])
+        #else:
+        #    print("no RC bound")
+                
         # weed out any temperatures that are above our opacity tables 
-        temp2 = np.where(temp < 6000., temp, 6000.)
+        # temp2 = np.where(temp < 6000., temp, 6000.)
+
+        temp2 = np.where(temp < 4000., temp, 4000.)
                         
         # finally smooth with a 5 layer boxcar
         temp1 = convolve(temp2,Gaussian1DKernel(5),boundary='extend')
- 
+
     # weed out any negative temperatures
     temp = np.where(temp1 > 10., temp1, 10.)
+    temp = np.where(temp < 4000., temp, 4000.)
 
     return temp
